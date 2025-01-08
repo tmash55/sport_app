@@ -1,0 +1,34 @@
+/* Dark mode styles for react-datetime */
+.dark-theme.rdtPicker {
+    background: #1f2937;
+    color: #fff;
+  }
+  
+  .dark-theme .rdtPicker th,
+  .dark-theme .rdtPicker td {
+    color: #fff;
+  }
+  
+  .dark-theme .rdtPicker .rdtDay:hover,
+  .dark-theme .rdtPicker .rdtHour:hover,
+  .dark-theme .rdtPicker .rdtMinute:hover,
+  .dark-theme .rdtPicker .rdtSecond:hover,
+  .dark-theme .rdtPicker .rdtTimeToggle:hover {
+    background: #374151;
+  }
+  
+  .dark-theme .rdtPicker .rdtActive {
+    background-color: #3b82f6 !important;
+    color: #fff !important;
+  }
+  
+  .dark-theme .rdtPicker .rdtToday:before {
+    border-bottom-color: #3b82f6;
+  }
+  
+  .dark-theme .rdtPicker .rdtSwitch:hover,
+  .dark-theme .rdtPicker .rdtBtn:hover {
+    color: #3b82f6;
+  }
+  
+  
