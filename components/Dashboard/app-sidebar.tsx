@@ -4,6 +4,7 @@ import { Trophy, LayoutDashboard, Users, PlusCircle, Settings, LogOut } from 'lu
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
+
 import {
   Sidebar,
   SidebarContent,
@@ -32,13 +33,13 @@ const data = {
       icon: LayoutDashboard,
     },
     {
-      title: "Join League",
+      title: "Join a Pool",
       url: "/dashboard/join",
       icon: Users,
     },
     {
-      title: "Create League",
-      url: "/dashboard/leagues/create",
+      title: "Create a Pool",
+      url: "/contests/start",
       icon: PlusCircle,
     },
     {
@@ -72,15 +73,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <Trophy className="size-4" />
-                </div>
-                <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">March Madness</span>
-                  <span className="">Fantasy</span>
-                </div>
-              </Link>
+            <Link href="/dashboard" className="flex items-center gap-3">
+        <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+          <Trophy className="size-5" />
+        </div>
+        <span className="font-semibold text-lg">DraftPlay</span>
+      </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

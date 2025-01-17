@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import {
@@ -12,6 +12,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { createClient } from '@/libs/supabase/client'
+import { useToast } from "@/hooks/use-toast"
+import { Loader2, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 
 interface JoinConfirmationProps {
   leagueId: string
@@ -20,9 +22,26 @@ interface JoinConfirmationProps {
 
 export function JoinConfirmation({ leagueId, leagueName }: JoinConfirmationProps) {
   const [isOpen, setIsOpen] = useState(true)
-  const [membershipStatus, setMembershipStatus] = useState<'checking' | 'member' | 'not_member' | 'error'>('checking')
+  const [membershipStatus, setMembershipStatus] = useState<'checking' | 'member' | 'joined' | 'error' | 'full'>('checking')
+  const [userDisplayName, setUserDisplayName] = useState<string>('')
   const router = useRouter()
   const supabase = createClient()
+  const { toast } = useToast()
+
+  const fetchUserDisplayName = useCallback(async (userId: string) => {
+    const { data, error } = await supabase
+      .from('users')
+      .select('display_name')
+      .eq('id', userId)
+      .single()
+
+    if (error) {
+      console.error('Error fetching user display name:', error)
+      return null
+    }
+
+    return data?.display_name
+  }, [supabase])
 
   useEffect(() => {
     const checkMembershipAndJoin = async () => {
@@ -34,53 +53,42 @@ export function JoinConfirmation({ leagueId, leagueName }: JoinConfirmationProps
           return
         }
 
-        // Fetch user's display_name
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('display_name')
-          .eq('id', user.id)
-          .single()
+        const displayName = await fetchUserDisplayName(user.id)
+        const finalDisplayName = displayName || user.email?.split('@')[0] || 'Unknown'
+        setUserDisplayName(finalDisplayName)
 
-        if (userError) {
-          console.error('Error fetching user data:', userError)
+        console.log('Attempting to join league:', leagueId, 'for user:', user.id)
+
+        const { data, error } = await supabase.rpc('check_and_join_league', {
+          p_league_id: leagueId,
+          p_user_id: user.id,
+          p_display_name: finalDisplayName
+        })
+
+        console.log('check_and_join_league result:', data, error)
+
+        if (error) {
+          console.error('Error in check_and_join_league:', error)
           setMembershipStatus('error')
           return
         }
 
-        const displayName = userData?.display_name || user.email?.split('@')[0] || 'Unknown'
-
-        // Check if user is already a member
-        const { data: existingMember, error: memberError } = await supabase
-          .from('league_members')
-          .select('id')
-          .eq('league_id', leagueId)
-          .eq('user_id', user.id)
-          .single()
-
-        if (memberError && memberError.code !== 'PGRST116') {
-          console.error('Error checking membership:', memberError)
-          setMembershipStatus('error')
-          return
-        }
-
-        if (existingMember) {
+        if (data.status === 'already_member') {
+          console.log('User is already a member')
           setMembershipStatus('member')
+        } else if (data.status === 'joined') {
+          console.log('User successfully joined the league')
+          setMembershipStatus('joined')
+          toast({
+            title: "Joined Successfully",
+            description: `You have successfully joined ${leagueName} as ${data.team_name}.`,
+          })
+        } else if (data.status === 'full') {
+          console.log('League is full')
+          setMembershipStatus('full')
         } else {
-          // Join the league
-          const { error: joinError } = await supabase
-            .from('league_members')
-            .insert({ 
-              league_id: leagueId, 
-              user_id: user.id,
-              team_name: displayName
-            })
-
-          if (joinError) {
-            console.error('Error joining league:', joinError)
-            setMembershipStatus('error')
-          } else {
-            setMembershipStatus('not_member')
-          }
+          console.error('Unexpected status:', data.status)
+          setMembershipStatus('error')
         }
       } catch (error) {
         console.error('Unexpected error:', error)
@@ -89,13 +97,13 @@ export function JoinConfirmation({ leagueId, leagueName }: JoinConfirmationProps
     }
 
     checkMembershipAndJoin()
-  }, [leagueId, supabase])
+  }, [leagueId, leagueName, supabase, toast, fetchUserDisplayName])
 
   useEffect(() => {
-    if (membershipStatus === 'member' || membershipStatus === 'not_member') {
+    if (membershipStatus === 'member' || membershipStatus === 'joined') {
       const timer = setTimeout(() => {
         router.push(`/dashboard/leagues/${leagueId}`)
-      }, 5000)
+      }, 3000)
 
       return () => clearTimeout(timer)
     }
@@ -103,26 +111,74 @@ export function JoinConfirmation({ leagueId, leagueName }: JoinConfirmationProps
 
   const handleClose = () => {
     setIsOpen(false)
-    router.push(`/dashboard/leagues/${leagueId}`)
+    router.push('/dashboard')
+  }
+
+  const renderContent = () => {
+    switch (membershipStatus) {
+      case 'checking':
+        return (
+          <>
+            <Loader2 className="w-16 h-16 animate-spin text-primary mx-auto mb-4" />
+            <DialogDescription>
+              Checking your membership status...
+            </DialogDescription>
+          </>
+        )
+      case 'member':
+        return (
+          <>
+            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+            <DialogDescription>
+              You are already a member of this league. Redirecting you to the league page...
+            </DialogDescription>
+          </>
+        )
+      case 'joined':
+        return (
+          <>
+            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+            <DialogDescription>
+              You have successfully joined the league. You will be redirected to the league page in a few seconds.
+            </DialogDescription>
+          </>
+        )
+      case 'full':
+        return (
+          <>
+            <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <DialogDescription>
+              Sorry, this league is already full. Please try joining another league or create your own.
+            </DialogDescription>
+          </>
+        )
+      case 'error':
+        return (
+          <>
+            <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
+            <DialogDescription>
+              There was an error processing your request. Please try again later or contact support if the problem persists.
+            </DialogDescription>
+          </>
+        )
+    }
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-center">
             {membershipStatus === 'member' ? 'Welcome back to' : 'Welcome to'} {leagueName}!
           </DialogTitle>
-          <DialogDescription>
-            {membershipStatus === 'checking' && 'Checking your membership status...'}
-            {membershipStatus === 'member' && 'You are already a member of this league.'}
-            {membershipStatus === 'not_member' && 'You have successfully joined the league.'}
-            {membershipStatus === 'error' && 'There was an error processing your request.'}
-            {membershipStatus !== 'error' && ' You will be redirected to the league page in a few seconds.'}
-          </DialogDescription>
         </DialogHeader>
+        <div className="flex flex-col items-center justify-center py-6">
+          {renderContent()}
+        </div>
         <DialogFooter>
-          <Button onClick={handleClose}>Go to League Page</Button>
+          <Button onClick={handleClose} className="w-full">
+            {membershipStatus === 'full' ? 'Go to Dashboard' : 'Go to League Page'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

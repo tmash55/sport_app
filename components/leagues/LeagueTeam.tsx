@@ -1,314 +1,252 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from 'react'
-import { createClient } from "@/libs/supabase/client"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Settings, Trophy } from 'lucide-react'
-import { useToast } from "@/hooks/use-toast"
+import { useEffect, useState } from "react";
+import { createClient } from "@/libs/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Trophy, X } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Database } from "@/types/database";
+import { cn } from "@/lib/utils";
 
-interface LeagueTeamProps {
-  leagueId: string
-  userId: string
-}
+type LeagueMember = Database['public']['Tables']['league_members']['Row'] & {
+  users: {
+    email: string;
+    display_name: string | null;
+  };
+};
 
-interface User {
-  email: string | null
-  team_name: string | null
-  avatar_url: string | null
-  display_name: string | null
-}
-
-interface DraftedTeam {
-  id: string;
-  name: string;
-  seed: number;
+type DraftedTeam = Database['public']['Tables']['league_teams']['Row'] & {
+  global_teams: Database['public']['Tables']['global_teams']['Row'];
   scores: number[];
   totalScore: number;
+};
+
+interface LeagueTeamProps {
+  leagueId: string;
+  userId: string;
 }
 
 export function LeagueTeam({ leagueId, userId }: LeagueTeamProps) {
-  const [isLoading, setIsLoading] = useState(true)
-  const [user, setUser] = useState<User | null>(null)
-  const [displayName, setDisplayName] = useState('')
-  const [avatarFile, setAvatarFile] = useState<File | null>(null)
-  const [isUpdating, setIsUpdating] = useState(false)
-  const [draftedTeams, setDraftedTeams] = useState<DraftedTeam[]>([])
-  const [maxTeams, setMaxTeams] = useState(0)
-  const supabase = createClient()
-  const { toast } = useToast()
+  const [isLoading, setIsLoading] = useState(true);
+  const [leagueMember, setLeagueMember] = useState<LeagueMember | null>(null);
+  const [draftedTeams, setDraftedTeams] = useState<DraftedTeam[]>([]);
+  const supabase = createClient();
+  const { toast } = useToast();
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [leagueSettingsResponse, userDataResponse, draftedTeamsResponse] = await Promise.all([
-          supabase
-            .from('league_settings')
-            .select('max_teams')
-            .eq('league_id', leagueId)
-            .single(),
-          supabase
-            .from('league_members')
-            .select('team_name, avatar_url, users!inner(email, display_name)')
-            .eq('league_id', leagueId)
-            .eq('user_id', userId)
-            .single(),
-          supabase
-            .from('draft_picks')
-            .select(`
+        const { data: member, error: memberError } = await supabase
+          .from("league_members")
+          .select("id, team_name, avatar_url, users(email, display_name)")
+          .eq("league_id", leagueId)
+          .eq("user_id", userId)
+          .single();
+
+        if (memberError) throw memberError;
+        setLeagueMember(member);
+
+        const { data: picks, error: picksError } = await supabase
+          .from("draft_picks")
+          .select(`
+            id,
+            league_teams (
               id,
-              league_teams (
+              name,
+              global_teams (
                 id,
-                name,
-                global_teams (
-                  seed
-                )
+                seed,
+                logo_filename,
+                round_1_win,
+                round_2_win,
+                round_3_win,
+                round_4_win,
+                round_5_win,
+                round_6_win,
+                is_eliminated
               )
-            `)
-            .eq('league_id', leagueId)
-            .eq('user_id', userId)
-            .order('pick_number', { ascending: true })
-        ])
+            )
+          `)
+          .eq("league_id", leagueId)
+          .eq("league_member_id", member.id)
+          .order("pick_number", { ascending: true });
 
-        const { data: leagueSettings, error: settingsError } = leagueSettingsResponse
-        const { data: userData, error: userError } = userDataResponse
-        const { data: draftedTeamsData, error: draftedTeamsError } = draftedTeamsResponse
+        if (picksError) throw picksError;
 
-        if (settingsError) throw settingsError
-        if (userError) throw userError
-        if (draftedTeamsError) throw draftedTeamsError
+        const { data: settings, error: settingsError } = await supabase
+          .from("league_settings")
+          .select("*")
+          .eq("league_id", leagueId)
+          .single();
 
-        setMaxTeams(leagueSettings.max_teams)
-        setUser({
-          email: userData.users.email,
-          team_name: userData.team_name,
-          avatar_url: userData.avatar_url,
-          display_name: userData.users.display_name
-        })
-        setDisplayName(userData.team_name || userData.users.display_name || '')
-        
-        // Simulating scores for each round and total score
-        setDraftedTeams(draftedTeamsData.map(pick => ({
-          id: pick.league_teams.id,
-          name: pick.league_teams.name,
-          seed: pick.league_teams.global_teams.seed,
-          scores: Array(6).fill(0).map(() => Math.floor(Math.random() * 50)),
-          totalScore: 0, // We'll calculate this next
-        })))
+        if (settingsError) throw settingsError;
+
+        const teamsWithScores = picks.map((pick) => {
+          const team = pick.league_teams;
+          const globalTeam = team.global_teams;
+          const scores = [
+            globalTeam.round_1_win ? settings.round_1_score : 0,
+            globalTeam.round_2_win ? settings.round_2_score : 0,
+            globalTeam.round_3_win ? settings.round_3_score : 0,
+            globalTeam.round_4_win ? settings.round_4_score : 0,
+            globalTeam.round_5_win ? settings.round_5_score : 0,
+            globalTeam.round_6_win ? settings.round_6_score : 0,
+          ];
+          const totalScore = scores.reduce((sum, score) => sum + score, 0);
+          return { ...team, scores, totalScore };
+        });
+
+        setDraftedTeams(teamsWithScores);
       } catch (error) {
-        console.error('Error fetching data:', error)
+        console.error("Error fetching data:", error);
         toast({
           title: "Error",
           description: "Failed to load team data. Please try again.",
           variant: "destructive",
-        })
+        });
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
-    fetchData()
+    fetchData();
 
     const leagueChannel = supabase
-      .channel('league_team_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'league_members', filter: `league_id=eq.${leagueId} AND user_id=eq.${userId}` }, fetchData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'draft_picks', filter: `league_id=eq.${leagueId} AND user_id=eq.${userId}` }, fetchData)
-      .subscribe()
+      .channel("league_team_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "league_members",
+          filter: `league_id=eq.${leagueId} AND user_id=eq.${userId}`,
+        },
+        fetchData
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "draft_picks",
+          filter: `league_id=eq.${leagueId}`,
+        },
+        fetchData
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "global_teams",
+        },
+        fetchData
+      )
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(leagueChannel)
-    }
-  }, [leagueId, userId, supabase, toast])
-
-  useEffect(() => {
-    // Calculate total scores
-    setDraftedTeams(prevTeams => 
-      prevTeams.map(team => ({
-        ...team,
-        totalScore: team.scores.reduce((sum, score) => sum + score, 0)
-      }))
-    )
-  }, [])
-
-  const handleUpdateProfile = async () => {
-    setIsUpdating(true)
-    try {
-      let avatarUrl = user?.avatar_url
-
-      if (avatarFile) {
-        const fileExt = avatarFile.name.split('.').pop()
-        const filePath = `${leagueId}/${userId}/team-avatar.${fileExt}`
-
-        const { error: uploadError } = await supabase.storage
-          .from('team-avatars')
-          .upload(filePath, avatarFile, { upsert: true })
-
-        if (uploadError) {
-          throw uploadError
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('team-avatars')
-          .getPublicUrl(filePath)
-
-        avatarUrl = publicUrl
-      }
-
-      const { error } = await supabase
-        .from('league_members')
-        .update({
-          team_name: displayName,
-          avatar_url: avatarUrl,
-        })
-        .eq('league_id', leagueId)
-        .eq('user_id', userId)
-
-      if (error) throw error
-
-      setUser(prev => ({
-        ...prev!,
-        team_name: displayName,
-        avatar_url: avatarUrl,
-      }))
-
-      toast({
-        title: "Team profile updated",
-        description: "Your team profile has been updated successfully.",
-      })
-    } catch (error) {
-      console.error('Error updating profile:', error)
-      toast({
-        title: "Error",
-        description: "Failed to update team profile. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsUpdating(false)
-    }
-  }
+      supabase.removeChannel(leagueChannel);
+    };
+  }, [leagueId, userId, supabase, toast]);
 
   if (isLoading) {
-    return <Skeleton className="h-[600px] w-full" />
+    return <Skeleton className="h-[600px] w-full" />;
   }
 
-  const userDisplayName = user?.display_name || user?.email?.split('@')[0] || 'User'
+  const getLogoUrl = (filename: string | null) => {
+    return filename ? `/images/team-logos/${filename}` : null;
+  };
 
   return (
     <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Avatar className="h-16 w-16">
-            <AvatarImage src={user?.avatar_url || ''} />
-            <AvatarFallback>
-              <Trophy className="h-8 w-8" />
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col">
-            <CardTitle className="text-2xl">{user?.team_name || userDisplayName}</CardTitle>
-            <span className="text-sm text-muted-foreground">{userDisplayName}</span>
-          </div>
-        </div>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="icon">
-              <Settings className="h-5 w-5" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Team Profile</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="team-name">Team Name</Label>
-                <Input
-                  id="team-name"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="avatar">Avatar Image</Label>
-                <Input
-                  id="avatar"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setAvatarFile(e.target.files?.[0] || null)}
-                />
-              </div>
-              <Button 
-                onClick={handleUpdateProfile} 
-                disabled={isUpdating}
-                className="w-full"
-              >
-                {isUpdating ? "Updating..." : "Update Profile"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <CardTitle className="text-2xl font-bold">
+          {leagueMember?.team_name || leagueMember?.users.display_name || "User's Team"}
+        </CardTitle>
+        <Avatar className="h-12 w-12">
+          <AvatarImage src={leagueMember?.avatar_url || undefined} alt={leagueMember?.users.display_name || "User"} />
+          <AvatarFallback>{leagueMember?.users.display_name?.[0] || "U"}</AvatarFallback>
+        </Avatar>
       </CardHeader>
-      <CardContent className="space-y-2">
-        {draftedTeams.map((team) => (
-          <div
-            key={team.id}
-            className="flex items-center justify-between bg-card rounded-xl border p-4 hover:bg-accent/50 transition-colors"
-          >
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                <Trophy className="h-6 w-6 text-primary" />
+      <CardContent>
+        <div className="space-y-4">
+          {draftedTeams.map((team) => (
+            <div
+              key={team.id}
+              className={cn(
+                "flex flex-col sm:flex-row items-start sm:items-center justify-between bg-card rounded-xl border p-4 transition-colors relative",
+                team.global_teams.is_eliminated ? "border-destructive" : "hover:bg-accent/50"
+              )}
+            >
+              <div className="flex items-center gap-4 mb-4 sm:mb-0">
+                <div className={cn(
+                  "flex h-12 w-12 items-center justify-center rounded-full",
+                  team.global_teams.is_eliminated ? "bg-destructive/10" : "bg-muted"
+                )}>
+                  {team.global_teams.logo_filename ? (
+                    <img
+                      src={getLogoUrl(team.global_teams.logo_filename) || "/placeholder.svg"}
+                      alt={`${team.name} logo`}
+                      className={cn(
+                        "h-10 w-10 object-contain",
+                        team.global_teams.is_eliminated && "opacity-50"
+                      )}
+                    />
+                  ) : (
+                    <Trophy className={cn(
+                      "h-6 w-6",
+                      team.global_teams.is_eliminated ? "text-destructive" : "text-primary"
+                    )} />
+                  )}
+                </div>
+                <div>
+                  <div className={cn(
+                    "font-semibold flex items-center gap-2",
+                    team.global_teams.is_eliminated && "text-destructive"
+                  )}>
+                    {team.name}
+                    {team.global_teams.is_eliminated && (
+                      <span className="text-xs bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full flex items-center">
+                        <X className="w-3 h-3 mr-1" />
+                        Eliminated
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Seed: {team.global_teams.seed}</div>
+                </div>
               </div>
-              <div>
-                <div className="font-semibold">{team.name}</div>
-                <div className="text-sm text-muted-foreground">
-                  ({team.seed})
+              <div className="flex items-center gap-3 mt-4 sm:mt-0">
+                {team.scores.map((score, index) => (
+                  <div
+                    key={index}
+                    className="flex flex-col items-center justify-center"
+                  >
+                    <div className="text-xs text-muted-foreground mb-1">R{index + 1}</div>
+                    <div className={cn(
+                      "flex h-10 w-10 items-center justify-center rounded-lg font-medium",
+                      team.global_teams.is_eliminated ? "bg-destructive/10 text-destructive" : "bg-muted"
+                    )}>
+                      {score}
+                    </div>
+                  </div>
+                ))}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="text-xs text-muted-foreground mb-1">Total</div>
+                  <div className={cn(
+                    "flex h-10 min-w-[4rem] items-center justify-center rounded-lg font-semibold px-3",
+                    team.global_teams.is_eliminated ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
+                  )}>
+                    {team.totalScore}
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              {team.scores.map((score, index) => (
-                <div
-                  key={index}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted font-medium"
-                >
-                  {score}
-                </div>
-              ))}
-              <div className="flex h-10 min-w-[4rem] items-center justify-center rounded-lg bg-primary/10 font-semibold text-primary px-3">
-                {team.totalScore}
-              </div>
-            </div>
-          </div>
-        ))}
-        {Array.from({ length: Math.max(0, maxTeams - draftedTeams.length) }).map((_, index) => (
-          <div
-            key={`empty-${index}`}
-            className="flex items-center justify-between bg-muted/50 rounded-xl border border-dashed p-4"
-          >
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                <Trophy className="h-6 w-6 text-muted-foreground/40" />
-              </div>
-              <div className="text-muted-foreground">Empty Slot</div>
-            </div>
-            <div className="flex items-center gap-3">
-              {Array(6).fill(0).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted/50"
-                />
-              ))}
-              <div className="flex h-10 min-w-[4rem] items-center justify-center rounded-lg bg-muted/50" />
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 

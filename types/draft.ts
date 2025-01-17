@@ -36,6 +36,7 @@ export interface DraftPick {
   pick_number: number;
   draft_id: string;
   league_teams: LeagueTeam;
+  league_member_id: string;
   users: {
     email: string;
     first_name: string | null;

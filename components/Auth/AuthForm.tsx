@@ -12,24 +12,49 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import toast from "react-hot-toast";
+import { isUsernameAvailable, debounce } from "@/utils/auth";
 
 type AuthFormProps = {
   type: "signin" | "signup";
+  onSuccess: (userId: string) => void;
 };
 
-export default function AuthForm({ type }: AuthFormProps) {
+export default function AuthForm({ type, onSuccess }: AuthFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isUsernameValid, setIsUsernameValid] = useState<boolean | null>(null);
   const router = useRouter();
   const supabase = createClient();
+
+  const debouncedCheckUsername = React.useCallback(
+    debounce(async (username: string) => {
+      if (username.length >= 3) {
+        const available = await isUsernameAvailable(username);
+        setIsUsernameValid(available);
+      } else {
+        setIsUsernameValid(null);
+      }
+    }, 500),
+    []
+  );
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newUsername = e.target.value;
+    setUsername(newUsername);
+    if (newUsername.length >= 3) {
+      debouncedCheckUsername(newUsername);
+    } else {
+      setIsUsernameValid(null);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,47 +63,44 @@ export default function AuthForm({ type }: AuthFormProps) {
 
     try {
       if (type === "signup") {
-        // Check if username is unique
         const { data: existingUser, error: checkError } = await supabase
-          .from('users')
-          .select('id')
-          .eq('display_name', username)
+          .from("users")
+          .select("id")
+          .eq("display_name", username)
           .single();
 
-        if (checkError && checkError.code !== 'PGRST116') {
+        if (checkError && checkError.code !== "PGRST116") {
           throw checkError;
         }
 
         if (existingUser) {
-          throw new Error('Username is already taken');
+          throw new Error("Username is already taken");
         }
 
-        const { data, error } = await supabase.auth.signUp({ 
-          email, 
+        const { data, error } = await supabase.auth.signUp({
+          email,
           password,
         });
-        console.log("Signup response:", { data, error });
         if (error) throw error;
         if (data.user) {
-          // Update the user's display_name in the public.users table
           const { error: updateError } = await supabase
-            .from('users')
+            .from("users")
             .update({ display_name: username })
-            .eq('id', data.user.id);
+            .eq("id", data.user.id);
 
           if (updateError) throw updateError;
 
           toast.success("Signed up successfully!");
-          router.push("/dashboard");
+          onSuccess(data.user.id);
         }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
         toast.success("Signed in successfully!");
-        router.push("/dashboard");
+        onSuccess(data.user.id);
       }
     } catch (error) {
       console.error("Authentication error:", error);
@@ -91,11 +113,13 @@ export default function AuthForm({ type }: AuthFormProps) {
   const handleOAuthSignIn = async (provider: Provider) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
       });
       if (error) throw error;
-      // The redirect to dashboard will be handled by the OAuth callback
+      if (data.user) {
+        onSuccess(data.user.id);
+      }
     } catch (error) {
       setError(error.message);
     } finally {
@@ -104,7 +128,7 @@ export default function AuthForm({ type }: AuthFormProps) {
   };
 
   return (
-    <Card className="w-full">
+    <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle>
           {type === "signup" ? "Create an account" : "Sign in"}
@@ -123,11 +147,18 @@ export default function AuthForm({ type }: AuthFormProps) {
               <Input
                 id="username"
                 type="text"
-                placeholder="Enter a unique username"
+                placeholder="Enter a unique username (min 3 characters)"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={handleUsernameChange}
                 required
+                minLength={3}
               />
+              {username.length >= 3 && isUsernameValid === false && (
+                <p className="text-sm text-red-500">Username is already taken</p>
+              )}
+              {username.length >= 3 && isUsernameValid === true && (
+                <p className="text-sm text-green-500">Username is available</p>
+              )}
             </div>
           )}
           <div className="space-y-2">
@@ -176,7 +207,7 @@ export default function AuthForm({ type }: AuthFormProps) {
             </span>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 w-full">
           <Button
             variant="outline"
             onClick={() => handleOAuthSignIn("google")}

@@ -50,30 +50,32 @@ export function TeamSettings({ leagueId, isCommissioner, leagueMembers, onUpdate
   }, [members, user])
 
   const handleSave = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error("No user found")
-
-      let newAvatarUrl = avatarUrl
-
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+  
+      let newAvatarUrl = avatarUrl;
+  
+      // Upload the avatar file if it exists
       if (avatarFile) {
-        const fileExt = avatarFile.name.split('.').pop()
-        const filePath = `${leagueId}/${user.id}/team-avatar.${fileExt}`
-
+        const fileExt = avatarFile.name.split('.').pop();
+        const filePath = `${leagueId}/${user.id}/team-avatar.${fileExt}`;
+  
         const { error: uploadError } = await supabase.storage
           .from('team-avatars')
-          .upload(filePath, avatarFile, { upsert: true })
-
-        if (uploadError) throw uploadError
-
+          .upload(filePath, avatarFile, { upsert: true });
+  
+        if (uploadError) throw uploadError;
+  
         const { data: { publicUrl } } = supabase.storage
           .from('team-avatars')
-          .getPublicUrl(filePath)
-
-        newAvatarUrl = publicUrl
+          .getPublicUrl(filePath);
+  
+        newAvatarUrl = publicUrl;
       }
-
+  
+      // Update the league_members table with the new team name and avatar URL
       const { error } = await supabase
         .from('league_members')
         .update({
@@ -81,28 +83,31 @@ export function TeamSettings({ leagueId, isCommissioner, leagueMembers, onUpdate
           avatar_url: newAvatarUrl,
         })
         .eq('league_id', leagueId)
-        .eq('user_id', user.id)
-
-      if (error) throw error
-
-      setAvatarUrl(newAvatarUrl)
-      onUpdate()
-
+        .eq('user_id', user.id);
+  
+      if (error) throw error;
+  
+      // Notify the parent component
+      setAvatarUrl(newAvatarUrl);
+      onUpdate();
+  
+      // Show success toast
       toast({
         title: "Team profile updated",
         description: "Your team profile has been updated successfully.",
-      })
+      });
     } catch (error) {
-      console.error('Error updating team settings:', error)
+      console.error('Error updating team settings:', error);
       toast({
         title: "Error",
         description: "Failed to update team settings. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
+  
 
   return (
     <div className="space-y-4">

@@ -17,10 +17,10 @@ interface User {
 }
 
 interface LeagueMember {
-  user_id: string;
+  user_id: string | null;
   draft_position: number | null;
-  users: User;
-  team_name: string
+  users: User | null;
+  team_name: string | null;
 }
 
 interface LeagueDetails {
@@ -43,20 +43,9 @@ interface LeagueSetting {
   max_teams: number;
 }
 
-interface DraftSettings {
-  draft_time: string;
-  picks_per_second: number;
-}
-
-interface PendingInvite {
-  id: string;
-  email: string;
-}
-
 export function LeagueOverview({ leagueId }: { leagueId: string }) {
   const [leagueDetails, setLeagueDetails] = useState<LeagueDetails | null>(null)
   const [leagueSettings, setLeagueSettings] = useState<LeagueSetting | null>(null)
-  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([])
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const supabase = createClient()
   const { toast } = useToast()
@@ -113,18 +102,6 @@ export function LeagueOverview({ leagueId }: { leagueId: string }) {
     }
 
     setLeagueSettings(settingsData as LeagueSetting)
-
-    const { data: invitesData, error: invitesError } = await supabase
-      .from("invites")
-      .select("id, email")
-      .eq("league_id", leagueId)
-      .is("accepted_at", null)
-
-    if (invitesError) {
-      console.error("Error fetching pending invites:", invitesError)
-    } else {
-      setPendingInvites(invitesData as PendingInvite[])
-    }
   }
 
   useEffect(() => {
@@ -135,7 +112,6 @@ export function LeagueOverview({ leagueId }: { leagueId: string }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'leagues', filter: `id=eq.${leagueId}` }, fetchLeagueData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'league_settings', filter: `league_id=eq.${leagueId}` }, fetchLeagueData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'league_members', filter: `league_id=eq.${leagueId}` }, fetchLeagueData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invites', filter: `league_id=eq.${leagueId}` }, fetchLeagueData)
       .subscribe()
 
     return () => {
@@ -152,6 +128,13 @@ export function LeagueOverview({ leagueId }: { leagueId: string }) {
   const isCommissioner = currentUserId === commissioner.id
   const maxTeams = leagueSettings.max_teams
 
+  // Separate assigned and unassigned teams
+  const assignedMembers = users.filter(member => member.user_id !== null)
+  const unassignedMembers = Array.from(
+    { length: maxTeams - assignedMembers.length },
+    (_, index) => ({ team_name: `Team ${assignedMembers.length + index + 1}`, user_id: null })
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -159,7 +142,7 @@ export function LeagueOverview({ leagueId }: { leagueId: string }) {
         {isCommissioner && (
           <DraftOrderManager
             leagueId={leagueId}
-            members={leagueDetails.league_members}
+            maxTeams={maxTeams}
             onOrderUpdated={fetchLeagueData}
           />
         )}
@@ -167,58 +150,42 @@ export function LeagueOverview({ leagueId }: { leagueId: string }) {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>League Members ({users.length}/{maxTeams})</CardTitle>
+            <CardTitle>League Members ({assignedMembers.length}/{maxTeams})</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
-              {Array.from({ length: maxTeams }, (_, index) => {
-                const member = users[index]
-                const pendingInvite = pendingInvites[index - users.length]
-                return (
-                  <li key={index} className="flex items-start p-2 bg-secondary/50 rounded-md">
+              {assignedMembers.map((member, index) => (
+                <li key={member.user_id || index} className="flex items-start p-2 bg-secondary/50 rounded-md">
                   <span className="font-semibold mr-2 mt-1 w-6 text-right">{index + 1}.</span>
-                  {member ? (
-                    <div className="flex flex-1 flex-col justify-between">
-                      <div className="flex items-baseline">
-                        <span className="font-medium">
-                          {member.team_name || member.users.email}
+                  <div className="flex flex-1 flex-col justify-between">
+                    <div className="flex items-baseline">
+                      <span className="font-medium">
+                        {member.team_name || member.users?.email || "Unnamed Team"}
+                      </span>
+                      {member.users?.display_name && (
+                        <span className="text-sm text-muted-foreground ml-2">
+                          {member.users.display_name}
                         </span>
-                        {member.users.display_name && (
-                          <span className="text-sm text-muted-foreground ml-2">
-                            {member.users.display_name}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center space-x-2 mt-1">
-                        {member.draft_position && (
-                          <Badge variant="secondary">Draft position #{member.draft_position}</Badge>
-                        )}
-                        {member.user_id === commissioner.id && (
-                          <Badge variant="outline">Commissioner</Badge>
-                        )}
-                      </div>
-                    </div>
-                  ) : pendingInvite ? (
-                    <div className="flex flex-1 items-center justify-between">
-                      <span>{pendingInvite.email}</span>
-                      <Badge variant="secondary">Invited</Badge>
-                    </div>
-                  ) : (
-                    <div className="flex-1">
-                      {isCommissioner && (
-                        <InviteMembers 
-                          leagueId={leagueId} 
-                          onInviteSent={(email) => {
-                            setPendingInvites([...pendingInvites, { id: Date.now().toString(), email }])
-                            fetchLeagueData()
-                          }} 
-                        />
                       )}
                     </div>
-                  )}
+                    <div className="flex items-center space-x-2 mt-1">
+                      {member.user_id === commissioner.id && (
+                        <Badge variant="outline">Commissioner</Badge>
+                      )}
+                    </div>
+                  </div>
                 </li>
-                )
-              })}
+              ))}
+              {unassignedMembers.map((member, index) => (
+                <li key={`unassigned-${index}`} className="flex items-start p-2 bg-secondary/20 rounded-md">
+                  <span className="font-semibold mr-2 mt-1 w-6 text-right">
+                    {assignedMembers.length + index + 1}.
+                  </span>
+                  <div className="flex-1 text-muted-foreground">
+                    {member.team_name}
+                  </div>
+                </li>
+              ))}
             </ul>
           </CardContent>
         </Card>
@@ -238,7 +205,11 @@ export function LeagueOverview({ leagueId }: { leagueId: string }) {
           </CardContent>
         </Card>
       </div>
+      {isCommissioner && assignedMembers.length < maxTeams && (
+        <InviteMembers 
+          leagueId={leagueId}
+        />
+      )}
     </div>
   )
 }
-

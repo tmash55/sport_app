@@ -9,13 +9,15 @@ import { MyDraftedTeams } from "@/components/leagues/MyDraftedTeams"
 interface DraftInfoDrawerProps {
   draft: any
   availableTeams: any[]
-  draftedTeamIds: string[]
+  draftedTeamIds: string[];
   draftPicks: any[]
   currentUser: string | null
   maxTeams: number
   isUsersTurn: () => boolean
   handleDraftPick: (teamId: string) => Promise<void>
 }
+
+
 
 export function DraftInfoDrawer({
   draft,
@@ -27,6 +29,7 @@ export function DraftInfoDrawer({
   isUsersTurn,
   handleDraftPick
 }: DraftInfoDrawerProps) {
+  console.log('Available Teams:', availableTeams);
   return (
     <Drawer>
       <DrawerTrigger asChild>

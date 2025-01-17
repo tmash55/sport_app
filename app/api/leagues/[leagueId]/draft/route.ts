@@ -1,4 +1,3 @@
-
 import { createClient } from '@/libs/supabase/client'
 import { NextResponse } from 'next/server'
 
@@ -8,7 +7,6 @@ export async function POST(
 ) {
   const { leagueId } = params
   const { action, teamId } = await request.json()
-
 
   const supabase = createClient()
 
@@ -28,7 +26,6 @@ export async function POST(
   if (draftError) {
     return NextResponse.json({ error: 'Failed to fetch draft' }, { status: 500 })
   }
-  
 
   // Perform the requested action
   switch (action) {
@@ -37,11 +34,24 @@ export async function POST(
         return NextResponse.json({ error: 'Draft is not in progress' }, { status: 400 })
       }
 
+      // Fetch the league_member_id for the current user and league
+      const { data: leagueMember, error: leagueMemberError } = await supabase
+        .from('league_members')
+        .select('id')
+        .eq('league_id', leagueId)
+        .eq('user_id', session.user.id)
+        .single()
+
+      if (leagueMemberError) {
+        return NextResponse.json({ error: 'Failed to fetch league member' }, { status: 500 })
+      }
+
       const { data: pick, error: pickError } = await supabase
         .from('draft_picks')
         .insert({
           draft_id: draft.id,
           user_id: session.user.id,
+          league_member_id: leagueMember.id,
           team_id: teamId,
           pick_number: draft.current_pick_number
         })

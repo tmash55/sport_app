@@ -57,6 +57,7 @@ export function DraftSettings({ leagueId, isCommissioner, draft, onUpdate }: Dra
       if (error) throw error
 
       onUpdate()
+      
 
       toast({
         title: "Success",

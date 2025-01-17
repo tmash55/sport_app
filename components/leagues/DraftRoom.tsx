@@ -13,6 +13,7 @@ import { DraftTimer } from "./DraftTimer"
 import { LeagueMember, LeagueTeam, DraftPick, Draft } from "@/types/draft"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DraftInfoDrawer } from './DraftInfoDrawer'
+import { RecentPicks } from './RecentPicks'
 
 
 interface DraftRoomProps {
@@ -88,7 +89,7 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
         .from('league_teams')
         .select(`
           *,
-          global_teams(seed)
+          global_teams(seed, logo_filename)
         `)
         .eq('league_id', leagueId)
 
@@ -238,20 +239,31 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
 
   const handleDraftPick = async (teamId: string) => {
     if (!draft || !isUsersTurn()) return;
-
+  
     try {
+      // Fetch the league_member_id for the current user
+      const { data: leagueMember, error: leagueMemberError } = await supabase
+        .from('league_members')
+        .select('id')
+        .eq('league_id', leagueId)
+        .eq('user_id', currentUser)
+        .single();
+  
+      if (leagueMemberError) throw leagueMemberError;
+  
       const { data, error } = await supabase
         .from('draft_picks')
         .insert({
           draft_id: draft.id,
           league_id: leagueId,
           user_id: currentUser,
+          league_member_id: leagueMember.id, 
           team_id: teamId,
           pick_number: draft.current_pick_number
         })
         .select('*, league_teams(*), users(email, first_name, last_name)')
         .single();
-
+  
       if (error) {
         if (error.code === '23505') {
           toast({
@@ -264,9 +276,9 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
         }
         return;
       }
-
+  
       updateDraftState(data);
-
+  
       toast({
         title: "Team Drafted",
         description: `You have successfully drafted ${data.league_teams.name}.`,
@@ -333,127 +345,157 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
   
 
   
-  const updateDraftState = useCallback(async (newPick: DraftPick) => {
-    setDraftedTeamIds(prevIds => new Set(prevIds).add(newPick.team_id));
-    setDraftPicks(prevPicks => [...prevPicks, newPick]);
-    setAvailableTeams(prevTeams => prevTeams.filter(team => team.id !== newPick.team_id));
+  const updateDraftState = useCallback(
+    async (newPick: DraftPick) => {
+      // Fetch full pick details to ensure all fields are included
+      const { data: pickDetails, error } = await supabase
+        .from("draft_picks")
+        .select(`
+          *,
+          league_teams (
+            *,
+            global_teams (
+              logo_filename
+            )
+          )
+        `)
+        .eq("id", newPick.id)
+        .single();
   
-    const newPickNumber = draft!.current_pick_number + 1;
-    console.log(`Updating draft state: currentPickNumber=${draft!.current_pick_number}, newPickNumber=${newPickNumber}`);
-    const timerExpiresAt = new Date(Date.now() + draft!.draft_pick_timer * 1000).toISOString();
+      if (error) {
+        console.error("Error fetching full pick details:", error);
+        return;
+      }
   
-    // Check if this was the final pick
-    const rounds = Math.floor(64 / maxTeams);
-    const totalPicks = rounds * maxTeams;
-    const isDraftCompleted = newPickNumber > totalPicks;
+      setDraftedTeamIds((prevIds) => new Set(prevIds).add(pickDetails.team_id));
+      setDraftPicks((prevPicks) => [...prevPicks, pickDetails]);
+      setAvailableTeams((prevTeams) =>
+        prevTeams.filter((team) => team.id !== pickDetails.team_id)
+      );
   
-    if (isDraftCompleted) {
-      console.log('Draft completed. Updating final state.');
-      const endTime = new Date().toISOString();
-      
-      // Update database
-      const { error: updateError } = await supabase
-        .from('drafts')
-        .update({
+      const newPickNumber = draft!.current_pick_number + 1;
+      const timerExpiresAt = new Date(Date.now() + draft!.draft_pick_timer * 1000).toISOString();
+  
+      const isDraftCompleted = newPickNumber > Math.floor(64 / maxTeams) * maxTeams;
+  
+      if (isDraftCompleted) {
+        const endTime = new Date().toISOString();
+        const { error: updateError } = await supabase
+          .from("drafts")
+          .update({
+            current_pick_number: newPickNumber,
+            status: "completed",
+            end_time: endTime,
+          })
+          .eq("id", draft!.id);
+  
+        if (updateError) throw updateError;
+  
+        setDraft((prevDraft) => ({
+          ...prevDraft!,
           current_pick_number: newPickNumber,
-          status: 'completed',
+          status: "completed",
           end_time: endTime,
-        })
-        .eq('id', draft!.id);
+        }));
   
-      if (updateError) throw updateError;
+        toast({
+          title: "Draft Completed",
+          description: `The draft has been completed.`,
+        });
+      } else {
+        const { error: updateError } = await supabase
+          .from("drafts")
+          .update({
+            current_pick_number: newPickNumber,
+            timer_expires_at: timerExpiresAt,
+          })
+          .eq("id", draft!.id);
   
-      // Update local state
-      setDraft(prevDraft => ({
-        ...prevDraft!,
-        current_pick_number: newPickNumber,
-        status: 'completed',
-        end_time: endTime,
-      }));
+        if (updateError) throw updateError;
   
-      toast({
-        title: "Draft Completed",
-        description: `The draft has been completed with ${totalPicks} picks. ${64 - totalPicks} teams remain undrafted.`,
-      });
-    } else {
-      // Regular update for ongoing draft
-      const { error: updateError } = await supabase
-        .from('drafts')
-        .update({
+        setDraft((prevDraft) => ({
+          ...prevDraft!,
           current_pick_number: newPickNumber,
           timer_expires_at: timerExpiresAt,
-        })
-        .eq('id', draft!.id);
+        }));
+      }
+    },
+    [draft, maxTeams, supabase, toast]
+  );
   
-      if (updateError) throw updateError;
-  
-      // Update local state
-      setDraft(prevDraft => ({
-        ...prevDraft!,
-        current_pick_number: newPickNumber,
-        timer_expires_at: timerExpiresAt,
-      }));
-    }
-  }, [draft, maxTeams, supabase, toast]);
   
 
   const handleAutoPick = async () => {
     if (!draft) return;
-
+  
     const currentDrafter = getCurrentDrafter();
     if (!currentDrafter) return;
-
+  
     try {
       // Check if a pick has already been made for this draft pick number
       const { data: existingPick, error: existingPickError } = await supabase
-        .from('draft_picks')
-        .select('*')
-        .eq('draft_id', draft.id)
-        .eq('pick_number', draft.current_pick_number)
+        .from("draft_picks")
+        .select("*")
+        .eq("draft_id", draft.id)
+        .eq("pick_number", draft.current_pick_number)
         .single();
-
-      if (existingPickError && existingPickError.code !== 'PGRST116') {
+  
+      if (existingPickError && existingPickError.code !== "PGRST116") {
         throw existingPickError;
       }
-
+  
       if (existingPick) {
-        console.log('Pick already made for this draft number, skipping auto-pick');
+        console.log(
+          "Pick already made for this draft number, skipping auto-pick"
+        );
         return;
       }
-
+  
       // Filter out already drafted teams and sort by seed
       const availableUndraftedTeams = availableTeams
-        .filter(team => !draftedTeamIds.has(team.id))
+        .filter((team) => !draftedTeamIds.has(team.id))
         .sort((a, b) => a.global_teams?.seed - b.global_teams?.seed);
-
+  
       const nextAvailableTeam = availableUndraftedTeams[0];
       if (!nextAvailableTeam) {
         throw new Error("No available teams left");
       }
-
+  
+      // Prepare the data for insertion
+      const draftPickData: Record<string, any> = {
+        draft_id: draft.id,
+        league_id: leagueId,
+        league_member_id: currentDrafter.id,
+        team_id: nextAvailableTeam.id,
+        pick_number: draft.current_pick_number,
+        is_auto_pick: true,
+      };
+  
+      // Include user_id only if it exists
+      if (currentDrafter.user_id) {
+        draftPickData.user_id = currentDrafter.user_id;
+      }
+  
       const { data, error } = await supabase
-        .from('draft_picks')
-        .insert({
-          draft_id: draft.id,
-          league_id: leagueId,
-          user_id: currentDrafter.user_id,
-          team_id: nextAvailableTeam.id,
-          pick_number: draft.current_pick_number,
-          is_auto_pick: true
-        })
-        .select('*, league_teams(id, name, seed, global_teams(name)), users(email, first_name, last_name)')
+        .from("draft_picks")
+        .insert(draftPickData)
+        .select(
+          "*, league_teams(id, name, seed, global_teams(name)), league_members(team_name, users(email, first_name, last_name))"
+        )
         .single();
-
+  
       if (error) throw error;
-
+  
       await updateDraftState(data);
-
+  
       toast({
         title: "Auto Pick",
-        description: `${currentDrafter.users.first_name || 'User'} ${currentDrafter.users.last_name || ''} auto-drafted ${data.league_teams.global_teams.name}.`,
+        description: `${currentDrafter.team_name || "Team"} auto-drafted ${
+          data.league_teams.global_teams.name
+        }.`,
       });
     } catch (error) {
-      console.error('Error making auto pick:', error);
+      console.error("Error making auto pick:", error);
       toast({
         title: "Error",
         description: "Failed to make auto pick. Please try again.",
@@ -461,6 +503,8 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
       });
     }
   };
+  
+  
 
   const renderDraftBoardSkeleton = () => {
     const board = []
@@ -524,31 +568,40 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <Card className="col-span-4">
-          <CardHeader>
-            <CardTitle className="flex justify-between items-center">
-              <span className='text-xl'>{leagueName}</span>
-              <DraftStatus status={draft?.status || 'pre_draft'} currentPickNumber={draft?.current_pick_number || 0} />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="overflow-x-auto">
-            {isCommissioner && draft?.status !== 'completed' && (
-              <DraftControls
-                draftStatus={draft?.status || 'pre_draft'}
-                onStartDraft={handleStartDraft}
-                onPauseDraft={handlePauseDraft}
-                onResumeDraft={handleResumeDraft}
-              />
-            )}
-            {draft && draft.status === 'in_progress' && (
-              <DraftTimer
-                draftId={draft.id}
-                status={draft.status}
-                timerExpiresAt={draft.timer_expires_at}
-                onTimerExpire={handleAutoPick}
-              />
-            )}
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <Card className="col-span-4">
+        <CardHeader>
+          <CardTitle className="flex justify-between items-center">
+            <span className="text-xl">{leagueName}</span>
+            <DraftStatus 
+              status={draft?.status || 'pre_draft'} 
+              currentPickNumber={draft?.current_pick_number || 0} 
+            />
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {isCommissioner && draft?.status !== 'completed' && (
+            <DraftControls
+              draftStatus={draft?.status || 'pre_draft'}
+              onStartDraft={handleStartDraft}
+              onPauseDraft={handlePauseDraft}
+              onResumeDraft={handleResumeDraft}
+            />
+          )}
+          {draft && draft.status === 'in_progress' && (
+            <DraftTimer
+              draftId={draft.id}
+              status={draft.status}
+              timerExpiresAt={draft.timer_expires_at}
+              onTimerExpire={handleAutoPick}
+            />
+          )}
+          <RecentPicks
+            draftPicks={draftPicks}
+            leagueMembers={leagueMembers}
+            currentPickNumber={draft?.current_pick_number || 0}
+          />
+          <div className="overflow-x-auto">
             <DraftBoard
               leagueMembers={leagueMembers}
               draftPicks={draftPicks}
@@ -556,9 +609,10 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
               maxTeams={maxTeams}
               isDraftCompleted={draft?.status === 'completed'}
             />
-          </CardContent>
-        </Card>
-        <DraftInfoDrawer
+          </div>
+        </CardContent>
+      </Card>
+      <DraftInfoDrawer
         draft={draft}
         availableTeams={availableTeams}
         draftedTeamIds={draftedTeamIds}
@@ -568,8 +622,8 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
         isUsersTurn={isUsersTurn}
         handleDraftPick={handleDraftPick}
       />
-      </div>
     </div>
+  </div>
   )
 }
 

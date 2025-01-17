@@ -1,18 +1,27 @@
+import { Hero } from "@/components/Hero";
+import {Navigation } from "@/components/Navigation"
+import { StepsSection } from "@/components/StepsSection"
+import { AboutContest } from "@/components/AboutContest"
+import { FeaturedContests } from "@/components/FeaturedContests"
+import { Testimonials } from "@/components/Testimonials"
+import { WhyChooseDraftPlay } from "@/components/WhyChooseDraftPlay"
+import { CallToAction } from "@/components/CallToAction"
+import { Footer } from "@/components/Footer"
 import { Navbar } from "@/components/homepage/navbar";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import LampDemo from "@/components/ui/lamp";
+
 
 export default function Home() {
   return (
     <main className="flex flex-col min-h-screen">
-      <Navbar />
-      <div className="flex-grow flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
-        <LampDemo />
-      </div>
-      <footer className="w-full py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-        <p className="text-sm text-gray-500">© 2024 March Madness Fantasy</p>
-        <ThemeToggle />
-      </footer>
+      <Navigation />
+      <Hero/>
+      <AboutContest />
+      <FeaturedContests />
+      <Testimonials />
+      <WhyChooseDraftPlay />
+      <CallToAction />
+      <Footer />
     </main>
   );
 }

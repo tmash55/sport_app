@@ -14,29 +14,26 @@ const createLeagueSchema = z.object({
 
 export type CreateLeagueInput = z.infer<typeof createLeagueSchema>
 
-export async function createLeague(input: CreateLeagueInput) {
-  const validatedInput = createLeagueSchema.parse(input)
-
+export async function createLeague(name: string, max_teams: number) {
   try {
-    const response = await fetch('/api/leagues/create', {
-      method: 'POST',
+    const response = await fetch("/api/leagues/create", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(validatedInput),
-    })
+      body: JSON.stringify({ name, max_teams }),
+    });
 
     if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.error || 'Failed to create league')
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to create league");
     }
 
-    const data = await response.json()
-    revalidatePath('/dashboard/leagues')
-    return { leagueId: data.leagueId }
+    const data = await response.json();
+    return { leagueId: data.leagueId };
   } catch (error) {
-    console.error('Error creating league:', error)
-    return { error: error instanceof Error ? error.message : 'An unexpected error occurred' }
+    console.error("Error creating league:", error);
+    return { error: error instanceof Error ? error.message : "An unexpected error occurred" };
   }
 }
 
