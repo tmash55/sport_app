@@ -1,15 +1,21 @@
-import { useState, useEffect } from 'react'
+"use client"
+
+import { useState, useEffect, useCallback } from "react"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { createClient } from "@/libs/supabase/client"
+
+interface Draft {
+  status: string
+  draft_pick_timer: number
+}
 
 interface DraftSettingsProps {
   leagueId: string
   isCommissioner: boolean
-  draft: any
-  onUpdate: () => void
+  draft: Draft
+  onUpdate: (updatedData: Partial<Draft>) => Promise<void>
 }
 
 const timerOptions = [
@@ -26,53 +32,56 @@ const timerOptions = [
   { label: "8 hours", value: "28800" },
   { label: "12 hours", value: "43200" },
   { label: "24 hours", value: "86400" },
+  { label: "No Limit", value: "99999" },
 ]
 
 export function DraftSettings({ leagueId, isCommissioner, draft, onUpdate }: DraftSettingsProps) {
-  const [draftPickTimer, setDraftPickTimer] = useState<string>(
-    draft?.draft_pick_timer === 99999 ? "99999" : (draft?.draft_pick_timer?.toString() || "99999")
-  )
+  const [draftSettings, setDraftSettings] = useState<Draft | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
-  const supabase = createClient()
 
   useEffect(() => {
-    setDraftPickTimer(
-      draft?.draft_pick_timer === 99999 ? "99999" : (draft?.draft_pick_timer?.toString() || "99999")
-    )
+    console.log("DraftSettings: draft updated", draft)
+    if (draft) {
+      setDraftSettings(draft)
+    }
   }, [draft])
 
-  const handleSave = async () => {
-    if (!isCommissioner) return
+  const handleInputChange = (value: string) => {
+    if (draftSettings) {
+      setDraftSettings((prev) => ({ ...prev, draft_pick_timer: Number.parseInt(value) || 99999 }))
+    }
+  }
+
+  const handleSave = useCallback(async () => {
+    if (!isCommissioner || !draftSettings) return
+
+    console.log("DraftSettings: handleSave called")
+    console.log("Current settings:", draftSettings)
 
     setIsLoading(true)
     try {
-      const timerValue = parseInt(draftPickTimer)
-
-      const { error } = await supabase
-        .from('drafts')
-        .update({ draft_pick_timer: timerValue })
-        .eq('league_id', leagueId)
-
-      if (error) throw error
-
-      onUpdate()
-      
-
+      await onUpdate({ draft_pick_timer: draftSettings.draft_pick_timer })
       toast({
         title: "Success",
         description: "Draft settings updated successfully.",
       })
     } catch (error) {
-      console.error('Error updating draft settings:', error)
+      console.error("Error updating draft settings:", error)
       toast({
         title: "Error",
         description: "Failed to update draft settings. Please try again.",
         variant: "destructive",
       })
+      // Revert to the last known good state
+      setDraftSettings(draft)
     } finally {
       setIsLoading(false)
     }
+  }, [isCommissioner, draftSettings, onUpdate, toast, draft])
+
+  if (!draftSettings) {
+    return <div>Loading draft settings...</div>
   }
 
   return (
@@ -80,8 +89,8 @@ export function DraftSettings({ leagueId, isCommissioner, draft, onUpdate }: Dra
       <div className="space-y-2">
         <Label htmlFor="draftPickTimer">Draft Pick Timer</Label>
         <Select
-          value={draftPickTimer}
-          onValueChange={setDraftPickTimer}
+          value={(draftSettings.draft_pick_timer ?? 99999).toString()}
+          onValueChange={handleInputChange}
           disabled={!isCommissioner || isLoading}
         >
           <SelectTrigger className="w-full">
@@ -89,7 +98,7 @@ export function DraftSettings({ leagueId, isCommissioner, draft, onUpdate }: Dra
           </SelectTrigger>
           <SelectContent>
             {timerOptions.map((option) => (
-              <SelectItem key={option.label} value={option.value}>
+              <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>
             ))}

@@ -47,7 +47,7 @@ export function InviteMembers2({ leagueId, leagueName }: InviteMembersProps) {
   return (
     <Card className="max-w-2xl mx-auto">
       <CardHeader className="text-center">
-        <StepIndicator steps={["Select Contest", "League Details", "Invite Friends"]} currentStep={3} />
+        
         <div className="space-y-2">
           <h2 className="text-2xl font-bold mb-4">Invite Members to {leagueName}</h2>
           <CardTitle className="text-3xl font-bold tracking-tight">Invite League Members</CardTitle>

@@ -1,155 +1,94 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { createClient } from '@/libs/supabase/client'
-import { SidebarMenuSubItem, SidebarMenuSubButton, SidebarMenuSkeleton, SidebarGroup, SidebarGroupLabel, SidebarGroupContent } from "@/components/ui/sidebar"
-import { FaBasketballBall, FaGolfBall } from 'react-icons/fa'
-import { IoMdFootball } from 'react-icons/io'
-import { MdSportsSoccer } from 'react-icons/md'
+import { useMemo, useState, useEffect } from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { ChevronDown } from "lucide-react"
+import {
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
+  SidebarMenuSkeleton,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent,
+} from "@/components/ui/sidebar"
+import { FaBasketballBall, FaGolfBall } from "react-icons/fa"
+import { IoMdFootball } from "react-icons/io"
+import { MdSportsSoccer } from "react-icons/md"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 interface League {
   id: string
   name: string
-  sport: string
+  status: "active" | "archived" | "upcoming"
+  contests: {
+    sport: string
+  }
 }
 
 interface GroupedLeagues {
   [key: string]: League[]
 }
 
-export function UserLeagues() {
-  const [groupedLeagues, setGroupedLeagues] = useState<GroupedLeagues>({})
-  const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClient()
+interface UserLeaguesProps {
+  leagues: League[] | undefined
+  isLoading: boolean
+  error: Error | null
+}
+
+export function UserLeagues({ leagues, isLoading, error }: UserLeaguesProps) {
   const pathname = usePathname()
-  const router = useRouter()
+  const [openSports, setOpenSports] = useState<string[]>([])
 
-  const fetchUserLeagues = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data, error } = await supabase
-          .from('league_members')
-          .select(`
-            league_id,
-            leagues:league_id(
-              id,
-              name,
-              contests(
-                sport
-              )
-            )
-          `)
-          .eq('user_id', user.id)
-
-        if (error) {
-          console.error('Error fetching user leagues:', error)
-        } else {
-          const leagues = data.map((item: any) => ({
-            id: item.leagues.id,
-            name: item.leagues.name,
-            sport: item.leagues.contests.sport
-          }))
-          
-          const grouped = leagues.reduce((acc: GroupedLeagues, league: League) => {
-            if (!acc[league.sport]) {
-              acc[league.sport] = []
-            }
-            acc[league.sport].push(league)
-            return acc
-          }, {})
-          
-          setGroupedLeagues(grouped)
-        }
+  const groupedLeagues = useMemo(() => {
+    if (!leagues) return {}
+    return leagues.reduce((acc: GroupedLeagues, league: League) => {
+      const sport = league.contests.sport
+      if (!acc[sport]) {
+        acc[sport] = []
       }
-    } catch (error) {
-      console.error('Error fetching user:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+      acc[sport].push(league)
+      return acc
+    }, {})
+  }, [leagues])
 
-  const handleLeagueDeleted = (deletedLeagueId: string) => {
-    setGroupedLeagues(prevGrouped => {
-      const newGrouped = { ...prevGrouped }
-      Object.keys(newGrouped).forEach(sport => {
-        newGrouped[sport] = newGrouped[sport].filter(league => league.id !== deletedLeagueId)
-        if (newGrouped[sport].length === 0) {
-          delete newGrouped[sport]
-        }
-      })
-      return newGrouped
-    })
-    if (pathname.startsWith(`/dashboard/leagues/${deletedLeagueId}`)) {
-      router.push('/dashboard')
-    }
-  }
-
+  // Set all sports to open by default
   useEffect(() => {
-    fetchUserLeagues()
-
-    window.addEventListener('leagueCreated', fetchUserLeagues)
-    window.addEventListener('leagueDeleted', (e: CustomEvent) => handleLeagueDeleted(e.detail.leagueId))
-
-    const setupSubscription = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-          const leagueSubscription = supabase
-            .channel('league_changes')
-            .on('postgres_changes', {
-              event: '*',
-              schema: 'public',
-              table: 'leagues',
-            }, (payload) => {
-              if (payload.eventType === 'DELETE') {
-                handleLeagueDeleted(payload.old.id)
-              } else if (payload.eventType === 'UPDATE') {
-                fetchUserLeagues() // Refetch all leagues to ensure correct grouping
-              }
-            })
-            .on('postgres_changes', {
-              event: '*',
-              schema: 'public',
-              table: 'league_members',
-              filter: `user_id=eq.${user.id}`,
-            }, () => {
-              fetchUserLeagues()
-            })
-            .subscribe()
-
-          return () => {
-            supabase.removeChannel(leagueSubscription)
-          }
-        }
-      } catch (error) {
-        console.error('Error setting up subscription:', error)
-      }
+    if (leagues) {
+      const allSports = Object.keys(groupedLeagues)
+      setOpenSports(allSports)
     }
+  }, [leagues, groupedLeagues])
 
-    const cleanup = setupSubscription()
-
-    return () => {
-      window.removeEventListener('leagueCreated', fetchUserLeagues)
-      window.removeEventListener('leagueDeleted', (e: CustomEvent) => handleLeagueDeleted(e.detail.leagueId))
-      if (cleanup) cleanup.then(unsubscribe => unsubscribe())
-    }
-  }, [supabase, pathname, router])
+  const toggleSport = (sport: string) => {
+    setOpenSports((prev) => (prev.includes(sport) ? prev.filter((s) => s !== sport) : [...prev, sport]))
+  }
 
   const getSportIcon = (sport: string) => {
     switch (sport.toLowerCase()) {
-      case 'basketball':
-        return <FaBasketballBall className="w-4 h-4 mr-2" />
-      case 'golf':
-        return <FaGolfBall className="w-4 h-4 mr-2" />
-      case 'football':
-        return <IoMdFootball className="w-4 h-4 mr-2" />
-      case 'soccer':
-        return <MdSportsSoccer className="w-4 h-4 mr-2" />
+      case "basketball":
+        return <FaBasketballBall className="w-5 h-5 mr-2 text-orange-500" />
+      case "golf":
+        return <FaGolfBall className="w-5 h-5 mr-2 text-green-500" />
+      case "football":
+        return <IoMdFootball className="w-5 h-5 mr-2 text-brown-500" />
+      case "soccer":
+        return <MdSportsSoccer className="w-5 h-5 mr-2 text-blue-500" />
       default:
         return null
+    }
+  }
+
+  const getStatusColor = (status: League["status"]) => {
+    switch (status) {
+      case "active":
+        return "bg-green-500"
+      case "archived":
+        return "bg-gray-400"
+      case "upcoming":
+        return "bg-yellow-500"
+      default:
+        return "bg-primary"
     }
   }
 
@@ -172,29 +111,57 @@ export function UserLeagues() {
     )
   }
 
+  if (error) {
+    return <div>Error loading leagues: {error.message}</div>
+  }
+
+  if (!leagues || leagues.length === 0) {
+    return <div>No leagues joined yet.</div>
+  }
+
   return (
-    <>
-      {Object.entries(groupedLeagues).map(([sport, leagues]) => (
-        <SidebarGroup key={sport}>
-          <SidebarGroupLabel className="flex items-center">
-            {getSportIcon(sport)}
-            {sport.charAt(0).toUpperCase() + sport.slice(1)}
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            {leagues.map((league) => (
-              <SidebarMenuSubItem key={league.id}>
-                <SidebarMenuSubButton
-                  asChild
-                  isActive={pathname.startsWith(`/dashboard/leagues/${league.id}`)}
-                >
-                  <Link href={`/dashboard/leagues/${league.id}`}>{league.name}</Link>
-                </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
-            ))}
-          </SidebarGroupContent>
-        </SidebarGroup>
+    <div className="space-y-6">
+      {Object.entries(groupedLeagues).map(([sport, sportLeagues], index, array) => (
+        <div key={sport}>
+          <Collapsible open={openSports.includes(sport)} onOpenChange={() => toggleSport(sport)}>
+            <CollapsibleTrigger className="w-full">
+              <SidebarGroup>
+                <SidebarGroupLabel className="flex items-center text-sm font-semibold text-foreground">
+                  <div className="flex items-center flex-1">
+                    {getSportIcon(sport)}
+                    {sport.charAt(0).toUpperCase() + sport.slice(1)}
+                  </div>
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform duration-200 ${
+                      openSports.includes(sport) ? "transform rotate-180" : ""
+                    }`}
+                  />
+                </SidebarGroupLabel>
+              </SidebarGroup>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <SidebarGroupContent>
+                {sportLeagues.map((league) => (
+                  <SidebarMenuSubItem key={league.id}>
+                    <SidebarMenuSubButton
+                      asChild
+                      isActive={pathname.startsWith(`/dashboard/leagues/${league.id}`)}
+                      className="hover:bg-accent hover:text-accent-foreground transition-colors"
+                    >
+                      <Link href={`/dashboard/leagues/${league.id}`} className="flex items-center">
+                        <div className="w-2 h-2 rounded-full mr-2 bg-gray-500"></div>
+                        {league.name}
+                      </Link>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                ))}
+              </SidebarGroupContent>
+            </CollapsibleContent>
+          </Collapsible>
+          {index < array.length - 1 && <div className="mt-4 mb-2 border-t border-gray-200 dark:border-gray-700" />}
+        </div>
       ))}
-    </>
+    </div>
   )
 }
 

@@ -1,24 +1,22 @@
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Search, Plus } from 'lucide-react'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { PlusCircle } from 'lucide-react'
 
 export function DashboardHeader() {
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-      <h1 className="text-3xl font-bold text-foreground">My DraftPlay</h1>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative">
-          <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search my leagues and pools..."
-            className="pl-8 md:w-[300px]"
-          />
-        </div>
-        <Button className="bg-primary text-primary-foreground">
-          <Plus className="mr-2 h-4 w-4" /> Create New Pool
-        </Button>
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 py-8 md:py-12">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight md:text-4xl">My Pools</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Manage your leagues and contests
+        </p>
       </div>
+      <Button asChild>
+        <Link href="/contests/start" className="inline-flex items-center">
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Start a pool
+        </Link>
+      </Button>
     </div>
   )
 }

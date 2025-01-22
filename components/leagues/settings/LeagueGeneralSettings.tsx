@@ -1,19 +1,26 @@
-import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { createClient } from "@/libs/supabase/client";
-import { updateLeagueMaxTeams } from "@/app/actions/league-actions";
-import { useRouter } from "next/navigation";
+"use client"
+
+import { useState, useCallback } from "react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { useToast } from "@/hooks/use-toast"
+import { createClient } from "@/libs/supabase/client"
+import { updateLeagueMaxTeams } from "@/app/actions/league-actions"
 
 interface LeagueGeneralSettingsProps {
-  leagueId: string;
-  isCommissioner: boolean;
-  league: any;
-  leagueSettings: any;
-  draft: any;
-  onUpdate: () => void;
+  leagueId: string
+  isCommissioner: boolean
+  league: {
+    name: string
+  }
+  leagueSettings: {
+    max_teams: number
+  }
+  draft: {
+    status: string
+  }
+  onUpdate: (updatedData: any) => Promise<void>
 }
 
 export function LeagueGeneralSettings({
@@ -24,75 +31,98 @@ export function LeagueGeneralSettings({
   draft,
   onUpdate,
 }: LeagueGeneralSettingsProps) {
-  const [leagueName, setLeagueName] = useState(league?.name || "");
-  const [maxTeams, setMaxTeams] = useState(leagueSettings?.max_teams || 0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDraftStarted, setIsDraftStarted] = useState(false);
-  const { toast } = useToast();
-  const supabase = createClient();
-  const router = useRouter(); // Initialize router
+  const [leagueName, setLeagueName] = useState(league.name)
+  const [maxTeams, setMaxTeams] = useState(leagueSettings.max_teams)
+  const [isLoading, setIsLoading] = useState(false)
+  const isDraftStarted = draft?.status !== "pre_draft"
+  const { toast } = useToast()
+  const supabase = createClient()
 
+  const handleSave = useCallback(async () => {
+    if (!isCommissioner) return
+    setIsLoading(true)
 
-  useEffect(() => {
-    setLeagueName(league?.name || "");
-    setMaxTeams(leagueSettings?.max_teams || 0);
-    setIsDraftStarted(draft?.status !== "pre_draft");
-  }, [league, leagueSettings, draft]);
-
-  const handleSave = async () => {
-    if (!isCommissioner) return;
-    setIsLoading(true);
-  
     try {
-      // Update league name directly
-      const { error: leagueError } = await supabase
-        .from("leagues")
-        .update({ name: leagueName })
-        .eq("id", leagueId);
-  
-      if (leagueError) {
-        throw leagueError;
+      const updatedData: { name?: string; max_teams?: number } = {}
+
+      // Update league name if changed
+      if (leagueName !== league.name) {
+        updatedData.name = leagueName
       }
-  
-      // Update max_teams in both league_members and league_settings
-      if (draft?.status === "pre_draft") {
-        const result = await updateLeagueMaxTeams(leagueId, maxTeams);
-  
+
+      // Update max_teams if changed and draft hasn't started
+      if (maxTeams !== leagueSettings.max_teams && !isDraftStarted) {
+        updatedData.max_teams = maxTeams
+      }
+
+      // Only proceed if there are changes
+      if (Object.keys(updatedData).length === 0) {
+        toast({
+          title: "No Changes",
+          description: "No changes were made to the league settings.",
+        })
+        setIsLoading(false)
+        return
+      }
+
+      // Update league name
+      if (updatedData.name) {
+        const { error: leagueError } = await supabase
+          .from("leagues")
+          .update({ name: updatedData.name })
+          .eq("id", leagueId)
+
+        if (leagueError) throw leagueError
+      }
+
+      // Update max_teams
+      if (updatedData.max_teams) {
+        const result = await updateLeagueMaxTeams(leagueId, updatedData.max_teams)
+
         if (result.error) {
           if (result.error.includes("Cannot reduce league size")) {
-            // Specific error when trying to reduce league size while it's full
             toast({
               title: "Error",
-              description:
-                "The league is full. Please remove users before reducing the league size.",
+              description: "The league is full. Please remove users before reducing the league size.",
               variant: "destructive",
-            });
+            })
+            setIsLoading(false)
+            return
           } else {
-            throw new Error(result.error);
+            throw new Error(result.error)
           }
-          return; // Exit early if specific error occurs
         }
       }
-  
-      onUpdate();
-      router.refresh();
+
+      // Call the onUpdate prop with the updated data
+      await onUpdate(updatedData)
 
       toast({
         title: "Success",
         description: "League settings updated successfully.",
-      });
+      })
     } catch (error) {
-      console.error("Error updating league settings:", error);
+      console.error("Error updating league settings:", error)
       toast({
         title: "Error",
         description: "Failed to update league settings. Please try again.",
         variant: "destructive",
-      });
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
-  
+  }, [
+    leagueId,
+    isCommissioner,
+    leagueName,
+    maxTeams,
+    league.name,
+    leagueSettings.max_teams,
+    isDraftStarted,
+    onUpdate,
+    supabase,
+    toast,
+  ])
 
   return (
     <div className="space-y-4">
@@ -111,20 +141,19 @@ export function LeagueGeneralSettings({
           id="maxTeams"
           type="number"
           min={4}
-          max={14}
+          max={12}
           value={maxTeams}
-          onChange={(e) => setMaxTeams(parseInt(e.target.value))}
+          onChange={(e) => setMaxTeams(Number.parseInt(e.target.value, 10))}
           disabled={!isCommissioner || isLoading || isDraftStarted}
         />
         {isDraftStarted && (
-          <p className="text-sm text-muted-foreground">
-            Max teams cannot be changed after the draft has started.
-          </p>
+          <p className="text-sm text-muted-foreground">Max teams cannot be changed after the draft has started.</p>
         )}
       </div>
       <Button onClick={handleSave} disabled={!isCommissioner || isLoading}>
         {isLoading ? "Saving..." : "Save Changes"}
       </Button>
     </div>
-  );
+  )
 }
+

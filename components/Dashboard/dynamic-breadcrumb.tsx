@@ -11,15 +11,16 @@ import {
   BreadcrumbLink,
 } from "@/components/ui/breadcrumb"
 import { createClient } from "@/libs/supabase/client"
+import Link from 'next/link'
 
 const routeMap: { [key: string]: string } = {
   '/dashboard': 'Dashboard',
-  '/dashboard/leagues': 'My Leagues',
   '/dashboard/leagues/create': 'Create League',
-  '/dashboard/join': 'Join League',
+  '/dashboard/join-pool': 'Join Pools',
   '/dashboard/bracket': 'Tournament Bracket',
   '/dashboard/scores': 'Tournament Scores',
   '/dashboard/leaderboard': 'Tournament Leaderboard',
+  "/dashboard/my-pools": "My Pools"
 }
 
 export function DynamicBreadcrumb() {
@@ -73,6 +74,18 @@ export function DynamicBreadcrumb() {
           // If this segment is a league ID and we have a league name, use it
           if (pathSegments[index - 1] === 'leagues' && leagueNames[segment]) {
             displayName = leagueNames[segment]
+          }
+          if (path === "/dashboard") {
+            return (
+              <BreadcrumbItem key={path}>
+                <Link href="/dashboard/my-pools" passHref legacyBehavior>
+                  <BreadcrumbLink className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+                    {displayName}
+                  </BreadcrumbLink>
+                </Link>
+                <BreadcrumbSeparator />
+              </BreadcrumbItem>
+            )
           }
 
           return (

@@ -1,10 +1,9 @@
 "use client"
-import * as React from "react"
-import { Trophy, LayoutDashboard, Users, PlusCircle, Settings, LogOut } from 'lucide-react'
+
+import type * as React from "react"
+import { Trophy, LayoutDashboard, Users, PlusCircle, Settings, LogOut } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-
-
 import {
   Sidebar,
   SidebarContent,
@@ -17,24 +16,27 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
-  SidebarFooter
+  SidebarFooter,
+  SidebarGroupContent,
+  SidebarGroupLabel
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { NavUser } from "@/components/Dashboard/nav-user"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { UserLeagues } from "@/components/Dashboard/user-leagues"
+import { useLeagues } from "@/app/context/LeaguesContext"
+import { Separator } from "../ui/separator"
 
-// This is sample data. In a real application, you'd fetch this from your backend.
 const data = {
   navMain: [
     {
-      title: "Dashboard",
-      url: "/dashboard",
+      title: "My Pools",
+      url: "/dashboard/my-pools",
       icon: LayoutDashboard,
     },
     {
       title: "Join a Pool",
-      url: "/dashboard/join",
+      url: "/dashboard/join-pool",
       icon: Users,
     },
     {
@@ -42,30 +44,12 @@ const data = {
       url: "/contests/start",
       icon: PlusCircle,
     },
-    {
-      title: "Tournament",
-      url: "#",
-      icon: Trophy,
-      items: [
-        {
-          title: "Bracket",
-          url: "/dashboard/bracket",
-        },
-        {
-          title: "Scores",
-          url: "/dashboard/scores",
-        },
-        {
-          title: "Leaderboard",
-          url: "/dashboard/leaderboard",
-        },
-      ],
-    },
   ],
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
+  const { leagues, userId, error } = useLeagues()
 
   return (
     <Sidebar {...props}>
@@ -73,12 +57,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-            <Link href="/dashboard" className="flex items-center gap-3">
-        <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-          <Trophy className="size-5" />
-        </div>
-        <span className="font-semibold text-lg">DraftPlay</span>
-      </Link>
+              <Link href="/dashboard/my-pools" className="group relative flex items-center gap-3">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <Trophy className="size-5" />
+                </div>
+                <span className="font-semibold text-lg  transition-colors">Prime Slate</span>
+               
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -88,48 +73,33 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenu>
             {data.navMain.map((item) => (
               <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild isActive={pathname === item.url}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === item.url}
+                  className="hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
                   <Link href={item.url} className="font-medium">
                     <item.icon className="mr-2 h-4 w-4" />
                     {item.title}
                   </Link>
                 </SidebarMenuButton>
-                {item.items?.length ? (
-                  <SidebarMenuSub>
-                    {item.items.map((subItem) => (
-                      <SidebarMenuSubItem key={subItem.title}>
-                        <SidebarMenuSubButton
-                          asChild
-                          isActive={pathname === subItem.url}
-                        >
-                          <Link href={subItem.url}>{subItem.title}</Link>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    ))}
-                  </SidebarMenuSub>
-                ) : null}
               </SidebarMenuItem>
             ))}
+            <Separator className="mt-2" />
           </SidebarMenu>
         </SidebarGroup>
         <SidebarGroup>
           <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname === "/dashboard/leagues"}>
-                <Link href="/dashboard/leagues" className="font-medium">
-                  <Trophy className="mr-2 h-4 w-4" />
-                  My Leagues
-                </Link>
-              </SidebarMenuButton>
-              <SidebarMenuSub>
-                <UserLeagues />
-              </SidebarMenuSub>
-            </SidebarMenuItem>
+            <SidebarGroupLabel className="px-3 pb-2 text-sm font-semibold uppercase text-foreground">
+              My Pools
+            </SidebarGroupLabel>
+            <SidebarMenuSub>
+              <UserLeagues leagues={leagues} isLoading={!leagues && !error} error={error} />
+            </SidebarMenuSub>
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <ThemeToggle />
         <NavUser />
       </SidebarFooter>
       <SidebarRail />

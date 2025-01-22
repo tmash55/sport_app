@@ -46,7 +46,7 @@ export function AuthButtons() {
         return (
           <div className="flex items-center">
             <Button asChild>
-              <Link href="/dashboard">Dashboard</Link>
+              <Link href="/dashboard/my-pools">Dashboard</Link>
             </Button>
           </div>
         )

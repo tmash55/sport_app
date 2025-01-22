@@ -14,7 +14,7 @@ export default function SignIn() {
     if (redirect) {
       router.push(redirect);
     } else {
-      router.push('/dashboard');
+      router.push('/dashboard/my-pools');
     }
   };
 

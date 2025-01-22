@@ -30,7 +30,7 @@ export function PageHeader({
             size="sm"
             className="gap-2 text-muted-foreground hover:text-foreground"
           >
-            <Link href="/dashboard">
+            <Link href="/dashboard/my-pools">
               <ArrowLeft className="h-4 w-4" />
               Back to Dashboard
             </Link>

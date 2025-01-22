@@ -1,6 +1,7 @@
-'use client'
+"use client"
 
 import { JoinLinkGenerator } from "./JoinLinkGenerator"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 
 interface InviteMembersProps {
   leagueId: string
@@ -8,10 +9,14 @@ interface InviteMembersProps {
 
 export function InviteMembers({ leagueId }: InviteMembersProps) {
   return (
-    <div className="space-y-4">
-      <h3 className="text-sm font-medium mb-2">Invite members by sharing this link:</h3>
-      <JoinLinkGenerator leagueId={leagueId} />
-    </div>
+    <Card className="bg-muted/30">
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold">Invite Members to Your League</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <JoinLinkGenerator leagueId={leagueId} />
+      </CardContent>
+    </Card>
   )
 }
 

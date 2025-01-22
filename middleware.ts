@@ -1,8 +1,18 @@
-import { type NextRequest } from "next/server";
-import { updateSession } from "@/libs/supabase/middleware";
+import { type NextRequest, NextResponse } from "next/server"
+import { updateSession } from "@/libs/supabase/middleware"
 
 export async function middleware(request: NextRequest) {
-  return await updateSession(request);
+  const { pathname } = request.nextUrl
+
+  // Handle redirects
+  if (pathname === "/dashboard" || pathname === "/dashboard/leagues") {
+    const url = request.nextUrl.clone()
+    url.pathname = "/dashboard/my-pools"
+    return NextResponse.redirect(url)
+  }
+
+  // Update session for all other routes
+  return await updateSession(request)
 }
 
 export const config = {
@@ -15,5 +25,9 @@ export const config = {
      * Feel free to modify this pattern to include more paths.
      */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Add specific matchers for dashboard routes
+    "/dashboard",
+    "/dashboard/leagues",
   ],
-};
+}
+

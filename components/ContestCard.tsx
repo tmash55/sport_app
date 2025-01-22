@@ -2,6 +2,9 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Clock, Users, Trophy } from 'lucide-react'
+import { PiFootballHelmetBold, PiGolf, PiTrophy, PiBasketball } from "react-icons/pi"
+import { GiBasketballBasket } from "react-icons/gi"
+import { CiBaseball } from "react-icons/ci"
 import Link from 'next/link'
 
 interface Contest {
@@ -20,27 +23,35 @@ interface ContestCardProps {
 }
 
 export function ContestCard({ contest }: ContestCardProps) {
-  const getIcon = (sport: string) => {
+  const SportIcon = ({ sport }: { sport: string }) => {
     switch (sport.toLowerCase()) {
+      case 'football':
+        return <PiFootballHelmetBold className="h-7 w-7" />
       case 'basketball':
-        return Trophy
+        return <PiBasketball className="h-7 w-7" />
+      case 'baseball':
+        return <CiBaseball className="h-7 w-7" />
       case 'golf':
-        return Trophy
+        return <PiGolf className="h-7 w-7" />
       default:
-        return Trophy
+        return <PiTrophy className="h-7 w-7" />
     }
   }
 
-  const Icon = getIcon(contest.sport)
+  const sport = contest?.sport || 'Unknown'
 
   return (
-    <Card className="flex flex-col">
+    <Card className="group flex h-full flex-col transition-all hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1">
       <CardHeader>
         <div className="flex items-center justify-between mb-2">
-          <Icon className="w-8 h-8 text-primary" />
-          <Badge variant="secondary">{contest.contest_type}</Badge>
+        <SportIcon sport={sport} />
+          <Badge variant="secondary" className="transition-colors group-hover:bg-primary/10">
+            {contest.contest_type}
+          </Badge>
         </div>
-        <CardTitle className="text-xl">{contest.name}</CardTitle>
+        <CardTitle className="text-xl group-hover:text-primary transition-colors">
+          {contest.name}
+        </CardTitle>
       </CardHeader>
       <CardContent className="flex-grow">
         <p className="text-muted-foreground mb-4">{contest.description}</p>
@@ -54,7 +65,7 @@ export function ContestCard({ contest }: ContestCardProps) {
         </div>
       </CardContent>
       <CardFooter className="flex flex-col gap-2">
-        <Button asChild variant="outline" className="w-full">
+        <Button asChild variant="outline" className="w-full group-hover:bg-primary/5 transition-colors">
           <Link href={`/contests/${contest.id}/rules`}>More Info</Link>
         </Button>
         <Button asChild className="w-full">
