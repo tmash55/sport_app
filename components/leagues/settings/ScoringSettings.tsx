@@ -19,44 +19,35 @@ interface LeagueSettings {
 interface ScoringSettingsProps {
   leagueId: string
   isCommissioner: boolean
-  leagueSettings: LeagueSettings
+  leagueSettings: LeagueSettings[] // Array of LeagueSettings
   onUpdate: (updatedData: Partial<LeagueSettings>) => Promise<void>
 }
 
 export function ScoringSettings({ leagueId, isCommissioner, leagueSettings, onUpdate }: ScoringSettingsProps) {
-  console.log("ScoringSettings: Initial leagueSettings", leagueSettings)
-  console.log("ScoringSettings: leagueSettings", leagueSettings)
-
   const [roundScores, setRoundScores] = useState<number[]>([])
   const [upsetMultiplier, setUpsetMultiplier] = useState<number>(1)
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
 
-  useEffect(() => {
-    console.log("ScoringSettings: leagueSettings updated", leagueSettings)
-    setRoundScores([
-      leagueSettings.round_1_score,
-      leagueSettings.round_2_score,
-      leagueSettings.round_3_score,
-      leagueSettings.round_4_score,
-      leagueSettings.round_5_score,
-      leagueSettings.round_6_score,
-    ])
-    setUpsetMultiplier(leagueSettings.upset_multiplier)
-  }, [leagueSettings])
+  // Extract the first object from the array
+  const settings = leagueSettings.length > 0 ? leagueSettings[0] : null
 
   useEffect(() => {
-    console.log("ScoringSettings: Component re-rendered")
-    console.log("Current roundScores:", roundScores)
-    console.log("Current upsetMultiplier:", upsetMultiplier)
-  }, [roundScores, upsetMultiplier])
+    if (settings) {
+      setRoundScores([
+        settings.round_1_score,
+        settings.round_2_score,
+        settings.round_3_score,
+        settings.round_4_score,
+        settings.round_5_score,
+        settings.round_6_score,
+      ])
+      setUpsetMultiplier(settings.upset_multiplier)
+    }
+  }, [settings])
 
   const handleSave = useCallback(async () => {
     if (!isCommissioner) return
-
-    console.log("ScoringSettings: handleSave called")
-    console.log("Current roundScores:", roundScores)
-    console.log("Current upsetMultiplier:", upsetMultiplier)
 
     setIsLoading(true)
     try {
@@ -70,7 +61,6 @@ export function ScoringSettings({ leagueId, isCommissioner, leagueSettings, onUp
         upset_multiplier: upsetMultiplier,
       }
 
-      console.log("ScoringSettings: Updating with", updatedSettings)
       await onUpdate(updatedSettings)
 
       toast({
@@ -89,6 +79,10 @@ export function ScoringSettings({ leagueId, isCommissioner, leagueSettings, onUp
     }
   }, [isCommissioner, roundScores, upsetMultiplier, onUpdate, toast])
 
+  if (!settings) {
+    return <p className="text-center">No league settings available.</p>
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
@@ -105,9 +99,8 @@ export function ScoringSettings({ leagueId, isCommissioner, leagueSettings, onUp
                 value={score}
                 onChange={(e) => {
                   const newScores = [...roundScores]
-                  newScores[index] = Number.parseInt(e.target.value, 10)
+                  newScores[index] = Number(e.target.value) || 0
                   setRoundScores(newScores)
-                  console.log(`ScoringSettings: Round ${index + 1} score changed to`, newScores[index])
                 }}
                 disabled={!isCommissioner || isLoading}
                 className="w-24"
@@ -126,9 +119,8 @@ export function ScoringSettings({ leagueId, isCommissioner, leagueSettings, onUp
             step={0.1}
             value={upsetMultiplier}
             onChange={(e) => {
-              const newValue = Number.parseFloat(e.target.value)
+              const newValue = Number(e.target.value) || 1
               setUpsetMultiplier(newValue)
-              console.log("ScoringSettings: Upset multiplier changed to", newValue)
             }}
             disabled={!isCommissioner || isLoading}
             className="w-24"

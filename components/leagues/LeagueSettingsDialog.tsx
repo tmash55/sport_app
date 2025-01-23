@@ -38,41 +38,47 @@ export function LeagueSettingsDialog({ children, leagueId, isCommissioner }: Lea
     async (updatedData: any) => {
       try {
         console.log("LeagueSettingsDialog: Updating with", updatedData)
-        // Make the API call to update the data
         const supabase = createClient()
-
+  
         if ("draft_pick_timer" in updatedData) {
           // Update the drafts table
           const { error } = await supabase
             .from("drafts")
             .update({ draft_pick_timer: updatedData.draft_pick_timer })
             .eq("league_id", leagueId)
-
+  
           if (error) throw error
         } else {
           // Update the league_settings table
           const { error } = await supabase.from("league_settings").update(updatedData).eq("league_id", leagueId)
-
+  
           if (error) throw error
         }
-
-        // If the update was successful, update the local state
-        mutate(
-          {
-            ...leagueData,
-            league_settings: { ...leagueData.league_settings, ...updatedData },
-            drafts: leagueData.drafts.map((draft:any) =>
-              "draft_pick_timer" in updatedData ? { ...draft, draft_pick_timer: updatedData.draft_pick_timer } : draft,
-            ),
-          },
-          false,
-        )
-
+  
+        // Update the local state
+        mutate((currentData: any) => {
+          if (!currentData) return currentData
+  
+          const updatedLeagueData = {
+            ...currentData,
+            league_settings: { ...currentData.league_settings, ...updatedData },
+          }
+  
+          if ("draft_pick_timer" in updatedData && Array.isArray(currentData.drafts)) {
+            updatedLeagueData.drafts = currentData.drafts.map((draft: any) => ({
+              ...draft,
+              draft_pick_timer: updatedData.draft_pick_timer,
+            }))
+          }
+  
+          return updatedLeagueData
+        }, false)
+  
         toast({
           title: "Success",
           description: "Settings updated successfully.",
         })
-
+  
         // Revalidate data
         mutate()
       } catch (error) {
