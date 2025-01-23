@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import React, { useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,7 +16,7 @@ interface InvitePageAuthProps {
   leagueName: string
 }
 
-export function InvitePageAuth({ leagueId, leagueName }: InvitePageAuthProps) {
+export function InvitePageAuth({leagueName }: InvitePageAuthProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [username, setUsername] = useState("")
@@ -257,7 +257,7 @@ export function InvitePageAuth({ leagueId, leagueName }: InvitePageAuthProps) {
         <div className="text-center text-sm">
           {authType === "signin" ? (
             <p>
-              Don't have an account?{" "}
+              Don`&apos;`t have an account?{" "}
               <Button variant="link" className="p-0" onClick={() => setAuthType("signup")}>
                 Sign up
               </Button>

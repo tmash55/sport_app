@@ -1,5 +1,6 @@
 import { DraftPick, LeagueMember } from "@/types/draft";
 import { Trophy, ArrowRight, ArrowDown, ArrowLeft } from 'lucide-react';
+import Image from "next/image";
 import { useMemo } from "react";
 
 const currentPickClass = "border-2 border-primary animate-pulse";
@@ -82,11 +83,13 @@ const renderDraftBoard = (
               <div className="relative w-full h-full flex items-center justify-center">
                 <div className="absolute inset-0 flex items-center justify-center opacity-10">
                   {pick?.league_teams?.global_teams?.logo_filename ? (
-                    <img
-                      src={getTeamLogoUrl(pick.league_teams.global_teams.logo_filename)}
-                      alt={`${pick.league_teams.name} logo`}
-                      className="w-32 h-32 object-contain"
-                    />
+                    <Image
+                    src={getTeamLogoUrl(pick.league_teams.global_teams.logo_filename) || "/placeholder.svg"}
+                    alt={`${pick.league_teams.name} logo`}
+                    width={128}
+                    height={128}
+                    className="object-contain"
+                  />
                   ) : (
                     <Trophy className="w-24 h-24 text-secondary-foreground/50" />
                   )}
@@ -94,11 +97,13 @@ const renderDraftBoard = (
                 <div className="relative z-10 flex flex-col items-center justify-center">
                   <div className="w-12 h-12 flex items-center justify-center rounded-full bg-background/80 backdrop-blur-sm">
                     {pick?.league_teams?.global_teams?.logo_filename ? (
-                      <img
-                        src={getTeamLogoUrl(pick.league_teams.global_teams.logo_filename)}
-                        alt={`${pick.league_teams.name} logo`}
-                        className="h-10 w-10 object-contain"
-                      />
+                      <Image
+                      src={getTeamLogoUrl(pick.league_teams.global_teams.logo_filename) || "/placeholder.svg"}
+                      alt={`${pick.league_teams.name} logo`}
+                      width={40}
+                      height={40}
+                      className="object-contain"
+                    />
                     ) : (
                       <Trophy className="h-6 w-6 text-secondary-foreground/50" />
                     )}

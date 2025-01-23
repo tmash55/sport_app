@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 
 import { useToast } from "@/hooks/use-toast"
-import { cn } from "@/lib/utils"
-import { StepIndicator } from '../StepIndicator'
 
 interface InviteMembersProps {
   leagueId: string

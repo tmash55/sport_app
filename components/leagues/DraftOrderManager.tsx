@@ -1,8 +1,8 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { createClient } from "@/libs/supabase/client";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react"
+import { createClient } from "@/libs/supabase/client"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -11,39 +11,39 @@ import {
   DialogTitle,
   DialogFooter,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, X } from "lucide-react";
+} from "@/components/ui/dialog"
+import { useToast } from "@/hooks/use-toast"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Loader2, X } from "lucide-react"
 
 interface User {
-  id: string;
-  email: string;
-  display_name: string | null;
+  id: string
+  email: string
+  display_name: string | null
 }
 
 interface LeagueMember {
-  id: string;
-  draft_position: number | null;
-  league_id: string;
-  team_name: string | null;
-  users: User;
+  id: string
+  draft_position: number | null
+  league_id: string
+  team_name: string | null
+  users: User[]
 }
 
 interface DraftOrderManagerProps {
-  leagueId: string;
-  maxTeams: number;
-  onOrderUpdated: () => void;
+  leagueId: string
+  maxTeams: number
+  onOrderUpdated: () => void
 }
 
 export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftOrderManagerProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [draftOrder, setDraftOrder] = useState<(LeagueMember | null)[]>(Array(maxTeams).fill(null));
-  const [unassignedMembers, setUnassignedMembers] = useState<LeagueMember[]>([]);
-  const supabase = createClient();
-  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [draftOrder, setDraftOrder] = useState<(LeagueMember | null)[]>(Array(maxTeams).fill(null))
+  const [unassignedMembers, setUnassignedMembers] = useState<LeagueMember[]>([])
+  const supabase = createClient()
+  const { toast } = useToast()
 
   const fetchLeagueMembers = async () => {
     const { data, error } = await supabase
@@ -59,52 +59,52 @@ export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftO
           display_name
         )
       `)
-      .eq("league_id", leagueId);
+      .eq("league_id", leagueId)
 
     if (error) {
-      throw new Error(`Failed to fetch league members: ${error.message}`);
+      throw new Error(`Failed to fetch league members: ${error.message}`)
     }
 
-    return data;
-  };
+    return data as LeagueMember[]
+  }
 
   const loadDraftOrder = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const members = await fetchLeagueMembers();
-      const newDraftOrder = Array(maxTeams).fill(null);
-      const newUnassignedMembers: LeagueMember[] = [];
+      const members = await fetchLeagueMembers()
+      const newDraftOrder = Array(maxTeams).fill(null)
+      const newUnassignedMembers: LeagueMember[] = []
 
       members.forEach((member) => {
         if (member.draft_position !== null && member.draft_position <= maxTeams) {
-          newDraftOrder[member.draft_position - 1] = member;
+          newDraftOrder[member.draft_position - 1] = member
         } else {
-          newUnassignedMembers.push(member);
+          newUnassignedMembers.push(member)
         }
-      });
+      })
 
-      setDraftOrder(newDraftOrder);
-      setUnassignedMembers(newUnassignedMembers);
+      setDraftOrder(newDraftOrder)
+      setUnassignedMembers(newUnassignedMembers)
     } catch (error) {
-      console.error("Error loading draft order:", error);
+      console.error("Error loading draft order:", error)
       toast({
         title: "Error",
         description: "Failed to load draft order. Please try again.",
         variant: "destructive",
-      });
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
     if (isOpen) {
-      loadDraftOrder();
+      loadDraftOrder()
     }
-  }, [isOpen]);
+  }, [isOpen])
 
   const assignMember = async (memberId: string, position: number) => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
       const { error } = await supabase
         .from("league_members")
@@ -112,30 +112,30 @@ export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftO
           draft_position: position,
         })
         .eq("id", memberId)
-        .eq("league_id", leagueId);
+        .eq("league_id", leagueId)
 
-      if (error) throw error;
+      if (error) throw error
 
-      await loadDraftOrder();
+      await loadDraftOrder()
       toast({
         title: "Success",
         description: "Draft position updated.",
-      });
-      onOrderUpdated();
+      })
+      onOrderUpdated()
     } catch (error) {
-      console.error("Error updating draft position:", error);
+      console.error("Error updating draft position:", error)
       toast({
         title: "Error",
         description: "Failed to update draft position. Please try again.",
         variant: "destructive",
-      });
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const removeMember = async (memberId: string) => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
       const { error } = await supabase
         .from("league_members")
@@ -143,92 +143,92 @@ export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftO
           draft_position: null,
         })
         .eq("id", memberId)
-        .eq("league_id", leagueId);
+        .eq("league_id", leagueId)
 
-      if (error) throw error;
+      if (error) throw error
 
-      await loadDraftOrder();
+      await loadDraftOrder()
       toast({
         title: "Success",
         description: "Member removed from draft position.",
-      });
-      onOrderUpdated();
+      })
+      onOrderUpdated()
     } catch (error) {
-      console.error("Error removing member from draft position:", error);
+      console.error("Error removing member from draft position:", error)
       toast({
         title: "Error",
         description: "Failed to remove member from draft position. Please try again.",
         variant: "destructive",
-      });
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const randomizeDraftOrder = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const members = await fetchLeagueMembers();
-      const shuffled = [...members].sort(() => Math.random() - 0.5);
+      const members = await fetchLeagueMembers()
+      const shuffled = [...members].sort(() => Math.random() - 0.5)
 
       const updates = shuffled.map((member, index) => ({
         id: member.id,
         draft_position: index < maxTeams ? index + 1 : null,
-      }));
+      }))
 
-      const { error } = await supabase.from("league_members").upsert(updates);
+      const { error } = await supabase.from("league_members").upsert(updates)
 
-      if (error) throw error;
+      if (error) throw error
 
-      await loadDraftOrder();
+      await loadDraftOrder()
       toast({
         title: "Success",
         description: "Draft order has been randomized.",
-      });
-      onOrderUpdated();
+      })
+      onOrderUpdated()
     } catch (error) {
-      console.error("Error randomizing draft order:", error);
+      console.error("Error randomizing draft order:", error)
       toast({
         title: "Error",
         description: "Failed to randomize draft order. Please try again.",
         variant: "destructive",
-      });
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const resetDraftOrder = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const members = await fetchLeagueMembers();
+      const members = await fetchLeagueMembers()
 
       const updates = members.map((member) => ({
         id: member.id,
-        draft_position: null,
-      }));
+        draft_position: null as number | null,
+      }))
 
-      const { error } = await supabase.from("league_members").upsert(updates);
+      const { error } = await supabase.from("league_members").upsert(updates)
 
-      if (error) throw error;
+      if (error) throw error
 
-      await loadDraftOrder();
+      await loadDraftOrder()
       toast({
         title: "Success",
         description: "Draft order has been reset.",
-      });
-      onOrderUpdated();
+      })
+      onOrderUpdated()
     } catch (error) {
-      console.error("Error resetting draft order:", error);
+      console.error("Error resetting draft order:", error)
       toast({
         title: "Error",
         description: "Failed to reset draft order. Please try again.",
         variant: "destructive",
-      });
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -251,14 +251,15 @@ export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftO
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-between group">
                     <span>
-                      {index + 1}. {member ? member.team_name || member.users?.display_name || "Unknown" : "Unassigned"}
+                      {index + 1}.{" "}
+                      {member ? member.team_name || member.users[0]?.display_name || "Unknown" : "Unassigned"}
                     </span>
                     {member && (
                       <span
                         className="ml-2 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                         onClick={(e) => {
-                          e.stopPropagation();
-                          removeMember(member.id);
+                          e.stopPropagation()
+                          removeMember(member.id)
                         }}
                       >
                         <X size={16} />
@@ -275,7 +276,7 @@ export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftO
                         className="w-full justify-start hover:bg-primary hover:text-primary-foreground"
                         onClick={() => assignMember(unassignedMember.id, index + 1)}
                       >
-                        {unassignedMember.team_name || unassignedMember.users?.display_name || "Unknown"}
+                        {unassignedMember.team_name || unassignedMember.users[0]?.display_name || "Unknown"}
                       </Button>
                     ))}
                   </ScrollArea>
@@ -299,5 +300,6 @@ export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftO
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
+

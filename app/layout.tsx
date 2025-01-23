@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Lato } from "next/font/google";
 import { Viewport } from "next";
 import { getSEOTags } from "@/libs/seo";
 import ClientLayout from "@/components/LayoutClient";
@@ -9,7 +9,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/toaster";
 
 
-const font = Plus_Jakarta_Sans({ subsets: ["latin"] });
+const font = Lato({ subsets: ["latin"], weight: ["400", "700"] })
 
 export const viewport: Viewport = {
   // Will use the primary color of your theme to show a nice theme color in the URL bar of supported browsers

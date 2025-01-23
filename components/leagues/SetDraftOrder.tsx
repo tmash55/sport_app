@@ -38,7 +38,7 @@ export function SetDraftOrder({ leagueId }: SetDraftOrderProps) {
       setIsLoading(true)
       try {
         const { data, error } = await supabase
-          .from('league_members')
+          .from("league_members")
           .select(`
             id,
             user_id,
@@ -51,13 +51,25 @@ export function SetDraftOrder({ leagueId }: SetDraftOrderProps) {
               last_name
             )
           `)
-          .eq('league_id', leagueId)
-          .order('draft_position', { ascending: true, nullsLast: true })
+          .eq("league_id", leagueId)
+          .order("draft_position", { ascending: true })
 
         if (error) throw error
-        setMembers(data)
+
+        const typedData = (data as unknown as LeagueMember[]).map((member) => ({
+          ...member,
+          users: Array.isArray(member.users) ? member.users[0] : member.users,
+        }))
+
+        setMembers(
+          typedData.sort((a, b) => {
+            if (a.draft_position === null) return 1
+            if (b.draft_position === null) return -1
+            return (a.draft_position || 0) - (b.draft_position || 0)
+          }),
+        )
       } catch (error) {
-        console.error('Error fetching members:', error)
+        console.error("Error fetching members:", error)
         toast({
           title: "Error",
           description: "Failed to load league members. Please try again.",
@@ -78,22 +90,22 @@ export function SetDraftOrder({ leagueId }: SetDraftOrderProps) {
     const [reorderedMember] = newMembers.splice(result.source.index, 1)
     newMembers.splice(result.destination.index, 0, reorderedMember)
 
-    setMembers(newMembers.map((member, index) => ({
-      ...member,
-      draft_position: index + 1
-    })))
+    setMembers(
+      newMembers.map((member, index) => ({
+        ...member,
+        draft_position: index + 1,
+      })),
+    )
   }
 
   const saveDraftOrder = async () => {
     try {
       const updates = members.map((member) => ({
         id: member.id,
-        draft_position: member.draft_position
+        draft_position: member.draft_position,
       }))
 
-      const { error } = await supabase
-        .from('league_members')
-        .upsert(updates, { onConflict: 'id' })
+      const { error } = await supabase.from("league_members").upsert(updates, { onConflict: "id" })
 
       if (error) throw error
 
@@ -104,7 +116,7 @@ export function SetDraftOrder({ leagueId }: SetDraftOrderProps) {
 
       router.push(`/leagues/${leagueId}`)
     } catch (error) {
-      console.error('Error saving draft order:', error)
+      console.error("Error saving draft order:", error)
       toast({
         title: "Error",
         description: "Failed to save draft order. Please try again.",
@@ -121,36 +133,36 @@ export function SetDraftOrder({ leagueId }: SetDraftOrderProps) {
       }
 
       const shuffledMembers = [...members].sort(() => Math.random() - 0.5)
-      
+
       const updates = shuffledMembers.map((member, index) => ({
         id: member.id,
         league_id: leagueId,
         user_id: member.user_id,
-        draft_position: index + 1
+        draft_position: index + 1,
       }))
 
-      const { error } = await supabase
-        .from('league_members')
-        .upsert(updates, { 
-          onConflict: 'id'
-        })
+      const { error } = await supabase.from("league_members").upsert(updates, {
+        onConflict: "id",
+      })
 
       if (error) {
-        console.error('Supabase error:', error)
+        console.error("Supabase error:", error)
         throw new Error(`Failed to update draft positions: ${error.message}`)
       }
 
-      setMembers(shuffledMembers.map((member, index) => ({
-        ...member,
-        draft_position: index + 1
-      })))
+      setMembers(
+        shuffledMembers.map((member, index) => ({
+          ...member,
+          draft_position: index + 1,
+        })),
+      )
 
       toast({
         title: "Success",
         description: "Draft order has been randomized.",
       })
     } catch (error) {
-      console.error('Error randomizing draft order:', error)
+      console.error("Error randomizing draft order:", error)
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to randomize draft order. Please try again.",
@@ -173,11 +185,9 @@ export function SetDraftOrder({ leagueId }: SetDraftOrderProps) {
       <CardContent>
         <div className="mb-4 flex justify-between items-center">
           <div>
+            <p className="text-sm text-muted-foreground">Total members: {members.length}</p>
             <p className="text-sm text-muted-foreground">
-              Total members: {members.length}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Members with draft positions: {members.filter(m => m.draft_position !== null).length}
+              Members with draft positions: {members.filter((m) => m.draft_position !== null).length}
             </p>
           </div>
           <Button onClick={randomizeDraftOrder} disabled={isRandomizing}>
@@ -197,7 +207,9 @@ export function SetDraftOrder({ leagueId }: SetDraftOrderProps) {
                         {...provided.dragHandleProps}
                         className="bg-secondary p-2 rounded-md flex items-center justify-between"
                       >
-                        <span>{index + 1}. {member.users.first_name} {member.users.last_name} ({member.users.email})</span>
+                        <span>
+                          {index + 1}. {member.users.first_name} {member.users.last_name} ({member.users.email})
+                        </span>
                       </li>
                     )}
                   </Draggable>
@@ -207,7 +219,9 @@ export function SetDraftOrder({ leagueId }: SetDraftOrderProps) {
             )}
           </Droppable>
         </DragDropContext>
-        <Button onClick={saveDraftOrder} className="mt-4">Save Draft Order</Button>
+        <Button onClick={saveDraftOrder} className="mt-4">
+          Save Draft Order
+        </Button>
       </CardContent>
     </Card>
   )

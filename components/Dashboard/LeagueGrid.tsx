@@ -23,6 +23,8 @@ interface League {
   contests: Contest
   league_members: LeagueMember[]
   all_members: LeagueMember[]
+  draft_start_time?: string
+  draft_status: "completed" | "scheduled" | "not_scheduled"
 }
 
 interface LeagueGridProps {
@@ -64,6 +66,8 @@ export function LeagueGrid({ leagues, userId }: LeagueGridProps) {
                 memberCount: assignedMembers.length,
                 totalSlots: league.all_members.length,
                 contest: league.contests,
+                draft_status: league.draft_status || "not_scheduled",
+                draft_start_time: league.draft_start_time,
               }}
               isCommissioner={league.commissioner_id === userId}
             />

@@ -1,5 +1,5 @@
 import { createClient } from '@/libs/supabase/server'
-
+import React from "react"
 import { redirect } from 'next/navigation'
 
 export default async function DraftLayout({

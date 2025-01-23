@@ -2,6 +2,7 @@ import { createClient } from "@/libs/supabase/server"
 import { JoinConfirmation } from "@/components/leagues/JoinConfirmation"
 import { CurrentUserDisplay } from "@/components/CurrentUserDisplay"
 import { InvitePageAuth } from "@/components/InvitedPageAuth"
+import React from 'react'
 
 export default async function InvitePage({ params }: { params: { id: string } }) {
   const supabase = createClient()

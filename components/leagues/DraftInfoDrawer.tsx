@@ -9,7 +9,7 @@ import { MyDraftedTeams } from "@/components/leagues/MyDraftedTeams"
 interface DraftInfoDrawerProps {
   draft: any
   availableTeams: any[]
-  draftedTeamIds: string[];
+  draftedTeamIds: string[] | Set<string>;
   draftPicks: any[]
   currentUser: string | null
   maxTeams: number
@@ -53,8 +53,7 @@ export function DraftInfoDrawer({
                       draftedTeamIds={draftedTeamIds}
                       onDraftPick={handleDraftPick}
                       isUsersTurn={isUsersTurn()}
-                      isDraftInProgress={draft?.status === 'in_progress'}
-                    />
+                      isDraftInProgress={draft?.status === 'in_progress'} leagueId={''}                    />
                   </CardContent>
                 </Card>
               )}

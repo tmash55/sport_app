@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -138,7 +138,7 @@ export function PoolDetailsForm({ contestId, contestName }: PoolDetailsFormProps
             </p>
           ) : (
             <p>
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Button variant="link" onClick={() => setAuthType('signup')}>
                 Sign up
               </Button>
@@ -177,7 +177,7 @@ export function PoolDetailsForm({ contestId, contestName }: PoolDetailsFormProps
               />
             </div>
             <p className="text-sm text-muted-foreground">
-              You'll be able to adjust more settings once the league is created.
+              You&apos;ll be able to adjust more settings once the league is created.
             </p>
           </div>
         </CardContent>

@@ -1,5 +1,6 @@
 {
-  "extends": ["next/core-web-vitals", "eslint:recommended"],
+  "extends": ["next/core-web-vitals", "eslint:recommended",
+  "plugin:react/jsx-runtime"],
   "env": {
     "browser": true,
     "node": true,
@@ -8,5 +9,7 @@
   "rules": {
     // Your specific rules.
     "no-unused-vars": "warn"
-  }
+  },
+  "plugins": ["unused-imports"]
+
 }

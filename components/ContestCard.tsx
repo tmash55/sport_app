@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Clock, Users, Trophy } from 'lucide-react'
 import { PiFootballHelmetBold, PiGolf, PiTrophy, PiBasketball } from "react-icons/pi"
-import { GiBasketballBasket } from "react-icons/gi"
 import { CiBaseball } from "react-icons/ci"
 import Link from 'next/link'
 

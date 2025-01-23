@@ -37,7 +37,7 @@ export function MyDraftedTeams({ draftPicks, currentUserId, maxTeams }: MyDrafte
           })}
         </ul>
       ) : (
-        <p className="text-muted-foreground text-sm">You haven't drafted any teams yet.</p>
+        <p className="text-muted-foreground text-sm">You haven&apos;t drafted any teams yet.</p>
       )}
     </>
   )

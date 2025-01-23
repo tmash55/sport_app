@@ -1,7 +1,7 @@
 "use client"
 
 import type * as React from "react"
-import { Trophy, LayoutDashboard, Users, PlusCircle, Settings, LogOut } from "lucide-react"
+import { Trophy, LayoutDashboard, Users, PlusCircle,} from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -13,16 +13,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarRail,
   SidebarFooter,
   SidebarGroupContent,
   SidebarGroupLabel
 } from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
 import { NavUser } from "@/components/Dashboard/nav-user"
-import { ThemeToggle } from "@/components/ThemeToggle"
 import { UserLeagues } from "@/components/Dashboard/user-leagues"
 import { useLeagues } from "@/app/context/LeaguesContext"
 import { Separator } from "../ui/separator"
@@ -34,15 +30,15 @@ const data = {
       url: "/dashboard/my-pools",
       icon: LayoutDashboard,
     },
-    {
-      title: "Join a Pool",
-      url: "/dashboard/join-pool",
-      icon: Users,
-    },
+  
     {
       title: "Create a Pool",
       url: "/contests/start",
       icon: PlusCircle,
+    },  {
+      title: "Join a Pool",
+      url: "/dashboard/join-pool",
+      icon: Users,
     },
   ],
 }

@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { useLeague } from "@/app/context/LeagueContext"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import Image from "next/image"
 
 type LeagueMember = {
   id: string
@@ -166,14 +167,13 @@ export function LeagueTeam() {
                               )}
                             >
                               {team.global_teams.logo_filename ? (
-                                <img
-                                  src={getLogoUrl(team.global_teams.logo_filename) || "/placeholder.svg"}
-                                  alt={`${team.name} logo`}
-                                  className={cn(
-                                    "h-6 w-6 object-contain",
-                                    team.global_teams.is_eliminated && "opacity-50",
-                                  )}
-                                />
+                                <Image
+                                src={getLogoUrl(team.global_teams.logo_filename) || "/placeholder.svg"}
+                                alt={`${team.name} logo`}
+                                width={40}
+                                height={40}
+                                className={cn("object-contain", team.global_teams.is_eliminated && "opacity-50")}
+                              />
                               ) : (
                                 <Trophy
                                   className={cn(

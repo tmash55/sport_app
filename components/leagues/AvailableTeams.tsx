@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Trophy } from "lucide-react";
 import { LeagueTeam } from "@/types/draft";
 import { createClient } from "@/libs/supabase/client";
@@ -13,7 +11,7 @@ import { createClient } from "@/libs/supabase/client";
 interface AvailableTeamsProps {
   leagueId: string;
   teams: LeagueTeam[];
-  draftedTeamIds: Set<string>;
+  draftedTeamIds: Set<string> | string[]
   onDraftPick: (teamId: string) => void;
   isUsersTurn: boolean;
   isDraftInProgress: boolean;
@@ -32,7 +30,7 @@ export function AvailableTeams({
   isDraftInProgress,
 }: AvailableTeamsProps) {
   const [localTeams, setLocalTeams] = useState<LocalTeam[]>([]);
-  const [draftedTeamIds, setDraftedTeamIds] = useState<Set<string>>(initialDraftedTeamIds);
+  const [draftedTeamIds, setDraftedTeamIds] = useState<Set<string>>(new Set(initialDraftedTeamIds))
   const [showDraftedTeams, setShowDraftedTeams] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const supabase = createClient();

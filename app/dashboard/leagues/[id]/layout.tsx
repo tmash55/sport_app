@@ -1,4 +1,4 @@
-import { Suspense } from "react"
+import React from "react"
 import { redirect, notFound } from "next/navigation"
 import { Settings } from "lucide-react"
 import { createClient } from "@/libs/supabase/server"
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import Link from "next/link"
 import { LeagueNavigation } from "@/components/leagues/league-navigation"
+import { ScrollToTopLayout } from "@/components/ScrollToTopLayout"
 
 export default async function LeagueLayout({
   children,
@@ -65,7 +66,8 @@ export default async function LeagueLayout({
   }
 
   return (
-    <LeagueProvider leagueId={params.id}>
+    <ScrollToTopLayout>
+      <LeagueProvider leagueId={params.id}>
       <div className="flex flex-col min-h-[calc(100vh-5rem)]">
         <div className="flex-grow overflow-y-auto">
           <div className="container max-w-7xl mx-auto px-4 py-6 space-y-6">
@@ -89,6 +91,8 @@ export default async function LeagueLayout({
         </div>
       </div>
     </LeagueProvider>
+    </ScrollToTopLayout>
+    
   )
 }
 

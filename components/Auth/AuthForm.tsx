@@ -111,21 +111,28 @@ export default function AuthForm({ type, onSuccess }: AuthFormProps) {
   };
 
   const handleOAuthSignIn = async (provider: Provider) => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
-      });
-      if (error) throw error;
-      if (data.user) {
-        onSuccess(data.user.id);
+      })
+      if (error) throw error
+  
+      if (data.url) {
+        // Redirect the user to the OAuth provider's login page
+        window.location.href = data.url
+      } else {
+        // This else block might not be necessary, but we'll keep it for now
+        console.log("OAuth sign-in initiated, but no redirect URL was provided.")
       }
     } catch (error) {
-      setError(error.message);
+      console.error("OAuth sign-in error:", error)
+      setError(error.message)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
+  
 
   return (
     <Card className="w-full max-w-md mx-auto">

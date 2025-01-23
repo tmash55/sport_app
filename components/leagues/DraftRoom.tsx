@@ -7,8 +7,6 @@ import { useToast } from "@/hooks/use-toast"
 import { DraftBoard } from "./DraftBoard"
 import { DraftControls } from "./DraftControls"
 import { DraftStatus } from "./DraftStatus"
-import { MyDraftedTeams } from "./MyDraftedTeams"
-import { AvailableTeams } from "./AvailableTeams"
 import { DraftTimer } from "./DraftTimer"
 import { LeagueMember, LeagueTeam, DraftPick, Draft } from "@/types/draft"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -21,6 +19,7 @@ interface DraftRoomProps {
   isCommissioner: boolean
   currentUser: string | null
   maxTeams: number
+  
 }
 const TOTAL_SLOTS = 8;
 const TOTAL_ROUNDS = 8;

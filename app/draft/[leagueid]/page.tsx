@@ -16,7 +16,7 @@ export default function DraftRoomPage({ params }: { params: { leagueid: string }
         </Button>
       </div>
       <div className="flex-grow">
-        <DraftRoom leagueId={params.leagueid} />
+        <DraftRoom leagueId={params.leagueid} isCommissioner={false} currentUser={null} maxTeams={0} />
       </div>
     </div>
   )
