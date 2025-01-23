@@ -40,6 +40,7 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
 
   
 
+  // Fetch initial draft data
   const fetchDraftData = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -47,73 +48,54 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
         setCurrentUser(user.id)
       }
 
-      const { data: draftData, error: draftError } = await supabase
-        .from('drafts')
-        .select('*')
-        .eq('league_id', leagueId)
+      const { data: draftData } = await supabase
+        .from("drafts")
+        .select("*")
+        .eq("league_id", leagueId)
         .single()
 
-      if (draftError) throw draftError
       setDraft(draftData)
 
-      const { data: leagueData, error: leagueError } = await supabase
-        .from('leagues')
-        .select('commissioner_id, name')
-        .eq('id', leagueId)
+      const { data: leagueData } = await supabase
+        .from("leagues")
+        .select("commissioner_id, name")
+        .eq("id", leagueId)
         .single()
 
-      if (leagueError) throw leagueError
-      
-      setIsCommissioner(leagueData.commissioner_id === user.id)
+      setIsCommissioner(leagueData.commissioner_id === user?.id)
       setLeagueName(leagueData.name)
-      // Fetch max_teams from league_settings
-      const { data: leagueSettings, error: leagueSettingsError } = await supabase
-        .from('league_settings')
-        .select('max_teams')
-        .eq('league_id', leagueId)
+
+      const { data: leagueSettings } = await supabase
+        .from("league_settings")
+        .select("max_teams")
+        .eq("league_id", leagueId)
         .single()
 
-      if (leagueSettingsError) throw leagueSettingsError
       setMaxTeams(leagueSettings.max_teams)
 
-      const { data: members, error: membersError } = await supabase
-        .from('league_members')
-        .select('*, users(email, first_name, last_name)')
-        .eq('league_id', leagueId)
+      const { data: members } = await supabase
+        .from("league_members")
+        .select("*, users(email, first_name, last_name)")
+        .eq("league_id", leagueId)
 
-      if (membersError) throw membersError
       setLeagueMembers(members)
 
-      const { data: teams, error: teamsError } = await supabase
-        .from('league_teams')
-        .select(`
-          *,
-          global_teams(seed, logo_filename)
-        `)
-        .eq('league_id', leagueId)
-
-      if (teamsError) throw teamsError
-
-      const { data: picks, error: picksError } = await supabase
-        .from('draft_picks')
-        .select(`
-          *,
-          league_teams(
-            *,
-            global_teams(seed, logo_filename)
-          ),
-          users(email, first_name, last_name)
-        `)
-        .eq('draft_id', draftData.id)
-
-      if (picksError) throw picksError
-      setDraftPicks(picks)
-      setDraftedTeamIds(new Set(picks.map(pick => pick.team_id)))
+      const { data: teams } = await supabase
+        .from("league_teams")
+        .select("*, global_teams(seed, logo_filename)")
+        .eq("league_id", leagueId)
 
       setAvailableTeams(teams)
 
+      const { data: picks } = await supabase
+        .from("draft_picks")
+        .select("*, league_teams(*, global_teams(seed, logo_filename)), users(email, first_name, last_name)")
+        .eq("draft_id", draftData.id)
+
+      setDraftPicks(picks)
+      setDraftedTeamIds(new Set(picks.map((pick) => pick.team_id)))
     } catch (error) {
-      console.error('Error fetching draft data:', error)
+      console.error("Error fetching draft data:", error)
       toast({
         title: "Error",
         description: "Failed to load draft data. Please try refreshing the page.",
@@ -124,28 +106,32 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
     }
   }, [leagueId, supabase, toast])
 
+  // Real-time updates for draft status
   useEffect(() => {
-    fetchDraftData()
+    if (!draft) return
 
     const draftChannel = supabase
-      .channel('drafts')
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'drafts',
-        filter: `id=eq.${draft?.id}`
-      }, (payload) => {
-        setDraft(prevDraft => ({
-          ...prevDraft,
-          ...payload.new,
-        } as Draft))
+      .channel(`draft:${draft.id}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "drafts", filter: `id=eq.${draft.id}` }, (payload) => {
+        setDraft((prev) => ({ ...prev, ...payload.new }))
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "draft_picks", filter: `draft_id=eq.${draft.id}` }, (payload) => {
+        const newPick = payload.new as DraftPick
+        setDraftPicks((prevPicks) => [...prevPicks, newPick])
+        setDraftedTeamIds((prevIds) => new Set(prevIds).add(newPick.team_id))
+        setAvailableTeams((prevTeams) => prevTeams.filter((team) => team.id !== newPick.team_id))
       })
       .subscribe()
 
     return () => {
       supabase.removeChannel(draftChannel)
     }
-  }, [fetchDraftData, supabase, draft?.id])
+  }, [draft, supabase])
+
+  useEffect(() => {
+    fetchDraftData()
+  }, [fetchDraftData])
+
 
   useEffect(() => {
     const draftPicksChannel = supabase
