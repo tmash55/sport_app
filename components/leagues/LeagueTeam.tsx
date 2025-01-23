@@ -231,11 +231,13 @@ function TeamCard({ team, getLogoUrl }: { team: DraftedTeam; getLogoUrl: (filena
             )}
           >
             {team.global_teams.logo_filename ? (
-              <img
-                src={getLogoUrl(team.global_teams.logo_filename) || "/placeholder.svg"}
-                alt={`${team.name} logo`}
-                className={cn("h-10 w-10 object-contain", team.global_teams.is_eliminated && "opacity-50")}
-              />
+              <Image
+              src={getLogoUrl(team.global_teams.logo_filename) || "/placeholder.svg"}
+              alt={`${team.name} logo`}
+              width={40}
+              height={40}
+              className={cn("object-contain", team.global_teams.is_eliminated && "opacity-50")}
+            />
             ) : (
               <Trophy
                 className={cn("h-6 w-6", team.global_teams.is_eliminated ? "text-destructive" : "text-primary")}
