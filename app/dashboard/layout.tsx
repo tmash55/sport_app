@@ -39,8 +39,8 @@ export default async function DashboardLayout({
             </div>
             <Trophy className="hidden md:block w-6 h-6 text-primary" aria-hidden="true" />
           </header>
-          <main className="flex-1 overflow-y-auto">
-            <div className="flex flex-col gap-4 p-4">{children}</div>
+          <main className="flex-1 overflow-y-auto ">
+            <div className="flex flex-col gap-4 p-4 ">{children}</div>
           </main>
         </SidebarInset>
       </SidebarProvider>

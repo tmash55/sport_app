@@ -15,15 +15,15 @@ export default async function LeagueLayout({
   children,
   params,
 }: {
-  children: React.ReactNode
-  params: { id: string }
+  children: React.ReactNode;
+  params: { id: string };
 }) {
-  const supabase = createClient()
+  const supabase = createClient();
 
-  const { data: userResponse, error: userError } = await supabase.auth.getUser()
+  const { data: userResponse, error: userError } = await supabase.auth.getUser();
   if (userError || !userResponse.user) {
-    console.error("Error fetching user:", userError)
-    redirect("/sign-in")
+    console.error("Error fetching user:", userError);
+    redirect("/sign-in");
   }
 
   const { data: leagueData, error: leagueError } = await supabase
@@ -33,21 +33,22 @@ export default async function LeagueLayout({
       id,
       name,
       commissioner_id,
+      drafts(status),
       league_members(user_id)
-    `,
+    `
     )
     .eq("id", params.id)
-    .single()
+    .single();
 
   if (leagueError || !leagueData) {
-    console.error("Error fetching league:", leagueError)
-    notFound()
+    console.error("Error fetching league:", leagueError);
+    notFound();
   }
 
   const isLeagueMember = leagueData.league_members.some(
-    (member: { user_id: string }) => member.user_id === userResponse.user.id,
-  )
-  const isCommissioner = leagueData.commissioner_id === userResponse.user.id
+    (member: { user_id: string }) => member.user_id === userResponse.user.id
+  );
+  const isCommissioner = leagueData.commissioner_id === userResponse.user.id;
 
   if (!isLeagueMember && !isCommissioner) {
     return (
@@ -62,37 +63,40 @@ export default async function LeagueLayout({
           </Button>
         </Alert>
       </div>
-    )
+    );
   }
+
+  const draftStatus = leagueData.drafts[0]?.status || "pre_draft";
 
   return (
     <ScrollToTopLayout>
       <LeagueProvider leagueId={params.id}>
-      <div className="flex flex-col min-h-[calc(100vh-5rem)]">
-        <div className="flex-grow overflow-y-auto">
-          <div className="container max-w-7xl mx-auto px-4 py-6 space-y-6">
-            <LeagueHeader />
-            <LeagueNavigation leagueId={params.id} />
-            <main>{children}</main>
+        <div className="flex flex-col min-h-[calc(100vh-5rem)]">
+          <div className="flex-grow overflow-y-auto">
+            <div className="container max-w-7xl mx-auto px-4 py-6 space-y-6">
+              <LeagueHeader />
+              <LeagueNavigation />
+              <main>{children}</main>
+            </div>
+          </div>
+
+          {/* Settings Button - Floating */}
+          <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-10">
+            <LeagueSettingsDialog leagueId={params.id} isCommissioner={isCommissioner}>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 sm:h-12 sm:w-12 rounded-full shadow-lg hover:shadow-xl transition-all bg-background"
+              >
+                <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
+              </Button>
+            </LeagueSettingsDialog>
           </div>
         </div>
-
-        {/* Settings Button - Floating */}
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-10">
-          <LeagueSettingsDialog leagueId={params.id} isCommissioner={isCommissioner}>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-10 w-10 sm:h-12 sm:w-12 rounded-full shadow-lg hover:shadow-xl transition-all bg-background"
-            >
-              <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
-            </Button>
-          </LeagueSettingsDialog>
-        </div>
-      </div>
-    </LeagueProvider>
+      </LeagueProvider>
     </ScrollToTopLayout>
-    
-  )
+  );
 }
+
+
 
