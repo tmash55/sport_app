@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { createClient } from "@/libs/supabase/client"
+import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { InviteMembers } from "@/components/leagues/InviteMembers"
 import { DraftOrderManager } from "@/components/leagues/DraftOrderManager"
+import { useLeague } from "@/app/context/LeagueContext"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface User {
   id: string
@@ -23,132 +23,70 @@ interface LeagueMember {
   team_name: string | null
 }
 
-interface LeagueDetails {
-  id: string
-  name: string
-  commissioner_id: string
-  league_members: LeagueMember[]
-  commissioner: User
-}
-
-interface LeagueSetting {
-  league_id: string
-  round_1_score: number
-  round_2_score: number
-  round_3_score: number
-  round_4_score: number
-  round_5_score: number
-  round_6_score: number
-  upset_multiplier: number
-  max_teams: number
-}
-
-export function LeagueOverview({ leagueId }: { leagueId: string }) {
-  const [leagueDetails, setLeagueDetails] = useState<LeagueDetails | null>(null)
-  const [leagueSettings, setLeagueSettings] = useState<LeagueSetting | null>(null)
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
-  const supabase = createClient()
+export function LeagueOverview() {
+  const { leagueData, isLoading, error } = useLeague()
   const { toast } = useToast()
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
-  const fetchLeagueData = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (user) {
-      setCurrentUserId(user.id)
-    }
-
-    const { data: leagueData, error: leagueError } = await supabase
-      .from("leagues")
-      .select(`
-        *,
-        league_members(
-          user_id,
-          draft_position,
-          team_name,
-          users:user_id(id, email, first_name, last_name, display_name)
-        ),
-        commissioner:commissioner_id(id, email, first_name, last_name)
-      `)
-      .eq("id", leagueId)
-      .single()
-
-    if (leagueError) {
-      console.error("Error fetching league details:", leagueError)
+  useEffect(() => {
+    if (error) {
       toast({
         title: "Error",
         description: "Failed to load league details",
         variant: "destructive",
       })
-      return
     }
-
-    if (leagueData) {
-      setLeagueDetails(leagueData as LeagueDetails)
-    }
-
-    const { data: settingsData, error: settingsError } = await supabase
-      .from("league_settings")
-      .select("*")
-      .eq("league_id", leagueId)
-      .single()
-
-    if (settingsError) {
-      console.error("Error fetching league settings:", settingsError)
-      toast({
-        title: "Error",
-        description: "Failed to load league settings",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setLeagueSettings(settingsData as LeagueSetting)
-  }
+  }, [error, toast])
 
   useEffect(() => {
-    fetchLeagueData()
-
-    const leagueChannel = supabase
-      .channel("league_changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "leagues", filter: `id=eq.${leagueId}` },
-        fetchLeagueData,
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "league_settings", filter: `league_id=eq.${leagueId}` },
-        fetchLeagueData,
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "league_members", filter: `league_id=eq.${leagueId}` },
-        fetchLeagueData,
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(leagueChannel)
+    if (leagueData) {
+      setCurrentUserId(leagueData.user_id)
     }
-  }, [leagueId, supabase])
+  }, [leagueData])
 
-  if (!leagueDetails || !leagueSettings) {
-    return <div>Loading league details...</div>
+  const { leagueDetails, leagueSettings, users, commissioner, isCommissioner, maxTeams } = useMemo(() => {
+    if (!leagueData) {
+      return {
+        leagueDetails: null,
+        leagueSettings: null,
+        users: [],
+        commissioner: null,
+        isCommissioner: false,
+        maxTeams: 0,
+      }
+    }
+
+    const leagueSettings = leagueData.league_settings[0]
+    const users = leagueData.league_members
+    const commissioner = leagueData.commissioner
+    const isCommissioner = currentUserId === commissioner.id
+    const maxTeams = leagueSettings.max_teams
+
+    return {
+      leagueDetails: leagueData,
+      leagueSettings,
+      users,
+      commissioner,
+      isCommissioner,
+      maxTeams,
+    }
+  }, [leagueData, currentUserId])
+
+  if (isLoading) {
+    return <Skeleton className="h-[600px] w-full" />
   }
 
-  const users = leagueDetails.league_members
-  const commissioner = leagueDetails.commissioner
-  const isCommissioner = currentUserId === commissioner.id
-  const maxTeams = leagueSettings.max_teams
+  if (error || !leagueDetails || !leagueSettings) {
+    return null
+  }
 
   // Separate assigned and unassigned teams
   const assignedMembers = users.filter((member) => member.user_id !== null)
   const unassignedMembers: LeagueMember[] = Array.from({ length: maxTeams - assignedMembers.length }, (_, index) => ({
     team_name: `Team ${assignedMembers.length + index + 1}`,
-    user_id: null as string | null,
-    draft_position: null as number | null,
-    users: null as User | null,
+    user_id: null,
+    draft_position: null,
+    users: null,
   }))
 
   return (
@@ -156,7 +94,7 @@ export function LeagueOverview({ leagueId }: { leagueId: string }) {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">League Overview</h2>
         {isCommissioner && (
-          <DraftOrderManager leagueId={leagueId} maxTeams={maxTeams} onOrderUpdated={fetchLeagueData} />
+          <DraftOrderManager leagueId={leagueDetails.id} maxTeams={maxTeams} onOrderUpdated={() => {}} />
         )}
       </div>
       <div className="grid gap-4 md:grid-cols-2">
@@ -209,7 +147,6 @@ export function LeagueOverview({ leagueId }: { leagueId: string }) {
           </CardContent>
         </Card>
       </div>
-      {isCommissioner && assignedMembers.length < maxTeams && <InviteMembers leagueId={leagueId} />}
     </div>
   )
 }

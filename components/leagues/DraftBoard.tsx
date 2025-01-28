@@ -110,6 +110,7 @@ const renderDraftBoard = (
                   </div>
                   <span className="mt-1 text-xs font-medium truncate bg-background/80 backdrop-blur-sm px-2 py-0.5 rounded">
                     <span className="text-muted-foreground">({pick.league_teams.seed})</span>{" "}
+                    
                     {pick.league_teams.name}
                   </span>
                 </div>

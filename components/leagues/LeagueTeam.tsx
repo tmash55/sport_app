@@ -3,13 +3,14 @@
 import { useEffect, useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Trophy, X } from "lucide-react"
+import { Trophy, X, ChevronUp, ChevronDown, ChevronsUpDown, ChevronDownIcon, CheckIcon } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { useLeague } from "@/app/context/LeagueContext"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import Image from "next/image"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 type LeagueMember = {
   id: string
@@ -40,18 +41,29 @@ type DraftedTeam = {
   totalScore: number
 }
 
+type SortConfig = {
+  key: string
+  direction: "ascending" | "descending"
+}
+
 export function LeagueTeam() {
   const { leagueData, isLoading, error } = useLeague()
   const { toast } = useToast()
+  const [imagesLoaded, setImagesLoaded] = useState(false)
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "", direction: "ascending" })
 
   const { leagueMember, draftedTeams } = useMemo(() => {
     if (!leagueData) return { leagueMember: null, draftedTeams: [] }
 
-    const currentUser = leagueData.league_members.find((member: any) => member.user_id === leagueData.user_id)
-    if (!currentUser) return { leagueMember: null, draftedTeams: [] }
+    const selectedMember =
+      leagueData.league_members.find((member: any) => member.id === selectedMemberId) ||
+      leagueData.league_members.find((member: any) => member.user_id === leagueData.user_id)
+
+    if (!selectedMember) return { leagueMember: null, draftedTeams: [] }
 
     const teamsWithScores = leagueData.draft_picks
-      .filter((pick: any) => pick.league_member_id === currentUser.id)
+      .filter((pick: any) => pick.league_member_id === selectedMember.id)
       .map((pick: any) => {
         const team = pick.league_teams
         const globalTeam = team.global_teams
@@ -65,8 +77,8 @@ export function LeagueTeam() {
         return { ...team, scores, totalScore }
       })
 
-    return { leagueMember: currentUser, draftedTeams: teamsWithScores }
-  }, [leagueData])
+    return { leagueMember: selectedMember, draftedTeams: teamsWithScores }
+  }, [leagueData, selectedMemberId])
 
   useEffect(() => {
     if (error) {
@@ -77,6 +89,63 @@ export function LeagueTeam() {
       })
     }
   }, [error, toast])
+
+  useEffect(() => {
+    if (draftedTeams.length > 0) {
+      const checkImageUrls = async () => {
+        const imagePromises = draftedTeams.map(async (team) => {
+          if (team.global_teams.logo_filename) {
+            const url = getLogoUrl(team.global_teams.logo_filename) || "/placeholder.svg"
+            try {
+              const response = await fetch(url, { method: "HEAD" })
+              return response.ok
+            } catch (error) {
+              console.error(`Error checking image URL ${url}:`, error)
+              return false
+            }
+          }
+          return true
+        })
+
+        await Promise.all(imagePromises)
+        setImagesLoaded(true)
+      }
+
+      checkImageUrls()
+    }
+  }, [draftedTeams])
+
+  const sortedTeams = useMemo(() => {
+    if (!sortConfig.key) return draftedTeams
+
+    return [...draftedTeams].sort((a, b) => {
+      if (sortConfig.key === "name") {
+        return sortConfig.direction === "ascending" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
+      }
+      if (sortConfig.key === "seed") {
+        return sortConfig.direction === "ascending"
+          ? a.global_teams.seed - b.global_teams.seed
+          : b.global_teams.seed - a.global_teams.seed
+      }
+      if (sortConfig.key.startsWith("round_")) {
+        const roundIndex = Number.parseInt(sortConfig.key.split("_")[1]) - 1
+        return sortConfig.direction === "ascending"
+          ? a.scores[roundIndex] - b.scores[roundIndex]
+          : b.scores[roundIndex] - a.scores[roundIndex]
+      }
+      if (sortConfig.key === "totalScore") {
+        return sortConfig.direction === "ascending" ? a.totalScore - b.totalScore : b.totalScore - a.totalScore
+      }
+      return 0
+    })
+  }, [draftedTeams, sortConfig])
+
+  const handleSort = (key: string) => {
+    setSortConfig((prevConfig) => ({
+      key,
+      direction: prevConfig.key === key && prevConfig.direction === "ascending" ? "descending" : "ascending",
+    }))
+  }
 
   if (isLoading) {
     return <Skeleton className="h-[600px] w-full" />
@@ -92,126 +161,166 @@ export function LeagueTeam() {
 
   return (
     <Card className="w-full">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-2xl font-bold">
-          {leagueMember?.team_name || leagueMember?.users.display_name || "User's Team"}
-        </CardTitle>
-        <Avatar className="h-12 w-12">
-          <AvatarImage src={leagueMember?.avatar_url || undefined} alt={leagueMember?.users.display_name || "User"} />
-          <AvatarFallback>{leagueMember?.users.display_name?.[0] || "U"}</AvatarFallback>
-        </Avatar>
+     <CardHeader className="space-y-4 px-0 pb-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-4 px-4">
+          <div className="flex flex-col items-start gap-2">
+            <CardTitle className="text-xl sm:text-2xl font-bold whitespace-nowrap bg-gradient-to-r from-primary/90 to-primary bg-clip-text text-transparent">
+              {leagueMember?.team_name || leagueMember?.users.display_name || "User's Team"}
+            </CardTitle>
+            <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80">
+              Total Score: {draftedTeams.reduce((sum, team) => sum + team.totalScore, 0)}
+            </div>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full sm:w-[250px] justify-start font-medium border-2 hover:border-primary/50 transition-colors"
+              >
+                <span className="truncate">
+                  {leagueMember?.team_name || leagueMember?.users.display_name || "Select Team"}
+                </span>
+                <ChevronDownIcon className="ml-auto h-4 w-4 shrink-0 opacity-50 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-[250px]">
+              {leagueData?.league_members.map((member: LeagueMember) => (
+                <DropdownMenuItem
+                  key={member.id}
+                  onSelect={() => setSelectedMemberId(member.id)}
+                  className="font-medium"
+                >
+                  {member.team_name || member.users.display_name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </CardHeader>
+
       <CardContent>
         <div className="space-y-4">
-          {/* Mobile view */}
-          <div className="md:hidden space-y-4">
-            {draftedTeams.map((team: any) => (
+          {/* Cards view (visible only on mobile screens) */}
+          <div className="grid grid-cols-1 gap-4 md:hidden">
+            {sortedTeams.map((team) => (
               <TeamCard key={team.id} team={team} getLogoUrl={getLogoUrl} />
             ))}
           </div>
 
-          {/* Desktop view */}
-          <div className="hidden md:block">
-            <ScrollArea className="w-full whitespace-nowrap rounded-md border">
-              <div className="w-full">
-                <table className="w-full caption-bottom text-sm">
-                  <thead className="[&_tr]:border-b">
-                    <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[200px]">
+          {/* Table view (visible from medium screens and up) */}
+          <div className="hidden md:block overflow-x-auto">
+            <div className="w-full min-w-[800px] whitespace-nowrap rounded-md border">
+              <table className="w-full caption-bottom text-sm">
+                <thead className="[&_tr]:border-b">
+                  <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                    <th
+                      className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[200px] cursor-pointer"
+                      onClick={() => handleSort("name")}
+                    >
+                      <div className="flex items-center">
                         Team
-                      </th>
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[100px]">
+                        <SortIcon column="name" sortConfig={sortConfig} />
+                      </div>
+                    </th>
+                    <th
+                      className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[100px] cursor-pointer"
+                      onClick={() => handleSort("seed")}
+                    >
+                      <div className="flex items-center">
                         Seed
-                      </th>
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[100px]">
-                        R1
-                      </th>
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[100px]">
-                        R2
-                      </th>
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[100px]">
-                        R3
-                      </th>
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[100px]">
-                        R4
-                      </th>
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[100px]">
-                        R5
-                      </th>
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[100px]">
-                        R6
-                      </th>
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[100px]">
-                        Total
-                      </th>
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[120px]">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="[&_tr:last-child]:border-0">
-                    {draftedTeams.map((team: any) => (
-                      <tr
-                        key={team.id}
-                        className={cn(
-                          "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
-                          team.global_teams.is_eliminated && "bg-destructive/10",
-                        )}
+                        <SortIcon column="seed" sortConfig={sortConfig} />
+                      </div>
+                    </th>
+                    {[1, 2, 3, 4, 5, 6].map((round) => (
+                      <th
+                        key={round}
+                        className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[100px] cursor-pointer"
+                        onClick={() => handleSort(`round_${round}`)}
                       >
-                        <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={cn(
-                                "flex h-8 w-8 items-center justify-center rounded-full",
-                                team.global_teams.is_eliminated ? "bg-destructive/10" : "bg-muted",
-                              )}
-                            >
-                              {team.global_teams.logo_filename ? (
-                                <Image
+                        <div className="flex items-center">
+                          R{round}
+                          <SortIcon column={`round_${round}`} sortConfig={sortConfig} />
+                        </div>
+                      </th>
+                    ))}
+                    <th
+                      className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[100px] cursor-pointer"
+                      onClick={() => handleSort("totalScore")}
+                    >
+                      <div className="flex items-center">
+                        Total
+                        <SortIcon column="totalScore" sortConfig={sortConfig} />
+                      </div>
+                    </th>
+                    <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[120px]">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="[&_tr:last-child]:border-0">
+                  {sortedTeams.map((team: any) => (
+                    <tr
+                      key={team.id}
+                      className={cn(
+                        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted even:bg-muted/5",
+                        team.global_teams.is_eliminated && "bg-destructive/10",
+                      )}
+                    >
+                      <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={cn(
+                              "flex h-8 w-8 items-center justify-center rounded-full",
+                              team.global_teams.is_eliminated ? "bg-destructive/10" : "bg-muted",
+                            )}
+                          >
+                            {team.global_teams.logo_filename ? (
+                              <Image
                                 src={getLogoUrl(team.global_teams.logo_filename) || "/placeholder.svg"}
                                 alt={`${team.name} logo`}
                                 width={40}
                                 height={40}
                                 className={cn("object-contain", team.global_teams.is_eliminated && "opacity-50")}
                               />
-                              ) : (
-                                <Trophy
-                                  className={cn(
-                                    "h-4 w-4",
-                                    team.global_teams.is_eliminated ? "text-destructive" : "text-primary",
-                                  )}
-                                />
-                              )}
-                            </div>
-                            <span className={cn(team.global_teams.is_eliminated && "text-destructive")}>
-                              {team.name}
-                            </span>
+                            ) : (
+                              <Trophy
+                                className={cn(
+                                  "h-4 w-4",
+                                  team.global_teams.is_eliminated ? "text-destructive" : "text-primary",
+                                )}
+                              />
+                            )}
                           </div>
+                          <span className={cn(team.global_teams.is_eliminated && "text-destructive")}>{team.name}</span>
+                        </div>
+                      </td>
+                      <td className="p-4 align-middle">{team.global_teams.seed}</td>
+                      {team.scores.map((score: any, index: any) => (
+                        <td key={index} className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                          {score}
                         </td>
-                        <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">{team.global_teams.seed}</td>
-                        {team.scores.map((score: any, index: any) => (
-                          <td key={index} className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
-                            {score}
-                          </td>
-                        ))}
-                        <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 font-bold">{team.totalScore}</td>
-                        <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
-                          {team.global_teams.is_eliminated ? (
-                            <span className="text-xs bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full inline-flex items-center">
-                              <X className="w-3 h-3 mr-1" />
-                              Eliminated
-                            </span>
-                          ) : (
-                            <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full">Active</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
+                      ))}
+                      <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 font-bold bg-primary/5">
+                        {team.totalScore}
+                      </td>
+                      <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                        {team.global_teams.is_eliminated ? (
+                          <span className="inline-flex items-center rounded-full bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive">
+                            <X className="mr-1 h-3 w-3" />
+                            Eliminated
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700">
+                            <CheckIcon className="mr-1 h-3 w-3" />
+                            Active
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </CardContent>
@@ -232,12 +341,12 @@ function TeamCard({ team, getLogoUrl }: { team: DraftedTeam; getLogoUrl: (filena
           >
             {team.global_teams.logo_filename ? (
               <Image
-              src={getLogoUrl(team.global_teams.logo_filename) || "/placeholder.svg"}
-              alt={`${team.name} logo`}
-              width={40}
-              height={40}
-              className={cn("object-contain", team.global_teams.is_eliminated && "opacity-50")}
-            />
+                src={getLogoUrl(team.global_teams.logo_filename) || "/placeholder.svg"}
+                alt={`${team.name} logo`}
+                width={40}
+                height={40}
+                className={cn("object-contain", team.global_teams.is_eliminated && "opacity-50")}
+              />
             ) : (
               <Trophy
                 className={cn("h-6 w-6", team.global_teams.is_eliminated ? "text-destructive" : "text-primary")}
@@ -262,7 +371,7 @@ function TeamCard({ team, getLogoUrl }: { team: DraftedTeam; getLogoUrl: (filena
               <div className="text-xs text-muted-foreground mb-1">R{index + 1}</div>
               <div
                 className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-lg font-medium",
+                  "flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg font-medium text-xs sm:text-sm",
                   team.global_teams.is_eliminated ? "bg-destructive/10 text-destructive" : "bg-muted",
                 )}
               >
@@ -276,7 +385,7 @@ function TeamCard({ team, getLogoUrl }: { team: DraftedTeam; getLogoUrl: (filena
             <div className="text-xs text-muted-foreground mb-1">Total</div>
             <div
               className={cn(
-                "flex h-10 min-w-[4rem] items-center justify-center rounded-lg font-semibold px-3",
+                "flex h-8 sm:h-10 min-w-[3rem] sm:min-w-[4rem] items-center justify-center rounded-lg font-semibold px-2 sm:px-3 text-sm sm:text-base",
                 team.global_teams.is_eliminated ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary",
               )}
             >
@@ -296,4 +405,16 @@ function TeamCard({ team, getLogoUrl }: { team: DraftedTeam; getLogoUrl: (filena
     </Card>
   )
 }
+
+function SortIcon({ column, sortConfig }: { column: string; sortConfig: SortConfig }) {
+  if (sortConfig.key !== column) {
+    return <ChevronsUpDown className="ml-2 h-4 w-4 text-muted-foreground" />
+  }
+  return sortConfig.direction === "ascending" ? (
+    <ChevronUp className="ml-2 h-4 w-4" />
+  ) : (
+    <ChevronDown className="ml-2 h-4 w-4" />
+  )
+}
+
 

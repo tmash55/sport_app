@@ -57,7 +57,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <Trophy className="size-5" />
                 </div>
-                <span className="font-semibold text-lg  transition-colors">Prime Slate</span>
+                <span className="font-semibold text-lg  transition-colors">DRYFT Pools</span>
                
               </Link>
             </SidebarMenuButton>

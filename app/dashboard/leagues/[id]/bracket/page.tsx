@@ -1,11 +1,12 @@
-import React from 'react'
+import { Bracket } from "@/components/bracket/Bracket"
+import { BracketHeader } from "@/components/bracket/BracketHeader"
+import React from "react"
 
-const page = () => {
+export default function BracketPage() {
   return (
-    <div>
-      
+    <div className="space-y-6 w-full overflow-x-auto">
+      <Bracket />
     </div>
   )
 }
 
-export default page

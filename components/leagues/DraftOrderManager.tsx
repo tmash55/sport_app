@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { createClient } from "@/libs/supabase/client"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -12,10 +11,11 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Loader2, X } from "lucide-react"
+import { Loader2 } from "lucide-react"
+import { useLeague } from "@/app/context/LeagueContext"
+import { createClient } from "@/libs/supabase/client"
 
 interface User {
   id: string
@@ -40,93 +40,48 @@ interface DraftOrderManagerProps {
 export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftOrderManagerProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [draftOrder, setDraftOrder] = useState<(LeagueMember | null)[]>(Array(maxTeams).fill(null))
-  const [unassignedMembers, setUnassignedMembers] = useState<LeagueMember[]>([])
-  const supabase = createClient()
+  const [draftOrder, setDraftOrder] = useState<(LeagueMember | null)[]>([])
+  const [allMembers, setAllMembers] = useState<LeagueMember[]>([])
+  const { leagueData } = useLeague()
   const { toast } = useToast()
 
-  const fetchLeagueMembers = async () => {
-    const { data, error } = await supabase
-      .from("league_members")
-      .select(`
-        id, 
-        draft_position, 
-        league_id,
-        team_name,
-        users (
-          id,
-          email,
-          display_name
-        )
-      `)
-      .eq("league_id", leagueId)
+  const loadDraftOrder = useCallback(() => {
+    if (!leagueData) return
 
-    if (error) {
-      throw new Error(`Failed to fetch league members: ${error.message}`)
-    }
+    const members = leagueData.league_members
+    const newDraftOrder = Array(maxTeams).fill(null)
 
-    return data as LeagueMember[]
-  }
+    members.forEach((member: LeagueMember) => {
+      if (member.draft_position !== null && member.draft_position <= maxTeams) {
+        newDraftOrder[member.draft_position - 1] = member
+      }
+    })
 
-  const loadDraftOrder = async () => {
-    setIsLoading(true)
-    try {
-      const members = await fetchLeagueMembers()
-      const newDraftOrder = Array(maxTeams).fill(null)
-      const newUnassignedMembers: LeagueMember[] = []
-
-      members.forEach((member) => {
-        if (member.draft_position !== null && member.draft_position <= maxTeams) {
-          newDraftOrder[member.draft_position - 1] = member
-        } else {
-          newUnassignedMembers.push(member)
-        }
-      })
-
-      setDraftOrder(newDraftOrder)
-      setUnassignedMembers(newUnassignedMembers)
-    } catch (error) {
-      console.error("Error loading draft order:", error)
-      toast({
-        title: "Error",
-        description: "Failed to load draft order. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
+    setDraftOrder(newDraftOrder)
+    setAllMembers(members)
+  }, [leagueData, maxTeams])
 
   useEffect(() => {
     if (isOpen) {
       loadDraftOrder()
     }
-  }, [isOpen])
+  }, [isOpen, loadDraftOrder])
 
-  const assignMember = async (memberId: string, position: number) => {
+  const handleAction = async (action: () => void, successMessage: string) => {
     setIsLoading(true)
     try {
-      const { error } = await supabase
-        .from("league_members")
-        .update({
-          draft_position: position,
-        })
-        .eq("id", memberId)
-        .eq("league_id", leagueId)
-
-      if (error) throw error
-
-      await loadDraftOrder()
+      action()
+      loadDraftOrder()
+      onOrderUpdated()
       toast({
         title: "Success",
-        description: "Draft position updated.",
+        description: successMessage,
       })
-      onOrderUpdated()
     } catch (error) {
-      console.error("Error updating draft position:", error)
+      console.error("Error performing action:", error)
       toast({
         title: "Error",
-        description: "Failed to update draft position. Please try again.",
+        description: "Failed to perform action. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -134,106 +89,110 @@ export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftO
     }
   }
 
-  const removeMember = async (memberId: string) => {
-    setIsLoading(true)
-    try {
-      const { error } = await supabase
-        .from("league_members")
-        .update({
-          draft_position: null,
-        })
-        .eq("id", memberId)
-        .eq("league_id", leagueId)
+  const assignMember = (memberId: string, position: number) => {
+    handleAction(() => {
+      const newDraftOrder = [...draftOrder]
 
-      if (error) throw error
+      if (memberId === "unassigned") {
+        // If the current position has a member, update their draft_position to null
+        if (newDraftOrder[position - 1]) {
+          const memberToUnassign = allMembers.find((m) => m.id === newDraftOrder[position - 1]?.id)
+          if (memberToUnassign) {
+            memberToUnassign.draft_position = null
+          }
+        }
+        newDraftOrder[position - 1] = null
+      } else {
+        const memberToAssign = allMembers.find((m) => m.id === memberId)
 
-      await loadDraftOrder()
-      toast({
-        title: "Success",
-        description: "Member removed from draft position.",
+        // Remove the member from their previous position if they had one
+        const previousPosition = newDraftOrder.findIndex((m) => m?.id === memberId)
+        if (previousPosition !== -1) {
+          newDraftOrder[previousPosition] = null
+        }
+
+        // Assign the member to the new position
+        if (memberToAssign) {
+          memberToAssign.draft_position = position
+          newDraftOrder[position - 1] = memberToAssign
+        }
+      }
+
+      setDraftOrder(newDraftOrder)
+    }, "Draft position updated.")
+  }
+
+  const randomizeDraftOrder = () => {
+    handleAction(() => {
+      const shuffled = [...allMembers].sort(() => Math.random() - 0.5)
+      const newDraftOrder = Array(maxTeams).fill(null)
+
+      shuffled.forEach((member, index) => {
+        if (index < maxTeams) {
+          member.draft_position = index + 1
+          newDraftOrder[index] = member
+        } else {
+          member.draft_position = null
+        }
       })
-      onOrderUpdated()
-    } catch (error) {
-      console.error("Error removing member from draft position:", error)
+
+      setDraftOrder(newDraftOrder)
+    }, "Draft order has been randomized.")
+  }
+
+  const resetDraftOrder = () => {
+    handleAction(() => {
+      allMembers.forEach((member) => (member.draft_position = null))
+      setDraftOrder(Array(maxTeams).fill(null))
+    }, "Draft order has been reset.")
+  }
+
+  const saveDraftOrderToDatabase = async () => {
+    const supabase = createClient()
+    const updates = allMembers.map((member) => ({
+      id: member.id,
+      draft_position: member.draft_position,
+      league_id: leagueId,
+    }))
+
+    const { error } = await supabase.from("league_members").upsert(updates, { onConflict: "id" })
+
+    if (error) {
+      console.error("Error saving draft order:", error)
       toast({
         title: "Error",
-        description: "Failed to remove member from draft position. Please try again.",
+        description: `Failed to save draft order: ${error.message}`,
         variant: "destructive",
       })
-    } finally {
-      setIsLoading(false)
+    } else {
+      toast({
+        title: "Success",
+        description: "Draft order saved successfully.",
+      })
+      onOrderUpdated()
     }
   }
 
-  const randomizeDraftOrder = async () => {
-    setIsLoading(true)
-    try {
-      const members = await fetchLeagueMembers()
-      const shuffled = [...members].sort(() => Math.random() - 0.5)
-
-      const updates = shuffled.map((member, index) => ({
-        id: member.id,
-        draft_position: index < maxTeams ? index + 1 : null,
-      }))
-
-      const { error } = await supabase.from("league_members").upsert(updates)
-
-      if (error) throw error
-
-      await loadDraftOrder()
-      toast({
-        title: "Success",
-        description: "Draft order has been randomized.",
-      })
-      onOrderUpdated()
-    } catch (error) {
-      console.error("Error randomizing draft order:", error)
-      toast({
-        title: "Error",
-        description: "Failed to randomize draft order. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const resetDraftOrder = async () => {
-    setIsLoading(true)
-    try {
-      const members = await fetchLeagueMembers()
-
-      const updates = members.map((member) => ({
-        id: member.id,
-        draft_position: null as number | null,
-      }))
-
-      const { error } = await supabase.from("league_members").upsert(updates)
-
-      if (error) throw error
-
-      await loadDraftOrder()
-      toast({
-        title: "Success",
-        description: "Draft order has been reset.",
-      })
-      onOrderUpdated()
-    } catch (error) {
-      console.error("Error resetting draft order:", error)
-      toast({
-        title: "Error",
-        description: "Failed to reset draft order. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
+  const getAvailableMembers = (currentPosition: number) => {
+    const currentMember = draftOrder[currentPosition - 1]
+    return allMembers.filter(
+      (member) =>
+        member.draft_position === null || member.draft_position === currentPosition || member.id === currentMember?.id,
+    )
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          saveDraftOrderToDatabase()
+        }
+        setIsOpen(open)
+      }}
+    >
       <DialogTrigger asChild>
-        <Button variant="outline">Manage Draft Order</Button>
+        <Button variant="default">Manage Draft Order</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -246,43 +205,27 @@ export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftO
               <Loader2 className="h-6 w-6 animate-spin" />
             </div>
           ) : (
-            draftOrder.map((member, index) => (
-              <Popover key={index}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-between group">
-                    <span>
-                      {index + 1}.{" "}
-                      {member ? member.team_name || member.users[0]?.display_name || "Unknown" : "Unassigned"}
-                    </span>
-                    {member && (
-                      <span
-                        className="ml-2 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          removeMember(member.id)
-                        }}
-                      >
-                        <X size={16} />
-                      </span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-56 p-0">
-                  <ScrollArea className="h-[200px]">
-                    {unassignedMembers.map((unassignedMember) => (
-                      <Button
-                        key={unassignedMember.id}
-                        variant="ghost"
-                        className="w-full justify-start hover:bg-primary hover:text-primary-foreground"
-                        onClick={() => assignMember(unassignedMember.id, index + 1)}
-                      >
-                        {unassignedMember.team_name || unassignedMember.users[0]?.display_name || "Unknown"}
-                      </Button>
-                    ))}
-                  </ScrollArea>
-                </PopoverContent>
-              </Popover>
-            ))
+            draftOrder.map((member, index) => {
+              const availableMembers = getAvailableMembers(index + 1)
+              return (
+                <div key={index} className="flex items-center space-x-2">
+                  <span className="w-6 text-right">{index + 1}.</span>
+                  <Select value={member?.id || "unassigned"} onValueChange={(value) => assignMember(value, index + 1)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a member" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                      {availableMembers.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.team_name || m.users[0]?.display_name || "Unknown"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )
+            })
           )}
         </div>
         <DialogFooter className="flex justify-between">

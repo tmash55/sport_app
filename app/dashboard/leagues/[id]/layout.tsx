@@ -73,8 +73,7 @@ export default async function LeagueLayout({
       <LeagueProvider leagueId={params.id}>
         <div className="flex flex-col min-h-[calc(100vh-5rem)]">
           <div className="flex-grow overflow-y-auto">
-            <div className="container max-w-7xl mx-auto px-4 py-6 space-y-6">
-              <LeagueHeader />
+            <div className="container max-w-7xl mx-auto px-4 py-6 space-y-6 border border-r-">
               <LeagueNavigation />
               <main>{children}</main>
             </div>
