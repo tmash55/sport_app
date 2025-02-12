@@ -41,6 +41,8 @@
     "@tanstack/react-query-devtools": "^5.66.0",
     "@tsparticles/react": "^3.0.0",
     "@tsparticles/slim": "^3.7.1",
+    "@vercel/analytics": "^1.5.0",
+    "@vercel/speed-insights": "^1.2.0",
     "axios": "^1.6.8",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
