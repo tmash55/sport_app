@@ -1,30 +1,34 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import type React from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import AuthForm from '@/components/Auth/AuthForm'
+import AuthForm from "@/components/Auth/AuthForm"
 import { createClient } from "@/libs/supabase/client"
-import { createLeague } from '@/app/actions/createLeague'
+import { createLeague } from "@/app/actions/createLeague"
+import { Trophy, Users } from "lucide-react"
 
 interface PoolDetailsFormProps {
-  contestId: string;
-  contestName: string;
+  contestId: string
+  contestName: string
 }
 
 export function PoolDetailsForm({ contestId, contestName }: PoolDetailsFormProps) {
-  const [leagueName, setLeagueName] = useState('')
+  const [leagueName, setLeagueName] = useState("")
+  const [maxTeams, setMaxTeams] = useState("8")
   const [isLoading, setIsLoading] = useState(false)
   const [showAuthForm, setShowAuthForm] = useState(false)
-  const [authType, setAuthType] = useState<'signin' | 'signup'>('signup')
-  const [contestDetails, setContestDetails] = useState<{ name: string, contest_type: string, sport: string } | null>({
+  const [authType, setAuthType] = useState<"signin" | "signup">("signup")
+  const [contestDetails, setContestDetails] = useState<{ name: string; contest_type: string; sport: string } | null>({
     name: contestName,
-    contest_type: '',
-    sport: ''
+    contest_type: "",
+    sport: "",
   })
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const router = useRouter()
@@ -33,23 +37,16 @@ export function PoolDetailsForm({ contestId, contestName }: PoolDetailsFormProps
 
   useEffect(() => {
     const fetchContestDetails = async () => {
-      console.log('Fetching contest details for ID:', contestId)
-      const { data, error } = await supabase
-        .from("contests")
-        .select("contest_type, sport")
-        .eq("id", contestId)
-        .single()
+      const { data, error } = await supabase.from("contests").select("contest_type, sport").eq("id", contestId).single()
 
       if (error) {
-        console.error('Error fetching contest details:', error)
         toast({
           title: "Error",
           description: "Failed to fetch contest details. Please try again.",
           variant: "destructive",
         })
       } else if (data) {
-        console.log('Contest details fetched:', data)
-        setContestDetails(prevDetails => ({ ...prevDetails, ...data }))
+        setContestDetails((prevDetails) => ({ ...prevDetails, ...data }))
       }
     }
 
@@ -58,7 +55,9 @@ export function PoolDetailsForm({ contestId, contestName }: PoolDetailsFormProps
   }, [contestId, supabase, toast])
 
   const checkAuthStatus = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     setIsAuthenticated(!!user)
   }
 
@@ -72,30 +71,26 @@ export function PoolDetailsForm({ contestId, contestName }: PoolDetailsFormProps
         return
       }
 
-      console.log('Handling form submission')
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser()
 
       if (userError) {
-        console.error('User authentication error:', userError)
         throw new Error("User not authenticated")
       }
 
       if (user) {
-        console.log('User authenticated, creating league')
-        const result = await createLeague(leagueName, contestId)
-        if ('error' in result) {
-          console.error('Error from createLeague:', result.error)
+        const result = await createLeague(leagueName, contestId, Number.parseInt(maxTeams))
+        if ("error" in result) {
           throw new Error(result.error)
         }
-        console.log('League created successfully:', result)
         router.push(`/dashboard/leagues/${result.leagueId}`)
       } else {
-        console.log('User not authenticated, showing auth form')
         setShowAuthForm(true)
-        setAuthType('signup')
+        setAuthType("signup")
       }
     } catch (error) {
-      console.error('Error in handleSubmit:', error)
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "An unexpected error occurred",
@@ -107,19 +102,16 @@ export function PoolDetailsForm({ contestId, contestName }: PoolDetailsFormProps
   }
 
   const handleAuthSuccess = async (userId: string) => {
-    console.log('Auth success, creating league for user:', userId)
     setShowAuthForm(false)
     setIsAuthenticated(true)
-    const result = await createLeague(leagueName, contestId)
-    if ('error' in result) {
-      console.error('Error creating league after auth:', result.error)
+    const result = await createLeague(leagueName, contestId, Number.parseInt(maxTeams))
+    if ("error" in result) {
       toast({
         title: "Error",
         description: result.error,
         variant: "destructive",
       })
     } else {
-      console.log('League created successfully after auth:', result)
       router.push(`/dashboard/leagues/${result.leagueId}`)
     }
   }
@@ -129,17 +121,17 @@ export function PoolDetailsForm({ contestId, contestName }: PoolDetailsFormProps
       <div className="max-w-md mx-auto">
         <AuthForm type={authType} onSuccess={handleAuthSuccess} />
         <div className="mt-4 text-center">
-          {authType === 'signup' ? (
+          {authType === "signup" ? (
             <p>
-              Already have an account?{' '}
-              <Button variant="link" onClick={() => setAuthType('signin')}>
+              Already have an account?{" "}
+              <Button variant="link" onClick={() => setAuthType("signin")}>
                 Sign in
               </Button>
             </p>
           ) : (
             <p>
-              Don&apos;t have an account?{' '}
-              <Button variant="link" onClick={() => setAuthType('signup')}>
+              Don&apos;t have an account?{" "}
+              <Button variant="link" onClick={() => setAuthType("signup")}>
                 Sign up
               </Button>
             </p>
@@ -150,46 +142,66 @@ export function PoolDetailsForm({ contestId, contestName }: PoolDetailsFormProps
   }
 
   return (
-    <Card className="max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>League Details</CardTitle>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent>
-          <div className="space-y-4">
-            {contestDetails && (
-              <div>
-                <p>Contest: {contestDetails.name}</p>
-                <p>Type: {contestDetails.contest_type}</p>
-                <p>Sport: {contestDetails.sport}</p>
-              </div>
-            )}
-            <div>
-              <Label htmlFor="leagueName">League Name</Label>
-              <Input
-                id="leagueName"
-                value={leagueName}
-                onChange={(e) => setLeagueName(e.target.value)}
-                placeholder="My March Madness League"
-                required
-                minLength={3}
-                maxLength={50}
-              />
+    <Card className="max-w-2xl mx-auto bg-card/50 backdrop-blur">
+      <CardContent className="p-6">
+        <div className="space-y-6">
+          <div className="grid gap-4 p-4 rounded-lg bg-muted/50">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-primary" />
+              <span className="font-medium">Contest:</span>
+              <span>{contestDetails?.name}</span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              You&apos;ll be able to adjust more settings once the league is created.
-            </p>
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              <span className="font-medium">Sport:</span>
+              <span>{contestDetails?.sport.toUpperCase()}</span>
+            </div>
           </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button type="button" variant="outline" onClick={() => router.back()} disabled={isLoading}>
-            Back
-          </Button>
-          <Button type="submit" disabled={isLoading || leagueName.length < 3}>
-            {isLoading ? "Creating..." : isAuthenticated ? "Create League" : "Sign Up and Create League"}
-          </Button>
-        </CardFooter>
-      </form>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="leagueName">League Name</Label>
+                <Input
+                  id="leagueName"
+                  value={leagueName}
+                  onChange={(e) => setLeagueName(e.target.value)}
+                  placeholder="My March Madness Pool"
+                  required
+                  minLength={3}
+                  maxLength={50}
+                  className="bg-background"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="maxTeams">Number of Teams</Label>
+                <Select value={maxTeams} onValueChange={setMaxTeams}>
+                  <SelectTrigger id="maxTeams" className="bg-background">
+                    <SelectValue placeholder="Select number of teams" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[4, 6, 8, 10, 12].map((num) => (
+                      <SelectItem key={num} value={num.toString()}>
+                        {num} Teams
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="pt-4">
+              <p className="text-sm text-muted-foreground mb-6">
+                You&apos;ll be able to adjust more settings once the pool is created.
+              </p>
+              <Button type="submit" disabled={isLoading || leagueName.length < 3} className="w-full">
+                {isLoading ? "Creating..." : isAuthenticated ? "Create Pool" : "Sign Up and Create Pool"}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </CardContent>
     </Card>
   )
 }

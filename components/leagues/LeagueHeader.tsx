@@ -6,61 +6,33 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { DraftTimeModal } from "./DraftTimeModal"
 import { DraftCountdown } from "./DraftCountdown"
 import { InviteMembers } from "./InviteMembers"
-import { Button } from "@/components/ui/button"
+import { DraftOrderManager } from "./DraftOrderManager"
 import Link from "next/link"
-import { Trophy, Users, ArrowRight, Clock } from "lucide-react"
+import { Trophy, Users, ArrowRight, Clock, AlertTriangle, ShieldCheck } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
-import styled from "@emotion/styled"
-import { keyframes } from "@emotion/react"
+import { EnergizedButton } from "../ui/energized-button"
+import ButtonCheckout from "../ButtonCheckout"
+import config from "@/config"
+import ButtonAccount from "../ButtonAccount"
 
-const pulseAnimation = keyframes`
-  0% {
-    box-shadow: 0 0 0 0 rgba(255, 140, 0, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(255, 140, 0, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(255, 140, 0, 0);
-  }
-`
-
-const EnergizedButton = styled(Button)`
-  background-color: #ff8c00;
-  color: white;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  animation: ${pulseAnimation} 2s infinite;
-
-  &:hover {
-    background-color: #ff7300;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(255, 140, 0, 0.2);
-  }
-
-  &:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(255, 140, 0, 0.2);
-  }
-`
-
-function LeagueHeaderSkeleton() {
-  return (
-    <Card className="mb-4 sm:mb-6">
-      <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4">
-        <div className="space-y-2 mb-4 sm:mb-0">
-          <Skeleton className="h-6 sm:h-8 w-[150px] sm:w-[200px]" />
-          <Skeleton className="h-4 w-[200px] sm:w-[300px]" />
+const LeagueHeaderSkeleton = () => (
+  <Card className="mb-4 sm:mb-6">
+    <CardContent className="p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div className="space-y-3">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-32" />
         </div>
-        <Skeleton className="h-8 sm:h-10 w-full sm:w-[140px]" />
-      </CardContent>
-    </Card>
-  )
-}
+        <Skeleton className="h-12 w-24" />
+      </div>
+      <Skeleton className="h-12 w-full" />
+      <Skeleton className="h-12 w-full" />
+    </CardContent>
+  </Card>
+)
 
 export function LeagueHeader() {
   const { leagueData, isLoading, error } = useLeague()
-  console.log(leagueData)
 
   if (isLoading) return <LeagueHeaderSkeleton />
 
@@ -73,31 +45,41 @@ export function LeagueHeader() {
       </Card>
     )
   }
+  console.log(leagueData)
+  const { id: leagueId, name, contests, league_members, drafts, user_id, payment_status, league_settings } = leagueData
 
-  const { id: leagueId, name, contests, league_members, drafts, user_id } = leagueData
+  const userLeagueRole = league_members.find(
+    (member: any) => member.user_id === user_id
+  )?.role;
+  
+  const isCommissioner = userLeagueRole === "commissioner";
+  
+  const isLeagueFull = league_members.every((member: any) => member.user_id !== null)
+  const needsPayment = isCommissioner && payment_status !== "paid"
+  const isDraftCompleted = drafts.status === "completed"
+  const maxTeams = league_settings[0].max_teams
+  
 
-  const isCommissioner = leagueData.commissioner.id === user_id
-  const isLeagueFull = league_members.every((member:any) => member.user_id !== null)
   return (
     <Card className="mb-4 sm:mb-6">
       <CardContent className="p-6 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div className="space-y-3">
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">{name}</h1>
+          <div className="flex-1">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3">{name}</h1>
             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Trophy className="h-4 w-4 text-primary" />
-                <span className="font-medium">{contests.sport}</span>
+                <span className="font-medium">{contests.sport.toUpperCase()}</span>
               </div>
               <Separator orientation="vertical" className="h-4" />
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-primary" />
-                <span className="font-medium">{league_members.length} Members</span>
+                <span className="font-medium">{maxTeams} Members</span>
               </div>
               <Separator orientation="vertical" className="h-4" />
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-primary" />
-                <span className="font-medium">
+                <span className="font-medium"> Draft{" "}
                   {drafts.status === "pre_draft"
                     ? "Pre Draft"
                     : drafts.status === "in_progress"
@@ -111,7 +93,14 @@ export function LeagueHeader() {
               </div>
             </div>
           </div>
-          {isCommissioner && drafts.status === "pre_draft" && <DraftTimeModal />}
+          <div className="flex flex-col sm:flex-row items-start gap-4">
+          {isCommissioner && drafts.status === "pre_draft" && (
+            <>
+              <DraftOrderManager leagueId={leagueId} maxTeams={maxTeams} onOrderUpdated={() => {}} />
+              <DraftTimeModal />
+            </>
+          )}
+          </div>
         </div>
 
         {(drafts.status === "pre_draft" || drafts.status === "in_progress" || drafts.status === "paused") && (
@@ -125,13 +114,44 @@ export function LeagueHeader() {
                 </Link>
               </EnergizedButton>
             )}
-            {!isLeagueFull && (
-              <>
-                <Separator className="my-6" />
-                <InviteMembers leagueId={leagueId} />
-              </>
+
+            {needsPayment && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg space-y-6 my-8 shadow-md">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-6 w-6 text-warning flex-shrink-0 mt-1" />
+                  <div>
+                    <h3 className="font-bold text-lg mb-2">Don&apos;t get benched!</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Access to standings and scoring updates will be locked after the draft. Lock in your pool now and
+                      enjoy full access all tournament!
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col items-center">
+                  <ButtonCheckout
+                    priceId={config.stripe.plans[1].priceId}
+                    leagueId={leagueId}
+                    mode="payment"
+                    metadata={{ leagueId }}
+                    className="w-full sm:w-auto py-4 px-8 text-lg font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition-transform hover:scale-105"
+                  >
+                    Lock in Your Spot - Pay Now!
+                  </ButtonCheckout>
+                  <div className="flex items-center text-xs text-muted-foreground mt-3">
+                    <ShieldCheck className="h-4 w-4 mr-1" />
+                    Secure checkout via Stripe – Trusted by millions
+                  </div>
+                </div>
+              </div>
             )}
           </div>
+        )}
+
+        {!isLeagueFull && isCommissioner && (
+          <>
+            <Separator className="my-6" />
+            <InviteMembers leagueId={leagueId} />
+          </>
         )}
       </CardContent>
     </Card>

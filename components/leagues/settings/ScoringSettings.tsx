@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { RotateCcw } from "lucide-react"
 
 interface LeagueSettings {
   round_1_score: number
@@ -19,9 +21,12 @@ interface LeagueSettings {
 interface ScoringSettingsProps {
   leagueId: string
   isCommissioner: boolean
-  leagueSettings: LeagueSettings[] // Array of LeagueSettings
+  leagueSettings: LeagueSettings
   onUpdate: (updatedData: Partial<LeagueSettings>) => Promise<void>
 }
+
+const DEFAULT_ROUND_SCORES = [1, 2, 4, 8, 16, 32]
+const DEFAULT_UPSET_MULTIPLIER = 1
 
 export function ScoringSettings({ leagueId, isCommissioner, leagueSettings, onUpdate }: ScoringSettingsProps) {
   const [roundScores, setRoundScores] = useState<number[]>([])
@@ -29,22 +34,19 @@ export function ScoringSettings({ leagueId, isCommissioner, leagueSettings, onUp
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
 
-  // Extract the first object from the array
-  const settings = leagueSettings.length > 0 ? leagueSettings[0] : null
-
   useEffect(() => {
-    if (settings) {
+    if (leagueSettings) {
       setRoundScores([
-        settings.round_1_score,
-        settings.round_2_score,
-        settings.round_3_score,
-        settings.round_4_score,
-        settings.round_5_score,
-        settings.round_6_score,
+        leagueSettings.round_1_score,
+        leagueSettings.round_2_score,
+        leagueSettings.round_3_score,
+        leagueSettings.round_4_score,
+        leagueSettings.round_5_score,
+        leagueSettings.round_6_score,
       ])
-      setUpsetMultiplier(settings.upset_multiplier)
+      setUpsetMultiplier(leagueSettings.upset_multiplier)
     }
-  }, [settings])
+  }, [leagueSettings])
 
   const handleSave = useCallback(async () => {
     if (!isCommissioner) return
@@ -79,55 +81,95 @@ export function ScoringSettings({ leagueId, isCommissioner, leagueSettings, onUp
     }
   }, [isCommissioner, roundScores, upsetMultiplier, onUpdate, toast])
 
-  if (!settings) {
+  const handleResetToDefault = useCallback(() => {
+    setRoundScores(DEFAULT_ROUND_SCORES)
+    setUpsetMultiplier(DEFAULT_UPSET_MULTIPLIER)
+    toast({
+      title: "Default Values Set",
+      description: "Scoring settings have been reset to default values. Don't forget to save your changes.",
+    })
+  }, [toast])
+
+  if (!leagueSettings) {
     return <p className="text-center">No league settings available.</p>
   }
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4">
-        {roundScores.map((score, index) => (
-          <div key={index} className="contents">
-            <Label htmlFor={`round${index + 1}Score`} className="flex items-center">
-              Round {index + 1} Score
-            </Label>
-            <div>
-              <Input
-                id={`round${index + 1}Score`}
-                type="number"
-                min={1}
-                value={score}
-                onChange={(e) => {
-                  const newScores = [...roundScores]
-                  newScores[index] = Number(e.target.value) || 0
-                  setRoundScores(newScores)
-                }}
-                disabled={!isCommissioner || isLoading}
-                className="w-24"
-              />
-            </div>
-          </div>
-        ))}
-        <Label htmlFor="upsetMultiplier" className="flex items-center">
-          Upset Multiplier
-        </Label>
-        <div>
-          <Input
-            id="upsetMultiplier"
-            type="number"
-            min={1}
-            step={0.1}
-            value={upsetMultiplier}
-            onChange={(e) => {
-              const newValue = Number(e.target.value) || 1
-              setUpsetMultiplier(newValue)
-            }}
-            disabled={!isCommissioner || isLoading}
-            className="w-24"
-          />
-        </div>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Scoring Settings</h2>
+        <Button variant="outline" onClick={handleResetToDefault} disabled={!isCommissioner || isLoading}>
+          <RotateCcw className="mr-2 h-4 w-4" />
+          Reset to Default
+        </Button>
       </div>
-      <Button onClick={handleSave} disabled={!isCommissioner || isLoading} className="mt-4">
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Round Scores</CardTitle>
+          <CardDescription>
+            Set the points awarded to a league member for each of their teams that win in a given round. Higher rounds
+            typically award more points to reflect the increasing difficulty.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {roundScores.map((score, index) => (
+              <div key={index} className="space-y-2">
+                <Label htmlFor={`round${index + 1}Score`} className="flex items-center">
+                  Round {index + 1}
+                </Label>
+                <Input
+                  id={`round${index + 1}Score`}
+                  type="number"
+                  min={1}
+                  value={score}
+                  onChange={(e) => {
+                    const newScores = [...roundScores]
+                    newScores[index] = Number(e.target.value) || 0
+                    setRoundScores(newScores)
+                  }}
+                  disabled={!isCommissioner || isLoading}
+                />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Upset Multiplier</CardTitle>
+          <CardDescription>
+            Set the multiplier for upset victories. This adds extra points when a lower-seeded team defeats a
+            higher-seeded team.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="upsetMultiplier">Upset Multiplier</Label>
+            <Input
+              id="upsetMultiplier"
+              type="number"
+              min={0}
+              step={0.1}
+              value={upsetMultiplier}
+              onChange={(e) => {
+                const newValue = Number(e.target.value) || 1
+                setUpsetMultiplier(newValue)
+              }}
+              disabled={!isCommissioner || isLoading}
+            />
+            <p className="text-sm text-muted-foreground">
+              Example: If a 12th seed beats a 5th seed (7 seed difference) and the upset multiplier is 1, the team earns
+              7 extra points on top of the round score. With a multiplier of 1.5, they would get 10.5 extra points (7 *
+              1.5).
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Button onClick={handleSave} disabled={!isCommissioner || isLoading} className="w-full">
         {isLoading ? "Saving..." : "Save Changes"}
       </Button>
     </div>

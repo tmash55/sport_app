@@ -1,41 +1,105 @@
-import Link from 'next/link'
-import { Facebook, Twitter, Instagram } from 'lucide-react'
+import Link from "next/link"
+import { Twitter, Mail, MapPin } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import config from "@/config";
+
 
 export function Footer() {
   return (
-    <footer className="bg-muted py-12">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-          <div>
-            <h3 className="font-bold mb-4">Quick Links</h3>
-            <ul className="space-y-2">
-              <li><Link href="/about" className="text-muted-foreground hover:text-foreground">About Us</Link></li>
-              <li><Link href="/contests" className="text-muted-foreground hover:text-foreground">Contests</Link></li>
-              <li><Link href="/help" className="text-muted-foreground hover:text-foreground">Help Center</Link></li>
-              <li><Link href="/privacy" className="text-muted-foreground hover:text-foreground">Privacy Policy</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-bold mb-4">Follow Us</h3>
+    <footer className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container px-4 md:px-6 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 lg:gap-12">
+          <div className="space-y-4 md:col-span-2 lg:col-span-1">
+            <Link href="/" className="flex items-center space-x-2">
+              <span className="text-2xl font-bold bg-gradient-to-r from-primary/90 to-primary bg-clip-text text-transparent">
+                dryft
+              </span>
+            </Link>
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Join the next generation of  sports pools and contests. Experience the thrill of live drafting and competitive
+              gameplay.
+            </p>
             <div className="flex space-x-4">
-              <Link href="#" className="text-muted-foreground hover:text-foreground">
-                <Facebook className="w-6 h-6" />
-              </Link>
-              <Link href="#" className="text-muted-foreground hover:text-foreground">
-                <Twitter className="w-6 h-6" />
-              </Link>
-              <Link href="#" className="text-muted-foreground hover:text-foreground">
-                <Instagram className="w-6 h-6" />
-              </Link>
+              <Button variant="ghost" size="icon" asChild className="hover:text-primary">
+                <Link href="https://twitter.com/dryft" target="_blank" rel="noopener noreferrer">
+                  <Twitter className="h-4 w-4" />
+                  <span className="sr-only">Twitter</span>
+                </Link>
+              </Button>
+              
             </div>
           </div>
-          <div className="sm:col-span-2 md:col-span-2">
-            <p className="text-2xl font-bold mb-2">DraftPlay</p>
-            <p className="text-muted-foreground">Where Every Play Counts</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 md:col-span-2 lg:col-span-3 gap-8">
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium">Product</h3>
+              <ul className="space-y-3 text-sm">
+                <li>
+                  <Link href="/pools" className="text-muted-foreground hover:text-primary transition-colors">
+                    Pools
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/" className="text-muted-foreground hover:text-primary transition-colors">
+                    Pricing
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/" className="text-muted-foreground hover:text-primary transition-colors">
+                    Features
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium">Company</h3>
+              <ul className="space-y-3 text-sm">
+                <li>
+                  <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">
+                    About Us
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/blog" className="text-muted-foreground hover:text-primary transition-colors">
+                    Blog
+                  </Link>
+                </li>
+                
+              </ul>
+            </div>
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium">Support</h3>
+              <ul className="space-y-3 text-sm">
+                <li>
+                  <Link href="/help" className="text-muted-foreground hover:text-primary transition-colors">
+                    Help Center
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/privacy-policy" className="text-muted-foreground hover:text-primary transition-colors">
+                    Privacy
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/tos" className="text-muted-foreground hover:text-primary transition-colors">
+                    Terms
+                  </Link>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
-        <div className="mt-8 pt-8 border-t border-muted-foreground/20 text-center text-muted-foreground">
-          © {new Date().getFullYear()} DraftPlay. All rights reserved.
+        <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} dryft. All rights reserved.</p>
+          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+            <Link href="mailto:contact@dryft.com" className="flex items-center hover:text-primary transition-colors">
+              <Mail className="h-4 w-4 mr-2" />
+              {config.resend.supportEmail}
+            </Link>
+            <span className="flex items-center">
+              <MapPin className="h-4 w-4 mr-2" />
+              USA
+            </span>
+          </div>
         </div>
       </div>
     </footer>

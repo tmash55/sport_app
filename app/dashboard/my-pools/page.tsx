@@ -11,10 +11,11 @@ export default function MyPoolsPage() {
   const { leagues, userId } = useLeagues()
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all")
-  const [sortBy, setSortBy] = useState("name")
+  const [sortBy, setSortBy] = useState("date")
 
   const filteredLeagues = useMemo(() => {
     if (!leagues) return []
+    console.log("All leagues:", leagues)
 
     return leagues
       .filter((league: any) => {
@@ -25,7 +26,7 @@ export default function MyPoolsPage() {
 
         const matchesTab =
           activeTab === "all" ||
-          (activeTab === "active" && league.status === "active") ||
+          (activeTab === "active" && league.contests.status === "active") ||
           (activeTab === "completed" && league.status === "completed") ||
           (activeTab === "draft" && league.status === "draft") ||
           (activeTab === "in_progress" && league.status === "in_progress")

@@ -23,7 +23,8 @@ const fetcher = async () => {
             id,
             name,
             contest_type,
-            sport
+            sport,
+            status
           ),
           league_members!inner (
             user_id,
@@ -33,7 +34,13 @@ const fetcher = async () => {
             user_id,
             role
           ),
-          member_count:league_members(count)
+          member_count:league_members(count),
+          drafts (
+            id,
+            status,
+            start_time,
+            draft_pick_timer
+          )
         `)
         .eq("league_members.user_id", user.id)
         .order("created_at", { ascending: false }),
@@ -48,8 +55,14 @@ const fetcher = async () => {
       console.error("Error fetching user data:", userError)
     }
 
+    const processedLeagues = leaguesData.map((league) => ({
+      ...league,
+      draft_status: league.drafts && league.drafts ? league.drafts.status : "not_scheduled",
+      start_time: league.drafts && league.drafts ? league.drafts.start_time : null,
+    }))
+
     return {
-      leagues: leaguesData,
+      leagues: processedLeagues,
       userId: user.id,
       userInfo: userData || {
         display_name: user.email?.split("@")[0] || "User",

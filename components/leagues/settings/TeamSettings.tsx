@@ -56,33 +56,13 @@ export function TeamSettings({ leagueId, isCommissioner, leagueMembers, onUpdate
       } = await supabase.auth.getUser()
       if (!user) throw new Error("No user found")
 
-      let newAvatarUrl = avatarUrl
-
-      if (avatarFile) {
-        const fileExt = avatarFile.name.split(".").pop()
-        const filePath = `${leagueId}/${user.id}/team-avatar.${fileExt}`
-
-        const { error: uploadError } = await supabase.storage
-          .from("team-avatars")
-          .upload(filePath, avatarFile, { upsert: true })
-
-        if (uploadError) throw uploadError
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("team-avatars").getPublicUrl(filePath)
-
-        newAvatarUrl = publicUrl
-      }
 
       const updatedData: Partial<LeagueMember> = {
         team_name: teamName,
-        avatar_url: newAvatarUrl,
       }
 
       await onUpdate(updatedData)
 
-      setAvatarUrl(newAvatarUrl)
 
       toast({
         title: "Team profile updated",
@@ -103,23 +83,7 @@ export function TeamSettings({ leagueId, isCommissioner, leagueMembers, onUpdate
   return (
     <div className="space-y-4">
       <DialogTitle>Edit Team Profile</DialogTitle>
-      <div className="flex items-center space-x-4">
-        <Avatar className="h-20 w-20">
-          <AvatarImage src={avatarUrl || ""} />
-          <AvatarFallback>
-            <Trophy className="h-10 w-10" />
-          </AvatarFallback>
-        </Avatar>
-        <div className="space-y-2">
-          <Label htmlFor="avatar">Team Avatar</Label>
-          <Input
-            id="avatar"
-            type="file"
-            accept="image/*"
-            onChange={(e) => setAvatarFile(e.target.files?.[0] || null)}
-          />
-        </div>
-      </div>
+      
       <div className="space-y-2">
         <Label htmlFor="teamName">Team Name</Label>
         <Input id="teamName" value={teamName} onChange={(e) => setTeamName(e.target.value)} disabled={isLoading} />

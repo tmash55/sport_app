@@ -59,37 +59,45 @@ const TOS = () => {
         >
           {`Last Updated: September 26, 2023
 
-Welcome to ShipFast!
+Welcome to Dryft!
 
-These Terms of Service ("Terms") govern your use of the ShipFast website at https://shipfa.st ("Website") and the services provided by ShipFast. By using our Website and services, you agree to these Terms.
+These Terms of Service ("Terms") govern your use of the ShipFast website at https://dryftsportspools.com ("Website") and the services provided by Dryft. By using our Website and services, you agree to these Terms.
 
-1. Description of ShipFast
+1. Description of Dryft
 
-ShipFast is a platform that offers a JavaScript code boilerplate to assist entrepreneurs in launching their startups more efficiently.
+Dryft is a fantasy sports platform that allows users to create and manage pools, participate in drafts, and track standings for various sporting events.
 
 2. Ownership and Usage Rights
 
-When you purchase a package from ShipFast, you gain the right to download and use the code provided for creating applications. You own the code you create but do not have the right to resell it. We offer a full refund within 7 days of purchase, as specified in our refund policy.
+When you create a pool on Dryft, you gain access to drafting and pool management tools.
+Pool access beyond the draft, including standings and scoring updates, requires a payment by the commissioner.
+Users may not resell, redistribute, or misuse any part of Dryft’s software or services.
 
 3. User Data and Privacy
 
-We collect and store user data, including name, email, and payment information, as necessary to provide our services. For details on how we handle your data, please refer to our Privacy Policy at https://shipfa.st/privacy-policy.
+We collect and store user data, including name, email, and payment information, to provide our services.
+For details on how we handle your data, please refer to our Privacy Policy at https://dryftsportspools.com/privacy-policy.
 
 4. Non-Personal Data Collection
 
 We use web cookies to collect non-personal data for the purpose of improving our services and user experience.
 
-5. Governing Law
+5. Payments and Refund Policy
 
-These Terms are governed by the laws of France.
+Payments for premium league features are processed securely via Stripe.
+All sales are final, and no refunds will be issued after payment is made.
 
-6. Updates to the Terms
+6. Governing Law
+
+These Terms are governed by the laws of the United States.
+
+7. Updates to the Terms
 
 We may update these Terms from time to time. Users will be notified of any changes via email.
 
-For any questions or concerns regarding these Terms of Service, please contact us at marc@shipfa.st.
+For any questions or concerns regarding these Terms of Service, please contact us at ${config.resend.supportEmail}.
 
-Thank you for using ShipFast!`}
+Thank you for using Dryft!`}
         </pre>
       </div>
     </main>

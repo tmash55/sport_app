@@ -54,7 +54,7 @@ export function JoinLinkGenerator({ leagueId }: JoinLinkGeneratorProps) {
         </Button>
       </div>
       <div className="sm:hidden">
-        <Button variant="default" onClick={copyToClipboard} disabled={isCopied} className="w-full">
+        <Button variant="secondary" onClick={copyToClipboard} disabled={isCopied} className="w-full">
           {isCopied ? "Copied!" : "Copy Invite Link"}
         </Button>
       </div>

@@ -79,16 +79,7 @@ export function MembersSettings({ leagueId, isCommissioner, leagueMembers, onUpd
                   <p className="text-sm text-muted-foreground">{member.users?.email || "No email available"}</p>
                 </div>
               </div>
-              {isCommissioner && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleRemoveMember(member.id)}
-                  disabled={isLoading}
-                >
-                  Remove
-                </Button>
-              )}
+              
             </li>
           ))}
         </ul>

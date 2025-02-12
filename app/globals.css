@@ -11,6 +11,21 @@
 *::-webkit-scrollbar {
   display: none !important;
 }
+@keyframes pulse-border {
+  0%,
+  100% {
+    border-color: theme("colors.green.500");
+    border-width: 2px;
+  }
+  50% {
+    border-color: theme("colors.green.300");
+    border-width: 3px;
+  }
+}
+
+.animate-pulse-border {
+  animation: pulse-border 2s infinite;
+}
 
 
 @layer base {
@@ -98,6 +113,6 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background dark:text-foreground text-[#11274F];
   }
 }

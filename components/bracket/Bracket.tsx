@@ -198,7 +198,7 @@ function FinalFourMatch({
       <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-4">Apr 5</p>
       <div className="bg-gradient-to-br from-yellow-100 via-yellow-50 to-white rounded-lg p-3 sm:p-4 lg:p-6 w-full max-w-[250px] shadow-lg relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-105">
         <div className="absolute inset-0 bg-gradient-to-br from-yellow-200/20 via-yellow-100/10 to-transparent pointer-events-none" />
-        <div className="relative z-10 flex justify-center">
+        <div className="relative z-50 flex justify-center">
           <Match
             match={match}
             roundIndex={4}

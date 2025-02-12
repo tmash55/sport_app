@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { createClient } from "@/libs/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -12,7 +10,7 @@ import { useLeague } from "@/app/context/LeagueContext"
 import { Clock } from "lucide-react"
 
 export function DraftTimeModal() {
-  const { leagueData, mutate } = useLeague()
+  const { leagueData, updateLeagueData } = useLeague() // ✅ Replace `mutate` with `refreshLeagueData`
   const [isOpen, setIsOpen] = useState(false)
   const [date, setDate] = useState<Date | undefined>(
     leagueData?.draft_start_time ? new Date(leagueData.draft_start_time) : undefined,
@@ -32,7 +30,7 @@ export function DraftTimeModal() {
       })
       return
     }
-
+  
     const [timeString, period] = time.split(" ")
     const [hours, minutes] = timeString.split(":").map(Number)
     const draftDateTime = new Date(date)
@@ -40,12 +38,12 @@ export function DraftTimeModal() {
       period === "PM" && hours !== 12 ? hours + 12 : hours === 12 && period === "AM" ? 0 : hours,
       minutes,
     )
-
+  
     const { error } = await supabase
       .from("leagues")
       .update({ draft_start_time: draftDateTime.toISOString() })
       .eq("id", leagueData?.id)
-
+  
     if (error) {
       toast({
         title: "Error",
@@ -54,13 +52,17 @@ export function DraftTimeModal() {
       })
     } else {
       setIsOpen(false)
-      mutate() // Trigger a revalidation of the league data
+  
+      // ✅ Update the local state instead of refreshing
+      updateLeagueData({ draft_start_time: draftDateTime.toISOString() })
+  
       toast({
         title: "Success",
         description: "Draft time has been updated.",
       })
     }
   }
+  
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -104,4 +106,3 @@ export function DraftTimeModal() {
     </Dialog>
   )
 }
-

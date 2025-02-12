@@ -7,6 +7,7 @@ interface CreateCheckoutParams {
   cancelUrl: string;
   couponId?: string | null;
   clientReferenceId?: string;
+  metadata?: { [key: string]: string }
   user?: {
     customerId?: string;
     email?: string;

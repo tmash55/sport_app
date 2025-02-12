@@ -7,7 +7,7 @@ export default function LeagueOverviewPage({ params }: { params: { id: string } 
   return (
     <Suspense fallback={<Skeleton className="h-[200px] w-full" />}>
       <LeagueHeader />
-      <LeagueOverview leagueId={params.id} />
+      <LeagueOverview />
     </Suspense>
   )
 }

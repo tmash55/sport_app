@@ -1,9 +1,15 @@
-import Link from "next/link";
-import Image from "next/image";
-import { articleType } from "../content";
+import Link from "next/link"
+import { Avatar as ShadcnAvatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import type { articleType } from "../content"
 
-// This is the author avatar that appears in the article page and in <CardArticle /> component
 const Avatar = ({ article }: { article: articleType }) => {
+  const initials = article.author.name
+    .split(" ")
+    .map((name) => name[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2)
+
   return (
     <Link
       href={`/blog/author/${article.author.slug}`}
@@ -11,19 +17,14 @@ const Avatar = ({ article }: { article: articleType }) => {
       className="inline-flex items-center gap-2 group"
       rel="author"
     >
-      <span itemProp="author">
-        <Image
-          src={article.author.avatar}
-          // alt={`Avatar of ${article.author.name}`}
-          alt=""
-          className="w-7 h-7 rounded-full object-cover object-center"
-          width={28}
-          height={28}
-        />
-      </span>
-      <span className="group-hover:underline">{article.author.name}</span>
+      <ShadcnAvatar className="w-8 h-8">
+        <AvatarImage src={article.author.avatar} alt={`Avatar of ${article.author.name}`} />
+        <AvatarFallback>{initials}</AvatarFallback>
+      </ShadcnAvatar>
+      <span className="group-hover:underline text-sm font-medium">{article.author.name}</span>
     </Link>
-  );
-};
+  )
+}
 
-export default Avatar;
+export default Avatar
+

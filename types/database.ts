@@ -343,6 +343,8 @@ export interface LeagueTeam {
 
 export interface DraftPick {
   id: string;
+  draft_id: string,
+  league_member: string,
   league_id: string;
   user_id: string;
   league_member_id: string; 

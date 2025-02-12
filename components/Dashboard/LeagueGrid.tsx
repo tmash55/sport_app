@@ -23,7 +23,7 @@ interface League {
   contests: Contest
   league_members: LeagueMember[]
   all_members: LeagueMember[]
-  draft_start_time?: string
+  start_time?: string
   draft_status: "completed" | "scheduled" | "not_scheduled"
 }
 
@@ -51,12 +51,8 @@ export function LeagueGrid({ leagues, userId }: LeagueGridProps) {
     <div className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {paginatedLeagues.map((league) => {
-          console.log("League:", league.name)
-          console.log("All league members:", league.all_members)
           const assignedMembers = league.all_members.filter((member) => member.user_id !== null)
-          console.log("Assigned members:", assignedMembers)
-          console.log("Assigned member count:", assignedMembers.length)
-          console.log("Total member slots:", league.all_members.length)
+
 
           return (
             <LeagueCards
@@ -66,8 +62,8 @@ export function LeagueGrid({ leagues, userId }: LeagueGridProps) {
                 memberCount: assignedMembers.length,
                 totalSlots: league.all_members.length,
                 contest: league.contests,
-                draft_status: league.draft_status || "not_scheduled",
-                draft_start_time: league.draft_start_time,
+                draft_status: league.draft_status,
+                draft_start_time: league.start_time,
               }}
               isCommissioner={league.commissioner_id === userId}
             />

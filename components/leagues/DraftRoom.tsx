@@ -1,630 +1,279 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
-import { createClient } from "@/libs/supabase/client"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useToast } from "@/hooks/use-toast"
+import { useState, useMemo } from "react"
+import { Card, CardContent } from "@/components/ui/card"
 import { DraftBoard } from "./DraftBoard"
-import { DraftControls } from "./DraftControls"
-import { DraftStatus } from "./DraftStatus"
+import { AvailableTeams } from "./AvailableTeams"
 import { DraftTimer } from "./DraftTimer"
-import { LeagueMember, LeagueTeam, DraftPick, Draft } from "@/types/draft"
-import { Skeleton } from "@/components/ui/skeleton"
-import { DraftInfoDrawer } from './DraftInfoDrawer'
-import { RecentPicks } from './RecentPicks'
-
+import { ScrollArea, ScrollBar } from "../ui/scroll-area"
+import { BracketView } from "../DraftRoom/BracketView"
+import { DraftRoomSkeleton } from "../DraftRoom/DraftRoomSkeleton"
+import { Button } from "../ui/button"
+import { Roster } from "../DraftRoom/Roster"
+import { DraftHeader } from "../DraftRoom/DraftHeader"
+import { cn } from "@/lib/utils"
+import { useDraftState } from "@/hooks/use-draft-state"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Menu } from "lucide-react"
 
 interface DraftRoomProps {
   leagueId: string
-  isCommissioner: boolean
-  currentUser: string | null
-  maxTeams: number
-  
 }
-const TOTAL_SLOTS = 8;
-const TOTAL_ROUNDS = 8;
+
+type ViewType = "draftBoard" | "availableTeams" | "bracketView"
 
 export function DraftRoom({ leagueId }: DraftRoomProps) {
-  const [leagueMembers, setLeagueMembers] = useState<LeagueMember[]>([])
-  const [availableTeams, setAvailableTeams] = useState<LeagueTeam[]>([])
-  const [draftPicks, setDraftPicks] = useState<DraftPick[]>([])
-  const [currentUser, setCurrentUser] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [draft, setDraft] = useState<Draft | null>(null)
-  const [isCommissioner, setIsCommissioner] = useState(false)
-  const [maxTeams, setMaxTeams] = useState<number>(0)
-  const [draftedTeamIds, setDraftedTeamIds] = useState<Set<string>>(new Set())
-  const [leagueName, setLeagueName] = useState<string | null>(null)
-  const supabase = createClient()
-  const { toast } = useToast()
+  const {
+    draft,
+    leagueMembers,
+    availableTeams,
+    draftPicks,
+    currentUser,
+    isLoading,
+    isCommissioner,
+    maxTeams,
+    draftedTeamIds,
+    leagueName,
+    fetchDraftData,
+    handleDraftAction,
+    handleDraftPick,
+    handleAutoPick,
+    handleSettingsChange,
+    isUsersTurn,
+    getCurrentDrafter,
+    matchups,
+    matchupsLoading,
+    matchupsError,
+  } = useDraftState(leagueId)
+  const [currentView, setCurrentView] = useState<ViewType>("draftBoard")
+  const [isRosterOpen, setIsRosterOpen] = useState(false)
 
-  
+  const handleStartDraft = () => handleDraftAction("start")
+  const handlePauseDraft = () => handleDraftAction("pause")
+  const handleResumeDraft = () => handleDraftAction("resume")
 
-  // Fetch initial draft data
-  const fetchDraftData = useCallback(async () => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) setCurrentUser(user.id);
-
-    const { data: draftData } = await supabase
-      .from("drafts")
-      .select("*")
-      .eq("league_id", leagueId)
-      .single();
-    setDraft(draftData);
-
-    const { data: leagueData } = await supabase
-      .from("leagues")
-      .select("commissioner_id, name")
-      .eq("id", leagueId)
-      .single();
-    setIsCommissioner(leagueData.commissioner_id === user?.id);
-    setLeagueName(leagueData.name);
-
-    const { data: leagueSettings } = await supabase
-      .from("league_settings")
-      .select("max_teams")
-      .eq("league_id", leagueId)
-      .single();
-    setMaxTeams(leagueSettings.max_teams);
-
-    const { data: members } = await supabase
-      .from("league_members")
-      .select("*, users(email, first_name, last_name)")
-      .eq("league_id", leagueId);
-    setLeagueMembers(members);
-
-    const { data: teams } = await supabase
-      .from("league_teams")
-      .select("*, global_teams(seed, logo_filename)")
-      .eq("league_id", leagueId);
-    setAvailableTeams(teams);
-
-    const { data: picks } = await supabase
-      .from("draft_picks")
-      .select("*, league_teams(*, global_teams(seed, logo_filename)), users(email, first_name, last_name)")
-      .eq("draft_id", draftData.id);
-
-    // Normalize draft picks to avoid undefined fields
-    const normalizedPicks = picks.map((pick) => ({
-      ...pick,
-      league_teams: {
-        ...pick.league_teams,
-        global_teams: pick.league_teams?.global_teams || {}, // Fallback for missing global_teams
-      },
-    }));
-
-    setDraftPicks(normalizedPicks);
-    setDraftedTeamIds(new Set(picks.map((pick) => pick.team_id)));
-  } catch (error) {
-    console.error("Error fetching draft data:", error);
-    toast({
-      title: "Error",
-      description: "Failed to load draft data. Please try refreshing the page.",
-      variant: "destructive",
-    });
-  } finally {
-    setIsLoading(false);
-  }
-}, [leagueId, supabase, toast]);
-
-  // Real-time updates for draft status
-  useEffect(() => {
-    if (!draft) return
-
-    const draftChannel = supabase
-  .channel("draft_picks")
-  .on(
-    "postgres_changes",
-    { event: "INSERT", schema: "public", table: "draft_picks", filter: `draft_id=eq.${draft?.id}` },
-    async (payload) => {
-      const newPick = payload.new as DraftPick;
-
-      // Fetch full pick details with relations
-      const { data: fullPick, error } = await supabase
-        .from("draft_picks")
-        .select("*, league_teams(*, global_teams(seed, logo_filename))")
-        .eq("id", newPick.id)
-        .single();
-
-      if (error) {
-        console.error("Error fetching full pick details:", error);
-        return;
-      }
-
-      setDraftPicks((prevPicks) => [...prevPicks, fullPick]);
-      setDraftedTeamIds((prevIds) => new Set(prevIds).add(fullPick.team_id));
-      setAvailableTeams((prevTeams) => prevTeams.filter((team) => team.id !== fullPick.team_id));
-    }
+  const currentLeagueMember = useMemo(
+    () => leagueMembers.find((member) => member.user_id === currentUser),
+    [leagueMembers, currentUser],
   )
-  .subscribe();
 
-    return () => {
-      supabase.removeChannel(draftChannel)
-    }
-  }, [draft, supabase])
+  const currentLeagueMemberId = currentLeagueMember?.id ?? ""
 
-  useEffect(() => {
-    fetchDraftData()
-  }, [fetchDraftData])
-
-
-  useEffect(() => {
-    const draftPicksChannel = supabase
-      .channel('draft_picks')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'draft_picks',
-        filter: `draft_id=eq.${draft?.id}`
-      }, (payload) => {
-        const newPick = payload.new as DraftPick;
-        updateDraftState(newPick);
-      })
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(draftPicksChannel)
-    }
-  }, [draft?.id, supabase])
-
-  const handleDraftAction = async (action: 'start' | 'pause' | 'resume') => {
-    if (!draft) return
-
-    try {
-      let newStatus: Draft['status']
-      let timerExpiresAt: string | null = null
-      switch (action) {
-        case 'start':
-        case 'resume':
-          newStatus = 'in_progress'
-          timerExpiresAt = new Date(Date.now() + draft.draft_pick_timer * 1000).toISOString()
-          break
-        case 'pause':
-          newStatus = 'paused'
-          break
-        default:
-          return
-      }
-
-      const { error } = await supabase
-        .from('drafts')
-        .update({ 
-          status: newStatus, 
-          timer_expires_at: timerExpiresAt 
-        })
-        .eq('id', draft.id)
-
-      if (error) throw error
-
-      setDraft(prevDraft => ({ 
-        ...prevDraft!, 
-        status: newStatus, 
-        timer_expires_at: timerExpiresAt 
-      }))
-
-      toast({
-        title: `Draft ${action}ed`,
-        description: `The draft has been successfully ${action}ed.`,
-      })
-    } catch (error) {
-      console.error(`Error ${action}ing draft:`, error)
-      toast({
-        title: "Error",
-        description: `Failed to ${action} the draft. Please try again.`,
-        variant: "destructive",
-      })
-    }
-  }
-
-  const handleStartDraft = () => handleDraftAction('start')
-  const handlePauseDraft = () => handleDraftAction('pause')
-  const handleResumeDraft = () => handleDraftAction('resume')
-
-  const getCurrentDrafter = () => {
-    if (!draft) return null
-    const currentPick = draft.current_pick_number
-    const totalMembers = leagueMembers.length
-    const roundNumber = Math.floor((currentPick - 1) / totalMembers) + 1
-    const pickInRound = (currentPick - 1) % totalMembers
-
-    const draftPosition = roundNumber % 2 === 1 ? pickInRound + 1 : totalMembers - pickInRound
-
-    return leagueMembers.find(member => member.draft_position === draftPosition)
-  }
-
-  const isUsersTurn = () => {
-    const currentDrafter = getCurrentDrafter()
-    return currentDrafter?.user_id === currentUser
-  }
-
-  const handleDraftPick = async (teamId: string) => {
-    if (!draft || !isUsersTurn()) return;
-  
-    try {
-      // Fetch the league_member_id for the current user
-      const { data: leagueMember, error: leagueMemberError } = await supabase
-        .from('league_members')
-        .select('id')
-        .eq('league_id', leagueId)
-        .eq('user_id', currentUser)
-        .single();
-  
-      if (leagueMemberError) throw leagueMemberError;
-  
-      const { data, error } = await supabase
-        .from('draft_picks')
-        .insert({
-          draft_id: draft.id,
-          league_id: leagueId,
-          user_id: currentUser,
-          league_member_id: leagueMember.id, 
-          team_id: teamId,
-          pick_number: draft.current_pick_number
-        })
-        .select('*, league_teams(*), users(email, first_name, last_name)')
-        .single();
-  
-      if (error) {
-        if (error.code === '23505') {
-          toast({
-            title: "Team Already Drafted",
-            description: "This team has already been drafted. Please choose another team.",
-            variant: "destructive",
-          });
-        } else {
-          throw error;
-        }
-        return;
-      }
-  
-      updateDraftState(data);
-  
-      toast({
-        title: "Team Drafted",
-        description: `You have successfully drafted ${data.league_teams.name}.`,
-      });
-    } catch (error) {
-      console.error('Error making draft pick:', error);
-      toast({
-        title: "Error",
-        description: "Failed to make draft pick. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const checkDraftCompletion = useCallback(async () => {
-    if (!draft || !maxTeams) return false;
-  
-    // Calculate total picks based on maxTeams
-    const rounds = Math.floor(64 / maxTeams);
-    const totalPicks = rounds * maxTeams;
-  
-    console.log(`Draft completion check: maxTeams=${maxTeams}, rounds=${rounds}, totalPicks=${totalPicks}, currentPick=${draft.current_pick_number}`);
-  
-    if (draft.current_pick_number >= totalPicks) {
-      console.log(`Draft completed: currentPick=${draft.current_pick_number} >= totalPicks=${totalPicks}`);
-      try {
-        // Mark the draft as completed
-        const { error } = await supabase
-          .from('drafts')
-          .update({ 
-            status: 'completed',
-            end_time: new Date().toISOString(),
-          })
-          .eq('id', draft.id);
-  
-        if (error) throw error;
-  
-        setDraft(prevDraft => ({
-          ...prevDraft!,
-          status: 'completed',
-          end_time: new Date().toISOString(),
-        }));
-  
-        toast({
-          title: "Draft Completed",
-          description: `The draft has been completed with ${totalPicks} picks. ${64 - totalPicks} teams remain undrafted.`,
-        });
-  
-        return true;
-      } catch (error) {
-        console.error('Error completing draft:', error);
-        toast({
-          title: "Error",
-          description: "Failed to complete the draft. Please try again.",
-          variant: "destructive",
-        });
-      }
-    }
-  
-    return false;
-  }, [draft, maxTeams, supabase, toast]);
-  
-  
-  
-
-  
-  const updateDraftState = useCallback(
-    async (newPick: DraftPick) => {
-      // Fetch full pick details to ensure all fields are included
-      const { data: pickDetails, error } = await supabase
-        .from("draft_picks")
-        .select(`
-          *,
-          league_teams (
-            *,
-            global_teams (
-              logo_filename
-            )
-          )
-        `)
-        .eq("id", newPick.id)
-        .single();
-  
-      if (error) {
-        console.error("Error fetching full pick details:", error);
-        return;
-      }
-  
-      setDraftedTeamIds((prevIds) => new Set(prevIds).add(pickDetails.team_id));
-      setDraftPicks((prevPicks) => [...prevPicks, pickDetails]);
-      setAvailableTeams((prevTeams) =>
-        prevTeams.filter((team) => team.id !== pickDetails.team_id)
-      );
-  
-      const newPickNumber = draft!.current_pick_number + 1;
-      const timerExpiresAt = new Date(Date.now() + draft!.draft_pick_timer * 1000).toISOString();
-  
-      const isDraftCompleted = newPickNumber > Math.floor(64 / maxTeams) * maxTeams;
-  
-      if (isDraftCompleted) {
-        const endTime = new Date().toISOString();
-        const { error: updateError } = await supabase
-          .from("drafts")
-          .update({
-            current_pick_number: newPickNumber,
-            status: "completed",
-            end_time: endTime,
-          })
-          .eq("id", draft!.id);
-  
-        if (updateError) throw updateError;
-  
-        setDraft((prevDraft) => ({
-          ...prevDraft!,
-          current_pick_number: newPickNumber,
-          status: "completed",
-          end_time: endTime,
-        }));
-  
-        toast({
-          title: "Draft Completed",
-          description: `The draft has been completed.`,
-        });
-      } else {
-        const { error: updateError } = await supabase
-          .from("drafts")
-          .update({
-            current_pick_number: newPickNumber,
-            timer_expires_at: timerExpiresAt,
-          })
-          .eq("id", draft!.id);
-  
-        if (updateError) throw updateError;
-  
-        setDraft((prevDraft) => ({
-          ...prevDraft!,
-          current_pick_number: newPickNumber,
-          timer_expires_at: timerExpiresAt,
-        }));
-      }
-    },
-    [draft, maxTeams, supabase, toast]
-  );
-  
-  
-
-  const handleAutoPick = async () => {
-    if (!draft) return;
-  
-    const currentDrafter = getCurrentDrafter();
-    if (!currentDrafter) return;
-  
-    try {
-      // Check if a pick has already been made for this draft pick number
-      const { data: existingPick, error: existingPickError } = await supabase
-        .from("draft_picks")
-        .select("*")
-        .eq("draft_id", draft.id)
-        .eq("pick_number", draft.current_pick_number)
-        .single();
-  
-      if (existingPickError && existingPickError.code !== "PGRST116") {
-        throw existingPickError;
-      }
-  
-      if (existingPick) {
-        console.log(
-          "Pick already made for this draft number, skipping auto-pick"
-        );
-        return;
-      }
-  
-      // Filter out already drafted teams and sort by seed
-      const availableUndraftedTeams = availableTeams
-        .filter((team) => !draftedTeamIds.has(team.id))
-        .sort((a, b) => a.global_teams?.seed - b.global_teams?.seed);
-  
-      const nextAvailableTeam = availableUndraftedTeams[0];
-      if (!nextAvailableTeam) {
-        throw new Error("No available teams left");
-      }
-  
-      // Prepare the data for insertion
-      const draftPickData: Record<string, any> = {
-        draft_id: draft.id,
-        league_id: leagueId,
-        league_member_id: currentDrafter.id,
-        team_id: nextAvailableTeam.id,
-        pick_number: draft.current_pick_number,
-        is_auto_pick: true,
-      };
-  
-      // Include user_id only if it exists
-      if (currentDrafter.user_id) {
-        draftPickData.user_id = currentDrafter.user_id;
-      }
-  
-      const { data, error } = await supabase
-        .from("draft_picks")
-        .insert(draftPickData)
-        .select(
-          "*, league_teams(id, name, seed, global_teams(name)), league_members(team_name, users(email, first_name, last_name))"
+  const renderMainContent = () => {
+    switch (currentView) {
+      case "draftBoard":
+        return (
+          <DraftBoard
+            leagueMembers={leagueMembers}
+            draftPicks={draftPicks}
+            currentPickNumber={draft?.current_pick_number || 0}
+            maxTeams={maxTeams}
+            isDraftCompleted={draft?.status === "completed"}
+            currentLeagueMemberId={currentLeagueMemberId}
+          />
         )
-        .single();
-  
-      if (error) throw error;
-  
-      await updateDraftState(data);
-  
-      toast({
-        title: "Auto Pick",
-        description: `${currentDrafter.team_name || "Team"} auto-drafted ${
-          data.league_teams.global_teams.name
-        }.`,
-      });
-    } catch (error) {
-      console.error("Error making auto pick:", error);
-      toast({
-        title: "Error",
-        description: "Failed to make auto pick. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  
-
-  const renderDraftBoardSkeleton = () => {
-    const board = []
-
-    // Header row
-    const headerRow = []
-    for (let slot = 0; slot < TOTAL_SLOTS; slot++) {
-      headerRow.push(
-        <div key={`header-${slot}`} className="p-2">
-          <Skeleton className="h-6 w-full" />
-        </div>
-      )
-    }
-    board.push(<div key="header" className="contents">{headerRow}</div>)
-
-    // Draft board rows
-    for (let round = 0; round < TOTAL_ROUNDS; round++) {
-      const rowCells = []
-      for (let slot = 0; slot < TOTAL_SLOTS; slot++) {
-        rowCells.push(
-          <div key={`${round}-${slot}`} className="relative bg-secondary p-2 rounded border border-secondary-foreground/20">
-            <div className="h-12 rounded flex flex-col items-center justify-center p-1">
-              <Skeleton className="h-4 w-3/4" />
+      case "availableTeams":
+        return (
+          <ScrollArea className="h-full w-full">
+            <div className="p-4">
+              <AvailableTeams
+                leagueId={leagueId}
+                draftId={draft.id}
+                onDraftPick={handleDraftPick}
+                isUsersTurn={isUsersTurn()}
+                isDraftInProgress={draft?.status === "in_progress"}
+                leagueTeams={availableTeams}
+                draftPicks={draftPicks}
+              />
             </div>
-          </div>
+          </ScrollArea>
         )
-      }
-      board.push(
-        <div key={round} className="contents">
-          {rowCells}
-        </div>
-      )
+      case "bracketView":
+        return (
+          <ScrollArea className="h-full w-full">
+            <BracketView
+              matchups={matchups}
+              matchupsLoading={matchupsLoading}
+              matchupsError={matchupsError}
+              currentUser={currentLeagueMemberId}
+              leagueMembers={leagueMembers}
+            />
+          </ScrollArea>
+        )
+      default:
+        return null
     }
-
-    return board
   }
 
-
-  if (isLoading) {
-    return (
-      <div className="h-full flex flex-col">
-        
-        <div className="flex-grow grid grid-cols-1 gap-6 p-6 overflow-auto mt-8">
-          <div className="space-y-6">
-            <Card>
-              
-              <CardContent>
-                <div className="grid grid-cols-8 gap-2 min-w-[800px]">
-                  {renderDraftBoardSkeleton()}
-                </div>
-              </CardContent>
-            </Card>
-            
-          </div>
-          
-        </div>
-      </div>
-    )
+  if (isLoading || !draft) {
+    return <DraftRoomSkeleton />
   }
 
+  const currentRound = Math.floor((draft.current_pick_number - 1) / maxTeams) + 1
+  const totalRounds = Math.floor(64 / maxTeams)
+
+  const getRoundDisplay = () => {
+    if (currentRound >= totalRounds) {
+      return "Final Round"
+    }
+    return `Round ${currentRound} of ${totalRounds}`
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-      <Card className="col-span-4">
-        <CardHeader>
-          <CardTitle className="flex justify-between items-center">
-            <span className="text-xl">{leagueName}</span>
-            <DraftStatus 
-              status={draft?.status || 'pre_draft'} 
-              currentPickNumber={draft?.current_pick_number || 0} 
-            />
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {isCommissioner && draft?.status !== 'completed' && (
-            <DraftControls
-              draftStatus={draft?.status || 'pre_draft'}
-              onStartDraft={handleStartDraft}
-              onPauseDraft={handlePauseDraft}
-              onResumeDraft={handleResumeDraft}
-            />
-          )}
-          {draft && draft.status === 'in_progress' && (
-            <DraftTimer
-              draftId={draft.id}
-              status={draft.status}
-              timerExpiresAt={draft.timer_expires_at}
-              onTimerExpire={handleAutoPick}
-            />
-          )}
-          <RecentPicks
-            draftPicks={draftPicks}
-            leagueMembers={leagueMembers}
-            currentPickNumber={draft?.current_pick_number || 0}
-          />
-          <div className="overflow-x-auto">
-            <DraftBoard
-              leagueMembers={leagueMembers}
-              draftPicks={draftPicks}
-              currentPickNumber={draft?.current_pick_number || 0}
-              maxTeams={maxTeams}
-              isDraftCompleted={draft?.status === 'completed'}
-            />
-          </div>
-        </CardContent>
-      </Card>
-      <DraftInfoDrawer
-        draft={draft}
-        availableTeams={availableTeams}
-        draftedTeamIds={draftedTeamIds}
-        draftPicks={draftPicks}
-        currentUser={currentUser}
+    <div className="flex flex-col h-screen overflow-hidden bg-background">
+      <DraftHeader
+        leagueName={leagueName}
+        minutesPerPick={draft.draft_pick_timer / 60}
         maxTeams={maxTeams}
-        isUsersTurn={isUsersTurn}
-        handleDraftPick={handleDraftPick}
+        totalRounds={Math.floor(64 / maxTeams)}
+        draftStatus={draft?.status}
+        onStartDraft={handleStartDraft}
+        onPauseDraft={handlePauseDraft}
+        onResumeDraft={handleResumeDraft}
+        isCommissioner={isCommissioner}
+        leagueId={leagueId}
       />
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 h-[calc(100vh-8rem)] overflow-hidden pt-2 px-2 lg:px-4">
+        <div className="w-full lg:w-[30%] xl:w-[20%] flex flex-col gap-4">
+          <Card
+             className={cn(
+              "h-[100px] sm:h-[120px] lg:h-[140px] flex-shrink-0 relative overflow-hidden transition-all duration-500",
+              isUsersTurn() ? "animate-pulse-border bg-gradient-to-r from-green-500 to-green-700 shadow-lg" : "bg-card",
+            )}
+          >
+            <CardContent className="h-full p-3 flex flex-col justify-center">
+              <div className="flex flex-row lg:flex-col xl:flex-row h-full">
+                <div className="w-1/2 lg:w-full xl:w-1/2 flex flex-col items-center justify-center mb-0 lg:mb-2 xl:mb-0">
+                  <div className="text-center">
+                    <h3
+                      className={cn(
+                        "text-sm lg:text-base font-semibold mb-1",
+                        isUsersTurn() ? "text-white" : "text-foreground",
+                      )}
+                    >
+                      {getRoundDisplay()}
+                    </h3>
+                    {draft && (
+                      <DraftTimer
+                        status={draft.status}
+                        timerExpiresAt={draft.timer_expires_at}
+                        onTimerExpire={handleAutoPick}
+                      />
+                    )}
+                  </div>
+                </div>
+                <div
+                  className={cn(
+                    "w-1/2 lg:w-full xl:w-1/2 flex flex-col items-center justify-center",
+                    isUsersTurn() ? " xl:border-l lg:border-white/30" : " xl:border-l lg:border-border",
+                  )}
+                >
+                  <p className={cn("text-xs lg:text-sm", isUsersTurn() ? "text-white/80" : "text-muted-foreground")}>
+                    On the Clock
+                  </p>
+                  <p
+                    className={cn(
+                      "text-base lg:text-lg xl:text-xl font-bold mt-1",
+                      isUsersTurn() ? "text-white" : "text-foreground",
+                    )}
+                  >
+                    {getCurrentDrafter()?.team_name || "Unknown"}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+            {isUsersTurn() && (
+              <div className="absolute inset-0 bg-white opacity-20 animate-pulse pointer-events-none"></div>
+            )}
+          </Card>
+
+          <Card className="flex-1 overflow-hidden lg:block hidden">
+            <CardContent className="p-2 lg:p-4 h-full">
+              <ScrollArea className="h-full">
+                <Roster
+                  draftPicks={draftPicks}
+                  currentLeagueMemberId={currentLeagueMemberId}
+                  maxTeams={maxTeams}
+                  leagueMembers={leagueMembers}
+                />
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="w-full lg:w-[70%] xl:w-[80%] flex flex-col gap-4 overflow-hidden">
+          <Card>
+            <CardContent className="p-2 lg:p-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="text-lg sm:text-xl lg:text-2xl font-bold">
+                  {currentView === "draftBoard"
+                    ? "Draft Board"
+                    : currentView === "availableTeams"
+                      ? "Available Teams"
+                      : "Bracket View"}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => setCurrentView("draftBoard")}
+                    variant={currentView === "draftBoard" ? "default" : "outline"}
+                    size="sm"
+                  >
+                    Draft Board
+                  </Button>
+                  <Button
+                    onClick={() => setCurrentView("availableTeams")}
+                    variant={currentView === "availableTeams" ? "default" : "outline"}
+                    size="sm"
+                  >
+                    Available Teams
+                  </Button>
+                  <Button
+                    onClick={() => setCurrentView("bracketView")}
+                    variant={currentView === "bracketView" ? "default" : "outline"}
+                    size="sm"
+                  >
+                    Bracket View
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex-1 overflow-hidden min-h-[300px] sm:min-h-[400px] pb-2">
+            <Card className="h-full">
+              <CardContent className="h-full p-2 lg:p-4 overflow-auto">
+                <ScrollArea className="h-full">
+                  <div className="min-w-[800px] lg:min-w-0">{renderMainContent()}</div>
+                  <ScrollBar orientation="horizontal" />
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Roster Button */}
+      <div className="lg:hidden fixed bottom-4 right-4 z-10">
+        <Sheet open={isRosterOpen} onOpenChange={setIsRosterOpen}>
+          <SheetTrigger asChild>
+            <Button size="lg" className="rounded-full shadow-lg">
+              <Menu className="mr-2 h-4 w-4" />
+              Roster
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="h-[80vh]">
+            <ScrollArea className="h-full mt-6">
+              <Roster
+                draftPicks={draftPicks}
+                currentLeagueMemberId={currentLeagueMemberId}
+                maxTeams={maxTeams}
+                leagueMembers={leagueMembers}
+              />
+            </ScrollArea>
+          </SheetContent>
+        </Sheet>
+      </div>
     </div>
-  </div>
   )
 }
 

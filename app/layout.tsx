@@ -7,6 +7,8 @@ import config from "@/config";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/toaster";
+import { ReactQueryProvider } from "@/components/providers/ReactQueryProvider";
+
 
 
 const font = Lato({ subsets: ["latin"], weight: ["400", "700"] })
@@ -26,11 +28,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" data-theme={config.colors.theme} className={font.className}>
       <body>
-        {/* ClientLayout contains all the client wrappers (Crisp chat support, toast messages, tooltips, etc.) */}
-        <ThemeProvider>
+        <ReactQueryProvider><ThemeProvider >
           <ClientLayout>{children}</ClientLayout>
           <Toaster />
-        </ThemeProvider>
+        </ThemeProvider></ReactQueryProvider>
+         
+       
       </body>
     </html>
   );

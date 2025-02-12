@@ -35,6 +35,12 @@ type DraftedTeam = {
     round_4_win: boolean | null
     round_5_win: boolean | null
     round_6_win: boolean | null
+    round_1_upset: number | null
+    round_2_upset: number | null
+    round_3_upset: number | null
+    round_4_upset: number | null
+    round_5_upset: number | null
+    round_6_upset: number | null
     is_eliminated: boolean
   }
   scores: number[]
@@ -51,8 +57,7 @@ export function LeagueTeam() {
   const { toast } = useToast()
   const [imagesLoaded, setImagesLoaded] = useState(false)
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "", direction: "ascending" })
-
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "totalScore", direction: "descending" })
   const { leagueMember, draftedTeams } = useMemo(() => {
     if (!leagueData) return { leagueMember: null, draftedTeams: [] }
 
@@ -69,9 +74,13 @@ export function LeagueTeam() {
         const globalTeam = team.global_teams
         const leagueSettings = leagueData.league_settings[0]
 
-        const scores = [1, 2, 3, 4, 5, 6].map((round) =>
-          globalTeam[`round_${round}_win`] ? leagueSettings[`round_${round}_score`] : 0,
-        )
+        const scores = [1, 2, 3, 4, 5, 6].map((round) => {
+          const winScore = globalTeam[`round_${round}_win`] ? leagueSettings[`round_${round}_score`] : 0
+          const upsetScore = globalTeam[`round_${round}_upset`]
+            ? globalTeam[`round_${round}_upset`] * leagueSettings.upset_multiplier
+            : 0
+          return winScore + upsetScore
+        })
 
         const totalScore = scores.reduce((sum, score) => sum + score, 0)
         return { ...team, scores, totalScore }
@@ -93,7 +102,7 @@ export function LeagueTeam() {
   useEffect(() => {
     if (draftedTeams.length > 0) {
       const checkImageUrls = async () => {
-        const imagePromises = draftedTeams.map(async (team) => {
+        const imagePromises = draftedTeams.map(async (team: any) => {
           if (team.global_teams.logo_filename) {
             const url = getLogoUrl(team.global_teams.logo_filename) || "/placeholder.svg"
             try {
@@ -161,14 +170,14 @@ export function LeagueTeam() {
 
   return (
     <Card className="w-full">
-     <CardHeader className="space-y-4 px-0 pb-0">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-4 px-4">
+      <CardHeader className="space-y-4 p-4 sm:px-6 sm:pb-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-4 pb-4 sm:pb-0">
           <div className="flex flex-col items-start gap-2">
             <CardTitle className="text-xl sm:text-2xl font-bold whitespace-nowrap bg-gradient-to-r from-primary/90 to-primary bg-clip-text text-transparent">
               {leagueMember?.team_name || leagueMember?.users.display_name || "User's Team"}
             </CardTitle>
             <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80">
-              Total Score: {draftedTeams.reduce((sum, team) => sum + team.totalScore, 0)}
+              Total Score: {draftedTeams.reduce((sum: any, team: any) => sum + team.totalScore, 0)}
             </div>
           </div>
           <DropdownMenu>
@@ -202,8 +211,8 @@ export function LeagueTeam() {
         <div className="space-y-4">
           {/* Cards view (visible only on mobile screens) */}
           <div className="grid grid-cols-1 gap-4 md:hidden">
-            {sortedTeams.map((team) => (
-              <TeamCard key={team.id} team={team} getLogoUrl={getLogoUrl} />
+            {sortedTeams.map((team: any) => (
+              <TeamCard key={team.id} team={team} getLogoUrl={getLogoUrl} leagueData={leagueData} />
             ))}
           </div>
 
@@ -214,7 +223,7 @@ export function LeagueTeam() {
                 <thead className="[&_tr]:border-b">
                   <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
                     <th
-                      className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[200px] cursor-pointer"
+                      className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[200px] cursor-pointer hover:bg-muted/30 transition-colors"
                       onClick={() => handleSort("name")}
                     >
                       <div className="flex items-center">
@@ -222,19 +231,13 @@ export function LeagueTeam() {
                         <SortIcon column="name" sortConfig={sortConfig} />
                       </div>
                     </th>
-                    <th
-                      className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[100px] cursor-pointer"
-                      onClick={() => handleSort("seed")}
-                    >
-                      <div className="flex items-center">
-                        Seed
-                        <SortIcon column="seed" sortConfig={sortConfig} />
-                      </div>
+                    <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[120px] hover:bg-muted/30 transition-colors">
+                      Status
                     </th>
                     {[1, 2, 3, 4, 5, 6].map((round) => (
                       <th
                         key={round}
-                        className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[100px] cursor-pointer"
+                        className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[100px] cursor-pointer hover:bg-muted/30 transition-colors"
                         onClick={() => handleSort(`round_${round}`)}
                       >
                         <div className="flex items-center">
@@ -244,7 +247,7 @@ export function LeagueTeam() {
                       </th>
                     ))}
                     <th
-                      className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[100px] cursor-pointer"
+                      className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[100px] cursor-pointer hover:bg-muted/30 transition-colors"
                       onClick={() => handleSort("totalScore")}
                     >
                       <div className="flex items-center">
@@ -252,18 +255,17 @@ export function LeagueTeam() {
                         <SortIcon column="totalScore" sortConfig={sortConfig} />
                       </div>
                     </th>
-                    <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[120px]">
-                      Status
-                    </th>
                   </tr>
                 </thead>
                 <tbody className="[&_tr:last-child]:border-0">
-                  {sortedTeams.map((team: any) => (
+                  {sortedTeams.map((team: DraftedTeam) => (
                     <tr
                       key={team.id}
                       className={cn(
-                        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted even:bg-muted/5",
-                        team.global_teams.is_eliminated && "bg-destructive/10",
+                        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+                        team.global_teams.is_eliminated
+                          ? "!bg-destructive/20 dark:!bg-destructive/30 hover:!bg-destructive/30 dark:hover:!bg-destructive/40 border-destructive/50"
+                          : "even:bg-muted/5",
                       )}
                     >
                       <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
@@ -291,17 +293,13 @@ export function LeagueTeam() {
                               />
                             )}
                           </div>
-                          <span className={cn(team.global_teams.is_eliminated && "text-destructive")}>{team.name}</span>
+                          <div className="flex flex-col">
+                            <span className={cn("font-medium", team.global_teams.is_eliminated && "text-destructive")}>
+                              {team.name}
+                            </span>
+                            <span className="text-xs text-muted-foreground">Seed #{team.global_teams.seed}</span>
+                          </div>
                         </div>
-                      </td>
-                      <td className="p-4 align-middle">{team.global_teams.seed}</td>
-                      {team.scores.map((score: any, index: any) => (
-                        <td key={index} className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
-                          {score}
-                        </td>
-                      ))}
-                      <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 font-bold bg-primary/5">
-                        {team.totalScore}
                       </td>
                       <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
                         {team.global_teams.is_eliminated ? (
@@ -316,6 +314,38 @@ export function LeagueTeam() {
                           </span>
                         )}
                       </td>
+                      {team.scores.map((score: number, index: number) => (
+                        <td key={index} className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                          {score !== 0 ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex items-center justify-center cursor-pointer">
+                                    <span>{score}</span>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {leagueData ? (
+                                    <>
+                                      <p>Win: {leagueData.league_settings[0][`round_${index + 1}_score`]}</p>
+                                      <p>Upset: {score - leagueData.league_settings[0][`round_${index + 1}_score`]}</p>
+                                    </>
+                                  ) : (
+                                    <p>Score details unavailable</p>
+                                  )}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : (
+                            <div className="flex items-center justify-center">
+                              <span>{score}</span>
+                            </div>
+                          )}
+                        </td>
+                      ))}
+                      <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 font-bold bg-primary/5">
+                        {team.totalScore}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -328,55 +358,107 @@ export function LeagueTeam() {
   )
 }
 
-function TeamCard({ team, getLogoUrl }: { team: DraftedTeam; getLogoUrl: (filename: string | null) => string | null }) {
+function TeamCard({
+  team,
+  getLogoUrl,
+  leagueData,
+}: {
+  team: DraftedTeam
+  getLogoUrl: (filename: string | null) => string | null
+  leagueData: any
+}) {
   return (
-    <Card className={cn(team.global_teams.is_eliminated && "bg-destructive/10")}>
+    <Card
+      className={cn(
+        "transition-colors cursor-pointer hover:bg-muted/50",
+        team.global_teams.is_eliminated &&
+          "bg-destructive/20 dark:bg-destructive/30 hover:bg-destructive/30 dark:hover:bg-destructive/40 border-destructive/50",
+      )}
+    >
       <CardContent className="p-4">
-        <div className="flex items-center gap-4 mb-4">
-          <div
-            className={cn(
-              "flex h-12 w-12 items-center justify-center rounded-full",
-              team.global_teams.is_eliminated ? "bg-destructive/10" : "bg-muted",
-            )}
-          >
-            {team.global_teams.logo_filename ? (
-              <Image
-                src={getLogoUrl(team.global_teams.logo_filename) || "/placeholder.svg"}
-                alt={`${team.name} logo`}
-                width={40}
-                height={40}
-                className={cn("object-contain", team.global_teams.is_eliminated && "opacity-50")}
-              />
-            ) : (
-              <Trophy
-                className={cn("h-6 w-6", team.global_teams.is_eliminated ? "text-destructive" : "text-primary")}
-              />
-            )}
-          </div>
-          <div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
             <div
               className={cn(
-                "font-semibold flex items-center gap-2",
-                team.global_teams.is_eliminated && "text-destructive",
+                "flex h-12 w-12 items-center justify-center rounded-full",
+                team.global_teams.is_eliminated ? "bg-destructive/10" : "bg-muted",
               )}
             >
-              {team.name}
+              {team.global_teams.logo_filename ? (
+                <Image
+                  src={getLogoUrl(team.global_teams.logo_filename) || "/placeholder.svg"}
+                  alt={`${team.name} logo`}
+                  width={40}
+                  height={40}
+                  className={cn("object-contain", team.global_teams.is_eliminated && "opacity-50")}
+                  priority
+                />
+              ) : (
+                <Trophy
+                  className={cn("h-6 w-6", team.global_teams.is_eliminated ? "text-destructive" : "text-primary")}
+                />
+              )}
             </div>
-            <div className="text-sm text-muted-foreground">Seed: {team.global_teams.seed}</div>
+            <div>
+              <div
+                className={cn(
+                  "font-semibold flex items-center gap-2",
+                  team.global_teams.is_eliminated && "text-destructive",
+                )}
+              >
+                {team.name}
+              </div>
+              <div className="text-sm text-muted-foreground">Seed: {team.global_teams.seed}</div>
+            </div>
           </div>
+          {team.global_teams.is_eliminated ? (
+            <span className="text-xs bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full flex items-center">
+              <X className="w-3 h-3 mr-1" />
+              Eliminated
+            </span>
+          ) : (
+            <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full">Active</span>
+          )}
         </div>
         <div className="grid grid-cols-3 gap-2 mb-4">
           {team.scores.map((score, index) => (
             <div key={index} className="flex flex-col items-center justify-center">
               <div className="text-xs text-muted-foreground mb-1">R{index + 1}</div>
-              <div
-                className={cn(
-                  "flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg font-medium text-xs sm:text-sm",
-                  team.global_teams.is_eliminated ? "bg-destructive/10 text-destructive" : "bg-muted",
-                )}
-              >
-                {score}
-              </div>
+              {score !== 0 ? (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={cn(
+                          "flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg font-medium text-xs sm:text-sm",
+                          team.global_teams.is_eliminated ? "bg-destructive/10 text-destructive" : "bg-muted",
+                        )}
+                      >
+                        {score}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {leagueData ? (
+                        <>
+                          <p>Win: {leagueData.league_settings[0][`round_${index + 1}_score`]}</p>
+                          <p>Upset: {score - leagueData.league_settings[0][`round_${index + 1}_score`]}</p>
+                        </>
+                      ) : (
+                        <p>Score details unavailable</p>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <div
+                  className={cn(
+                    "flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg font-medium text-xs sm:text-sm",
+                    team.global_teams.is_eliminated ? "bg-destructive/10 text-destructive" : "bg-muted",
+                  )}
+                >
+                  {score}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -392,14 +474,6 @@ function TeamCard({ team, getLogoUrl }: { team: DraftedTeam; getLogoUrl: (filena
               {team.totalScore}
             </div>
           </div>
-          {team.global_teams.is_eliminated ? (
-            <span className="text-xs bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full flex items-center">
-              <X className="w-3 h-3 mr-1" />
-              Eliminated
-            </span>
-          ) : (
-            <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full">Active</span>
-          )}
         </div>
       </CardContent>
     </Card>
@@ -416,5 +490,4 @@ function SortIcon({ column, sortConfig }: { column: string; sortConfig: SortConf
     <ChevronDown className="ml-2 h-4 w-4" />
   )
 }
-
 

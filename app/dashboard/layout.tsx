@@ -8,6 +8,7 @@ import { DynamicBreadcrumb } from "@/components/Dashboard/dynamic-breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { Trophy } from "lucide-react"
 import { LeaguesProvider } from "../context/LeaguesContext"
+import { DashboardFooter } from "@/components/DashboardFooter"
 
 export default async function DashboardLayout({
   children,
@@ -37,11 +38,11 @@ export default async function DashboardLayout({
                 <DynamicBreadcrumb />
               </div>
             </div>
-            <Trophy className="hidden md:block w-6 h-6 text-primary" aria-hidden="true" />
           </header>
           <main className="flex-1 overflow-y-auto ">
             <div className="flex flex-col gap-4 p-4 ">{children}</div>
           </main>
+          <DashboardFooter/>
         </SidebarInset>
       </SidebarProvider>
     </LeaguesProvider>

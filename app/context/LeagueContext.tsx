@@ -11,6 +11,9 @@ interface LeagueContextType {
   isLoading: boolean
   error: Error | null
   refreshLeagueData: () => Promise<void>
+  updateLeagueData: (updatedData: Partial<any>) => void
+  updateLeagueSettings: (updatedSettings: Partial<any>) => void
+  updateLeagueName: (newName: string) => Promise<void>
 }
 
 const LeagueContext = createContext<LeagueContextType | null>(null)
@@ -61,9 +64,6 @@ export function LeagueProvider({
             team_name,
             users:user_id (
               id,
-              email,
-              first_name,
-              last_name,
               display_name
             )
           ),
@@ -85,8 +85,7 @@ export function LeagueProvider({
             display_name
           ),
           drafts (
-            status,
-            draft_pick_timer
+            *
           ),
           draft_picks (
             id,
@@ -105,6 +104,12 @@ export function LeagueProvider({
                 round_4_win,
                 round_5_win,
                 round_6_win,
+                round_1_upset,
+                round_2_upset,
+                round_3_upset,
+                round_4_upset,
+                round_5_upset,
+                round_6_upset,
                 is_eliminated
               )
             )
@@ -134,7 +139,7 @@ export function LeagueProvider({
 
       if (matchupsError) throw matchupsError
 
-      const draft_status = data.drafts && data.drafts.length > 0 ? data.drafts[0].status : "pre_draft"
+      const draft_status = data.drafts.status
 
       setLeagueData({ ...data, user_id: userId, draft_status })
       setMatchups(matchupsData)
@@ -188,8 +193,46 @@ export function LeagueProvider({
     await fetchLeagueData()
   }, [fetchLeagueData])
 
+  const updateLeagueData = useCallback((updatedData: Partial<any>) => {
+    setLeagueData((prevData: any) => ({ ...prevData, ...updatedData }))
+  }, [])
+
+  const updateLeagueSettings = useCallback((updatedSettings: Partial<any>) => {
+    setLeagueData((prevData: any) => ({
+      ...prevData,
+      league_settings: [{ ...prevData.league_settings[0], ...updatedSettings }],
+    }))
+  }, [])
+
+  const updateLeagueName = useCallback(
+    async (newName: string) => {
+      try {
+        const { error } = await supabase.from("leagues").update({ name: newName }).eq("id", leagueId)
+
+        if (error) throw error
+
+        setLeagueData((prevData: any) => ({ ...prevData, name: newName }))
+      } catch (error) {
+        console.error("Error updating league name:", error)
+        throw error
+      }
+    },
+    [leagueId, supabase],
+  )
+
   return (
-    <LeagueContext.Provider value={{ leagueData, matchups, isLoading, error, refreshLeagueData }}>
+    <LeagueContext.Provider
+      value={{
+        leagueData,
+        matchups,
+        isLoading,
+        error,
+        refreshLeagueData,
+        updateLeagueData,
+        updateLeagueSettings,
+        updateLeagueName,
+      }}
+    >
       {children}
     </LeagueContext.Provider>
   )

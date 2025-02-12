@@ -37,17 +37,27 @@ const StyledButton = styled(Button)`
 
 export function DashboardHeader() {
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 py-8 md:py-12">
-      <div>
+    <div className="py-8 md:py-12">
+      <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight md:text-4xl">My Pools</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Manage your leagues and contests</p>
+        <StyledButton asChild className="md:hidden">
+          <Link href="/contests/start">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            New
+          </Link>
+        </StyledButton>
       </div>
-      <StyledButton asChild>
-        <Link href="/contests/start" className="inline-flex items-center">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Start a pool
-        </Link>
-      </StyledButton>
+      <div className="mt-1 flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          Manage your leagues and contests
+        </p>
+        <StyledButton asChild className="hidden md:inline-flex">
+          <Link href="/pools/start">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Start a pool
+          </Link>
+        </StyledButton>
+      </div>
     </div>
   )
 }

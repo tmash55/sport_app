@@ -12,7 +12,7 @@ import {
   SidebarGroupLabel,
   SidebarGroupContent,
 } from "@/components/ui/sidebar"
-import { FaBasketballBall, FaGolfBall } from "react-icons/fa"
+import { PiFootballHelmetBold, PiGolf, PiTrophy, PiBasketball } from "react-icons/pi"
 import { IoMdFootball } from "react-icons/io"
 import { MdSportsSoccer } from "react-icons/md"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -66,10 +66,10 @@ export function UserLeagues({ leagues, isLoading, error }: UserLeaguesProps) {
 
   const getSportIcon = (sport: string) => {
     switch (sport.toLowerCase()) {
-      case "basketball":
-        return <FaBasketballBall className="w-5 h-5 mr-2 text-orange-500" />
-      case "golf":
-        return <FaGolfBall className="w-5 h-5 mr-2 text-green-500" />
+      case "ncaab":
+        return <PiBasketball className="w-5 h-5 mr-2 text-orange-500 dark:text-orange-400" />
+      case "pga":
+        return <PiGolf className="w-5 h-5 mr-2 text-green-500 dark:text-green-400" />
       case "football":
         return <IoMdFootball className="w-5 h-5 mr-2 text-brown-500" />
       case "soccer":
@@ -126,10 +126,10 @@ export function UserLeagues({ leagues, isLoading, error }: UserLeaguesProps) {
           <Collapsible open={openSports.includes(sport)} onOpenChange={() => toggleSport(sport)}>
             <CollapsibleTrigger className="w-full">
               <SidebarGroup>
-                <SidebarGroupLabel className="flex items-center text-sm font-semibold text-foreground">
+                <SidebarGroupLabel className="flex items-center text-sm font-semibold">
                   <div className="flex items-center flex-1">
                     {getSportIcon(sport)}
-                    {sport.charAt(0).toUpperCase() + sport.slice(1)}
+                    {sport.toUpperCase()}
                   </div>
                   <ChevronDown
                     className={`h-4 w-4 transition-transform duration-200 ${
@@ -149,7 +149,7 @@ export function UserLeagues({ leagues, isLoading, error }: UserLeaguesProps) {
                       className="hover:bg-accent hover:text-accent-foreground transition-colors"
                     >
                       <Link href={`/dashboard/leagues/${league.id}`} className="flex items-center">
-                        <div className="w-2 h-2 rounded-full mr-2 bg-gray-500"></div>
+                        <div className="w-2 h-2 rounded-full mr-2 bg-[#11274F] dark:bg-slate-300" ></div>
                         {league.name}
                       </Link>
                     </SidebarMenuSubButton>

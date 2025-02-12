@@ -44,6 +44,8 @@ export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftO
   const [allMembers, setAllMembers] = useState<LeagueMember[]>([])
   const { leagueData } = useLeague()
   const { toast } = useToast()
+  const [isDirty, setIsDirty] = useState(false)
+  console.log(leagueData)
 
   const loadDraftOrder = useCallback(() => {
     if (!leagueData) return
@@ -59,6 +61,7 @@ export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftO
 
     setDraftOrder(newDraftOrder)
     setAllMembers(members)
+    setIsDirty(false)
   }, [leagueData, maxTeams])
 
   useEffect(() => {
@@ -67,87 +70,60 @@ export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftO
     }
   }, [isOpen, loadDraftOrder])
 
-  const handleAction = async (action: () => void, successMessage: string) => {
-    setIsLoading(true)
-    try {
-      action()
-      loadDraftOrder()
-      onOrderUpdated()
-      toast({
-        title: "Success",
-        description: successMessage,
-      })
-    } catch (error) {
-      console.error("Error performing action:", error)
-      toast({
-        title: "Error",
-        description: "Failed to perform action. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   const assignMember = (memberId: string, position: number) => {
-    handleAction(() => {
-      const newDraftOrder = [...draftOrder]
+    const newDraftOrder = [...draftOrder]
 
-      if (memberId === "unassigned") {
-        // If the current position has a member, update their draft_position to null
-        if (newDraftOrder[position - 1]) {
-          const memberToUnassign = allMembers.find((m) => m.id === newDraftOrder[position - 1]?.id)
-          if (memberToUnassign) {
-            memberToUnassign.draft_position = null
-          }
-        }
-        newDraftOrder[position - 1] = null
-      } else {
-        const memberToAssign = allMembers.find((m) => m.id === memberId)
-
-        // Remove the member from their previous position if they had one
-        const previousPosition = newDraftOrder.findIndex((m) => m?.id === memberId)
-        if (previousPosition !== -1) {
-          newDraftOrder[previousPosition] = null
-        }
-
-        // Assign the member to the new position
-        if (memberToAssign) {
-          memberToAssign.draft_position = position
-          newDraftOrder[position - 1] = memberToAssign
+    if (memberId === "unassigned") {
+      if (newDraftOrder[position - 1]) {
+        const memberToUnassign = allMembers.find((m) => m.id === newDraftOrder[position - 1]?.id)
+        if (memberToUnassign) {
+          memberToUnassign.draft_position = null
         }
       }
+      newDraftOrder[position - 1] = null
+    } else {
+      const memberToAssign = allMembers.find((m) => m.id === memberId)
 
-      setDraftOrder(newDraftOrder)
-    }, "Draft position updated.")
+      const previousPosition = newDraftOrder.findIndex((m) => m?.id === memberId)
+      if (previousPosition !== -1) {
+        newDraftOrder[previousPosition] = null
+      }
+
+      if (memberToAssign) {
+        memberToAssign.draft_position = position
+        newDraftOrder[position - 1] = memberToAssign
+      }
+    }
+
+    setDraftOrder(newDraftOrder)
+    setIsDirty(true)
   }
 
   const randomizeDraftOrder = () => {
-    handleAction(() => {
-      const shuffled = [...allMembers].sort(() => Math.random() - 0.5)
-      const newDraftOrder = Array(maxTeams).fill(null)
+    const shuffled = [...allMembers].sort(() => Math.random() - 0.5)
+    const newDraftOrder = Array(maxTeams).fill(null)
 
-      shuffled.forEach((member, index) => {
-        if (index < maxTeams) {
-          member.draft_position = index + 1
-          newDraftOrder[index] = member
-        } else {
-          member.draft_position = null
-        }
-      })
+    shuffled.forEach((member, index) => {
+      if (index < maxTeams) {
+        member.draft_position = index + 1
+        newDraftOrder[index] = member
+      } else {
+        member.draft_position = null
+      }
+    })
 
-      setDraftOrder(newDraftOrder)
-    }, "Draft order has been randomized.")
+    setDraftOrder(newDraftOrder)
+    setIsDirty(true)
   }
 
   const resetDraftOrder = () => {
-    handleAction(() => {
-      allMembers.forEach((member) => (member.draft_position = null))
-      setDraftOrder(Array(maxTeams).fill(null))
-    }, "Draft order has been reset.")
+    allMembers.forEach((member) => (member.draft_position = null))
+    setDraftOrder(Array(maxTeams).fill(null))
+    setIsDirty(true)
   }
 
   const saveDraftOrderToDatabase = async () => {
+    setIsLoading(true)
     const supabase = createClient()
     const updates = allMembers.map((member) => ({
       id: member.id,
@@ -156,6 +132,8 @@ export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftO
     }))
 
     const { error } = await supabase.from("league_members").upsert(updates, { onConflict: "id" })
+
+    setIsLoading(false)
 
     if (error) {
       console.error("Error saving draft order:", error)
@@ -169,7 +147,9 @@ export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftO
         title: "Success",
         description: "Draft order saved successfully.",
       })
+      setIsDirty(false)
       onOrderUpdated()
+      setIsOpen(false) // Close the dialog on successful save
     }
   }
 
@@ -182,24 +162,18 @@ export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftO
   }
 
   return (
-    <Dialog
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) {
-          saveDraftOrderToDatabase()
-        }
-        setIsOpen(open)
-      }}
-    >
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="default">Manage Draft Order</Button>
+        <Button variant="outline" className="w-full sm:w-auto border-primary">
+          Manage Draft Order
+        </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] w-[95vw] max-w-[95vw] sm:w-full">
         <DialogHeader>
           <DialogTitle>Manage Draft Order</DialogTitle>
           <DialogDescription>Set the draft order for league members or randomize it.</DialogDescription>
         </DialogHeader>
-        <div className="py-4 space-y-4">
+        <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto">
           {isLoading ? (
             <div className="flex justify-center">
               <Loader2 className="h-6 w-6 animate-spin" />
@@ -228,18 +202,23 @@ export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftO
             })
           )}
         </div>
-        <DialogFooter className="flex justify-between">
-          <div>
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="mr-2">
+        <DialogFooter className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="w-full sm:w-auto">
               Close
             </Button>
-            <Button variant="destructive" onClick={resetDraftOrder} disabled={isLoading}>
+            <Button variant="destructive" onClick={resetDraftOrder} disabled={isLoading} className="w-full sm:w-auto">
               Reset
             </Button>
           </div>
-          <Button onClick={randomizeDraftOrder} disabled={isLoading}>
-            {isLoading ? "Randomizing..." : "Randomize"}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button onClick={randomizeDraftOrder} disabled={isLoading} className="w-full sm:w-auto">
+              {isLoading ? "Randomizing..." : "Randomize"}
+            </Button>
+            <Button onClick={saveDraftOrderToDatabase} disabled={!isDirty || isLoading} className="w-full sm:w-auto">
+              {isLoading ? "Saving..." : "Save"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

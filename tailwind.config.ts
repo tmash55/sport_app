@@ -1,4 +1,10 @@
 import type { Config } from 'tailwindcss'
+import svgToDataUri from "mini-svg-data-uri";
+ 
+import colors from "tailwindcss/colors";
+const {
+  default: flattenColorPalette,
+} = require("tailwindcss/lib/util/flattenColorPalette");
 
 const config = {
   darkMode: ['class'],
@@ -69,6 +75,16 @@ const config = {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		keyframes: {
+			"pulse-border": {
+				"0%, 100%": {
+				  borderColor: "hsl(var(--primary))",
+				  borderWidth: "2px",
+				},
+				"50%": {
+				  borderColor: "hsl(var(--primary-foreground))",
+				  borderWidth: "3px",
+				},
+			  },
   			scroll: {
   				to: {
   					transform: 'translate(calc(-50% - 0.5rem))'
@@ -132,7 +148,20 @@ const config = {
   				to: {
   					height: '0'
   				}
-  			}
+  			},"gradient-x": {
+				"0%, 100%": {
+				  "background-size": "200% 200%",
+				  "background-position": "left center",
+				},
+				"50%": {
+				  "background-size": "200% 200%",
+				  "background-position": "right center",
+				},
+			  },
+			  wiggle: {
+				"0%, 100%": { transform: "rotate(-3deg)" },
+				"50%": { transform: "rotate(3deg)" },
+			  },
   		},
   		animation: {
   			scroll: 'scroll var(--animation-duration, 40s) var(--animation-direction, forwards) linear infinite',
@@ -143,21 +172,50 @@ const config = {
   			second: 'moveInCircle 20s reverse infinite',
   			third: 'moveInCircle 40s linear infinite',
   			fourth: 'moveHorizontal 40s ease infinite',
-  			fifth: 'moveInCircle 20s ease infinite'
+  			fifth: 'moveInCircle 20s ease infinite',
+			"slow-pulse": "slow-pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+			"pulse-border": "pulse-border 2s infinite",
+			"gradient-x": "gradient-x 15s ease infinite",
+			wiggle: "wiggle 1s ease-in-out infinite",
+			
   		}
   	}
   },
   plugins: [require('tailwindcss-animate')],
+  addVariablesForColors,
+  function ({ matchUtilities, theme }: any) {
+	matchUtilities(
+	  {
+		"bg-grid": (value: any) => ({
+		  backgroundImage: `url("${svgToDataUri(
+			`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="${value}"><path d="M0 .5H31.5V32"/></svg>`
+		  )}")`,
+		}),
+		"bg-grid-small": (value: any) => ({
+		  backgroundImage: `url("${svgToDataUri(
+			`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="8" height="8" fill="none" stroke="${value}"><path d="M0 .5H31.5V32"/></svg>`
+		  )}")`,
+		}),
+		"bg-dot": (value: any) => ({
+		  backgroundImage: `url("${svgToDataUri(
+			`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="16" height="16" fill="none"><circle fill="${value}" id="pattern-circle" cx="10" cy="10" r="1.6257413380501518"></circle></svg>`
+		  )}")`,
+		}),
+	  },
+	  { values: flattenColorPalette(theme("backgroundColor")), type: "color" }
+	);
+  },
 } 
 
-// function addVariablesForColors({ addBase, theme }: any) {
-//   let allColors = flattenColorPalette(theme('colors'))
-//   let newVars = Object.fromEntries(
-//     Object.entries(allColors).map(([key, val]) => [`--${key}`, val])
-//   )
-//   addBase({
-//     ':root': newVars,
-//   })
-// }
+function addVariablesForColors({ addBase, theme }: any) {
+	let allColors = flattenColorPalette(theme("colors"));
+	let newVars = Object.fromEntries(
+	  Object.entries(allColors).map(([key, val]) => [`--${key}`, val])
+	);
+   
+	addBase({
+	  ":root": newVars,
+	});
+}
 
 export default config

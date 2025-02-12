@@ -12,6 +12,7 @@ export interface LeagueMember {
 }
 
 export interface GlobalTeam {
+  drafted_owner: string;
   id: string;
   name: string;
   seed: number;
@@ -30,18 +31,29 @@ export interface LeagueTeam {
 }
 
 export interface DraftPick {
-  id: string;
-  user_id: string;
-  team_id: string;
-  pick_number: number;
-  draft_id: string;
-  league_teams: LeagueTeam;
-  league_member_id: string;
+  id: string
+  draft_id: string
+  league_id: string
+  user_id: string
+  league_member_id: string
+  team_id: string
+  pick_number: number
+  created_at: string
+  league_teams: LeagueTeam
+  is_auto_pick?: boolean
   users: {
-    email: string;
-    first_name: string | null;
-    last_name: string | null;
-  };
+    email: string
+    first_name: string | null
+    last_name: string | null
+    display_name: string | null
+  }
+  league_member: {
+    id: string
+    team_name: string | null
+    users: {
+      display_name: string | null
+    }
+  }
 }
 
 export interface Draft {
@@ -67,4 +79,17 @@ export interface LeagueSettings {
   upset_multiplier: number;
 }
 
-
+export interface Matchup {
+  drafted_away_owner: string;
+  drafted_home_owner: string;
+  id: string
+  round: number
+  group: string
+  region: string
+  home_score: number | null
+  away_score: number | null
+  game_status: "scheduled" | "in_progress" | "completed"
+  home_team: GlobalTeam
+  away_team: GlobalTeam
+  winning_team: GlobalTeam | null
+}

@@ -1,7 +1,7 @@
 "use client"
 
 import type * as React from "react"
-import { Trophy, LayoutDashboard, Users, PlusCircle,} from "lucide-react"
+import {LayoutDashboard, Users, PlusCircle,} from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -22,24 +22,21 @@ import { NavUser } from "@/components/Dashboard/nav-user"
 import { UserLeagues } from "@/components/Dashboard/user-leagues"
 import { useLeagues } from "@/app/context/LeaguesContext"
 import { Separator } from "../ui/separator"
+import { ThemeSwitchingLogo } from "../ui/ThemeSwitchingLogo"
 
 const data = {
   navMain: [
     {
-      title: "My Pools",
+      title: "Dashboard",
       url: "/dashboard/my-pools",
       icon: LayoutDashboard,
     },
   
     {
       title: "Create a Pool",
-      url: "/contests/start",
+      url: "/pools/start",
       icon: PlusCircle,
-    },  {
-      title: "Join a Pool",
-      url: "/dashboard/join-pool",
-      icon: Users,
-    },
+    },  
   ],
 }
 
@@ -53,12 +50,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href="/dashboard/my-pools" className="group relative flex items-center gap-3">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <Trophy className="size-5" />
+            <Link href="/" className="group relative flex items-center gap-3">
+                <div className="flex items-center justify-center">
+                <ThemeSwitchingLogo />
                 </div>
-                <span className="font-semibold text-lg  transition-colors">DRYFT Pools</span>
-               
+                <span className="text-2xl transition-colors font-bold">dryft</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

@@ -11,7 +11,7 @@ export function InviteMembers({ leagueId }: InviteMembersProps) {
   return (
     <Card className="bg-muted/30">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold">Invite Members to Your League</CardTitle>
+        <CardTitle className="text-lg font-semibold">Invite Members to Your Pool</CardTitle>
       </CardHeader>
       <CardContent>
         <JoinLinkGenerator leagueId={leagueId} />
