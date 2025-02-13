@@ -264,7 +264,17 @@ export function useDraftState(leagueId: string) {
   
       if (error) throw error;
   
-      await updateDraftState(data);
+      // Update local state immediately
+      setDraftPicks((prevPicks) => [...prevPicks, data]);
+      setDraftedTeamIds((prevIds) => new Set(prevIds).add(data.team_id));
+      setAvailableTeams((prevTeams) => prevTeams.filter((team) => team.id !== data.team_id));
+  
+      // Update draft state locally
+      setDraft((prevDraft) => ({
+        ...prevDraft!,
+        current_pick_number: prevDraft!.current_pick_number + 1,
+        timer_expires_at: new Date(Date.now() + prevDraft!.draft_pick_timer * 1000).toISOString(),
+      }));
   
       toast({
         title: "Auto Pick",
@@ -272,6 +282,10 @@ export function useDraftState(leagueId: string) {
           data.league_teams.global_teams.name
         }.`,
       });
+  
+      // Fetch updated matchups
+      fetchMatchups();
+  
     } catch (error) {
       console.error("Error making auto pick:", error);
       toast({
