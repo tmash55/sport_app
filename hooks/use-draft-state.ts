@@ -452,12 +452,17 @@ export function useDraftState(leagueId: string) {
     // ✅ Listen for updates to the draft (e.g., current_pick_number)
     channel.on(
       "postgres_changes",
-      { event: "UPDATE", schema: "public", table: "drafts", filter: `league_id=eq.${leagueId}` },
-      (payload) => {
-        console.log("🔥 Draft Updated!", payload.new);
-        setDraft(payload.new); // ✅ Live update when changes occur
+      { event: "UPDATE", schema: "public", table: "drafts", filter: `id=eq.${draft.id}` },
+      async (payload) => {
+        console.log("🔄 Draft state updated!", payload.new);
+        setDraft((prevDraft) => ({
+          ...prevDraft!,
+          current_pick_number: payload.new.current_pick_number,
+          status: payload.new.status,
+          timer_expires_at: payload.new.timer_expires_at,
+        }));
       }
-    )
+    );
   
     // ✅ Subscribe
     channel.subscribe();
