@@ -92,7 +92,7 @@ export function DraftTimeModal() {
                 const timeString = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")} ${period}`
                 return (
                   <SelectItem key={timeString} value={timeString}>
-                    {timeString} ET
+                    {timeString}
                   </SelectItem>
                 )
               })}

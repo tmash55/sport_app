@@ -112,53 +112,46 @@ export function useDraftState(leagueId: string) {
   }, [fetchDraftData])
 
   const handleDraftAction = async (action: 'start' | 'pause' | 'resume') => {
-    if (!draft) return
-
+    if (!draft) return;
+  
     try {
-      let newStatus: Draft['status']
-      let timerExpiresAt: string | null = null
+      let newStatus: Draft['status'];
+      let timerExpiresAt: string | null = null;
+  
       switch (action) {
         case 'start':
         case 'resume':
-          newStatus = 'in_progress'
-          timerExpiresAt = new Date(Date.now() + draft.draft_pick_timer * 1000).toISOString()
-          break
+          newStatus = 'in_progress';
+          timerExpiresAt = new Date(Date.now() + draft.draft_pick_timer * 1000).toISOString();
+          break;
         case 'pause':
-          newStatus = 'paused'
-          break
+          newStatus = 'paused';
+          break;
         default:
-          return
+          return;
       }
-
+  
       const { error } = await supabase
         .from('drafts')
         .update({ 
           status: newStatus, 
           timer_expires_at: timerExpiresAt 
         })
-        .eq('id', draft.id)
-
-      if (error) throw error
-
-      setDraft(prevDraft => ({ 
-        ...prevDraft!, 
-        status: newStatus, 
-        timer_expires_at: timerExpiresAt 
-      }))
-
-      toast({
-        title: `Draft ${action}ed`,
-        description: `The draft has been successfully ${action}ed.`,
-      })
+        .eq('id', draft.id);
+  
+      if (error) throw error;
+  
+      // ✅ This will now update in real-time via subscription
     } catch (error) {
-      console.error(`Error ${action}ing draft:`, error)
+      console.error(`Error ${action}ing draft:`, error);
       toast({
         title: "Error",
         description: `Failed to ${action} the draft. Please try again.`,
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
+  
 
   const handleSettingsChange = useCallback(
     async (newSettings: { leagueName: string; minutesPerPick: number }) => {
@@ -421,7 +414,6 @@ export function useDraftState(leagueId: string) {
   );
   
 
-  // ✅ Subscribe to Draft & Draft Pick Updates
   useEffect(() => {
     if (!draft) return;
   
@@ -429,7 +421,22 @@ export function useDraftState(leagueId: string) {
   
     const channel = supabase.channel(`draft_room_${draft.id}`);
   
-    // ✅ Listen for draft pick insertions
+    // ✅ Listen for draft status updates (Start, Pause, Resume, Timer Updates)
+    channel.on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "drafts", filter: `id=eq.${draft.id}` },
+      (payload) => {
+        console.log("🔄 Draft update detected!", payload.new);
+  
+        setDraft((prevDraft) => ({
+          ...prevDraft!,
+          status: payload.new.status,
+          timer_expires_at: payload.new.timer_expires_at,
+        }));
+      }
+    );
+  
+    // ✅ Listen for new draft picks (INSERT)
     channel.on(
       "postgres_changes",
       { event: "INSERT", schema: "public", table: "draft_picks", filter: `draft_id=eq.${draft.id}` },
@@ -448,16 +455,16 @@ export function useDraftState(leagueId: string) {
           return;
         }
   
+        // ✅ Update UI with new pick
         setDraftPicks((prevPicks) => [...prevPicks, fullPick]);
         setDraftedTeamIds((prevIds) => new Set(prevIds).add(fullPick.team_id));
         setAvailableTeams((prevTeams) => prevTeams.filter((team) => team.id !== fullPick.team_id));
   
-        // ✅ Only fetch matchups if needed
-        fetchMatchups();
+        fetchMatchups(); // Fetch new matchups after a pick
       }
     );
   
-    // ✅ Subscribe
+    // ✅ Subscribe to real-time updates
     channel.subscribe();
   
     return () => {
@@ -465,6 +472,7 @@ export function useDraftState(leagueId: string) {
       supabase.removeChannel(channel);
     };
   }, [draft, leagueId, fetchMatchups]);
+  
   
 
   
