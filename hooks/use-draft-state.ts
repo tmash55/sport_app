@@ -211,63 +211,105 @@ export function useDraftState(leagueId: string) {
     if (!currentDrafter) return;
   
     try {
-      // ... (existing code for checking existing pick and finding next available team)
-  
-      const { data, error } = await supabase
+      // Check if a pick has already been made for this draft pick number
+      const { data: existingPick, error: existingPickError } = await supabase
         .from("draft_picks")
-        .insert(draftPickData)
-        .select(
-          "*, league_teams(id, name, seed, global_teams(name)), league_members(team_name, users(email, first_name, last_name))"
-        )
+        .select("*")
+        .eq("draft_id", draft.id)
+        .eq("pick_number", draft.current_pick_number)
         .single();
   
-      if (error) throw error;
+      if (existingPickError && existingPickError.code !== "PGRST116") {
+        throw existingPickError;
+      }
   
-      // Update local state
-      setDraftPicks((prevPicks) => [...prevPicks, data]);
-      setDraftedTeamIds((prevIds) => new Set(prevIds).add(data.team_id));
-      setAvailableTeams((prevTeams) => prevTeams.filter((team) => team.id !== data.team_id));
+      if (existingPick) {
+        console.log(
+          "Pick already made for this draft number, skipping auto-pick"
+        );
+        return;
+      }
   
-      // Update draft state in the database
-      const newPickNumber = draft.current_pick_number + 1;
-      const newTimerExpiresAt = new Date(Date.now() + draft.draft_pick_timer * 1000).toISOString();
+      // Filter out already drafted teams and sort by seed
+      const availableUndraftedTeams = availableTeams
+        .filter((team) => !draftedTeamIds.has(team.id))
+        .sort((a, b) => a.global_teams?.seed - b.global_teams?.seed);
   
-      const { error: updateError } = await supabase
-        .from('drafts')
-        .update({ 
-          current_pick_number: newPickNumber,
-          timer_expires_at: newTimerExpiresAt
-        })
-        .eq('id', draft.id);
+      const nextAvailableTeam = availableUndraftedTeams[0];
+      if (!nextAvailableTeam) {
+        throw new Error("No available teams left");
+      }
   
-      if (updateError) throw updateError;
+      // Prepare the data for insertion
+      const draftPickData: Record<string, any> = {
+        draft_id: draft.id,
+        league_id: leagueId,
+        league_member_id: currentDrafter.id,
+        team_id: nextAvailableTeam.id,
+        pick_number: draft.current_pick_number,
+        is_auto_pick: true,
+      };
   
-      // Update local draft state
-      setDraft((prevDraft) => ({
-        ...prevDraft!,
+      // Include user_id only if it exists
+      if (currentDrafter.user_id) {
+        draftPickData.user_id = currentDrafter.user_id;
+      }
+  
+      const { data, error } = await supabase
+      .from("draft_picks")
+      .insert(draftPickData)
+      .select(
+        "*, league_teams(id, name, seed, global_teams(name)), league_members(team_name, users(email, first_name, last_name))"
+      )
+      .single();
+
+    if (error) throw error;
+
+    // Update local state
+    setDraftPicks((prevPicks) => [...prevPicks, data]);
+    setDraftedTeamIds((prevIds) => new Set(prevIds).add(data.team_id));
+    setAvailableTeams((prevTeams) => prevTeams.filter((team) => team.id !== data.team_id));
+
+    // Update draft state in the database
+    const newPickNumber = draft.current_pick_number + 1;
+    const newTimerExpiresAt = new Date(Date.now() + draft.draft_pick_timer * 1000).toISOString();
+
+    const { error: updateError } = await supabase
+      .from('drafts')
+      .update({ 
         current_pick_number: newPickNumber,
-        timer_expires_at: newTimerExpiresAt,
-      }));
-  
-      toast({
-        title: "Auto Pick",
-        description: `${currentDrafter.team_name || "Team"} auto-drafted ${
-          data.league_teams.global_teams.name
-        }.`,
-      });
-  
-      // Fetch updated matchups
-      fetchMatchups();
-  
-    } catch (error) {
-      console.error("Error making auto pick:", error);
-      toast({
-        title: "Error",
-        description: "Failed to make auto pick. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+        timer_expires_at: newTimerExpiresAt
+      })
+      .eq('id', draft.id);
+
+    if (updateError) throw updateError;
+
+    // Update local draft state
+    setDraft((prevDraft) => ({
+      ...prevDraft!,
+      current_pick_number: newPickNumber,
+      timer_expires_at: newTimerExpiresAt,
+    }));
+
+    toast({
+      title: "Auto Pick",
+      description: `${currentDrafter.team_name || "Team"} auto-drafted ${
+        data.league_teams.global_teams.name
+      }.`,
+    });
+
+    // Fetch updated matchups
+    fetchMatchups();
+
+  } catch (error) {
+    console.error("Error making auto pick:", error);
+    toast({
+      title: "Error",
+      description: "Failed to make auto pick. Please try again.",
+      variant: "destructive",
+    });
+  }
+};
   const handleDraftPick = async (teamId: string) => {
     if (!draft || !isUsersTurn()) return;
   
