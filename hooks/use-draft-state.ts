@@ -285,7 +285,6 @@ export function useDraftState(leagueId: string) {
     if (!draft || !isUsersTurn()) return;
   
     try {
-      // Fetch the league_member_id for the current user
       const { data: leagueMember, error: leagueMemberError } = await supabase
         .from('league_members')
         .select('id')
@@ -305,7 +304,7 @@ export function useDraftState(leagueId: string) {
           team_id: teamId,
           pick_number: draft.current_pick_number
         })
-        .select('*, league_teams(*), users(email, first_name, last_name)')
+        .select('*, league_teams(*, global_teams(*))')
         .single();
   
       if (error) {
@@ -321,12 +320,26 @@ export function useDraftState(leagueId: string) {
         return;
       }
   
-      updateDraftState(data);
+      // Instead of calling updateDraftState, update local state immediately
+      setDraftPicks((prevPicks) => [...prevPicks, data]);
+      setDraftedTeamIds((prevIds) => new Set(prevIds).add(data.team_id));
+      setAvailableTeams((prevTeams) => prevTeams.filter((team) => team.id !== data.team_id));
+  
+      // Update draft state locally
+      setDraft((prevDraft) => ({
+        ...prevDraft!,
+        current_pick_number: prevDraft!.current_pick_number + 1,
+        timer_expires_at: new Date(Date.now() + prevDraft!.draft_pick_timer * 1000).toISOString(),
+      }));
   
       toast({
         title: "Team Drafted",
         description: `You have successfully drafted ${data.league_teams.name}.`,
       });
+  
+      // Fetch updated matchups
+      fetchMatchups();
+  
     } catch (error) {
       console.error('Error making draft pick:', error);
       toast({
@@ -423,7 +436,7 @@ export function useDraftState(leagueId: string) {
   
     const channel = supabase.channel(`draft_room_${draft.id}`);
   
-    // ✅ Listen for draft pick insertions
+    // Listen for draft pick insertions
     channel.on(
       "postgres_changes",
       { event: "INSERT", schema: "public", table: "draft_picks", filter: `draft_id=eq.${draft.id}` },
@@ -432,7 +445,7 @@ export function useDraftState(leagueId: string) {
   
         const { data: fullPick, error } = await supabase
           .from("draft_picks")
-          .select("*, league_teams(*, global_teams(id, seed, logo_filename))")
+          .select("*, league_teams(*, global_teams(*))")
           .eq("id", payload.new.id)
           .single();
   
@@ -445,15 +458,22 @@ export function useDraftState(leagueId: string) {
         setDraftedTeamIds((prevIds) => new Set(prevIds).add(fullPick.team_id));
         setAvailableTeams((prevTeams) => prevTeams.filter((team) => team.id !== fullPick.team_id));
   
-        fetchMatchups(); // Ensure matchups are updated
+        // Update draft state
+        setDraft((prevDraft) => ({
+          ...prevDraft!,
+          current_pick_number: prevDraft!.current_pick_number + 1,
+          timer_expires_at: new Date(Date.now() + prevDraft!.draft_pick_timer * 1000).toISOString(),
+        }));
+  
+        fetchMatchups();
       }
     );
   
-    // ✅ Listen for updates to the draft (e.g., current_pick_number)
+    // Listen for updates to the draft
     channel.on(
       "postgres_changes",
       { event: "UPDATE", schema: "public", table: "drafts", filter: `id=eq.${draft.id}` },
-      async (payload) => {
+      (payload) => {
         console.log("🔄 Draft state updated!", payload.new);
         setDraft((prevDraft) => ({
           ...prevDraft!,
@@ -464,7 +484,6 @@ export function useDraftState(leagueId: string) {
       }
     );
   
-    // ✅ Subscribe
     channel.subscribe();
   
     return () => {
