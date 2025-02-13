@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils"
 import { useDraftState } from "@/hooks/use-draft-state"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu } from "lucide-react"
+import { RecentPicks } from "./RecentPicks"
 
 interface DraftRoomProps {
   leagueId: string
@@ -203,40 +204,50 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
 
         <div className="w-full lg:w-[70%] xl:w-[80%] flex flex-col gap-4 overflow-hidden">
           <Card>
-            <CardContent className="p-2 lg:p-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="text-lg sm:text-xl lg:text-2xl font-bold">
-                  {currentView === "draftBoard"
-                    ? "Draft Board"
-                    : currentView === "availableTeams"
-                      ? "Available Teams"
-                      : "Bracket View"}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    onClick={() => setCurrentView("draftBoard")}
-                    variant={currentView === "draftBoard" ? "default" : "outline"}
-                    size="sm"
-                  >
-                    Draft Board
-                  </Button>
-                  <Button
-                    onClick={() => setCurrentView("availableTeams")}
-                    variant={currentView === "availableTeams" ? "default" : "outline"}
-                    size="sm"
-                  >
-                    Available Teams
-                  </Button>
-                  <Button
-                    onClick={() => setCurrentView("bracketView")}
-                    variant={currentView === "bracketView" ? "default" : "outline"}
-                    size="sm"
-                  >
-                    Bracket View
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
+          <CardContent className="p-2 lg:p-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="text-lg sm:text-xl lg:text-2xl font-bold">
+            {currentView === "draftBoard"
+              ? "Draft Board"
+              : currentView === "availableTeams"
+                ? "Available Teams"
+                : "Bracket View"}
+          </div>
+          <div className="w-full sm:w-auto">
+            <RecentPicks
+              draftPicks={draftPicks}
+              leagueMembers={leagueMembers}
+              currentPickNumber={draft?.current_pick_number || 0}
+            />
+          </div>
+          <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
+            <Button
+              onClick={() => setCurrentView("draftBoard")}
+              variant={currentView === "draftBoard" ? "default" : "outline"}
+              size="sm"
+              className="w-full sm:w-auto"
+            >
+              Draft Board
+            </Button>
+            <Button
+              onClick={() => setCurrentView("availableTeams")}
+              variant={currentView === "availableTeams" ? "default" : "outline"}
+              size="sm"
+              className="w-full sm:w-auto"
+            >
+              Available Teams
+            </Button>
+            <Button
+              onClick={() => setCurrentView("bracketView")}
+              variant={currentView === "bracketView" ? "default" : "outline"}
+              size="sm"
+              className="w-full sm:w-auto"
+            >
+              Bracket View
+            </Button>
+          </div>
+        </div>
+      </CardContent>
           </Card>
 
           <div className="flex-1 overflow-hidden min-h-[300px] sm:min-h-[400px] pb-2">
