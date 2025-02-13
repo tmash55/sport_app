@@ -9,36 +9,37 @@ interface DraftTimerProps {
 }
 
 export function DraftTimer({ status, timerExpiresAt, onTimerExpire }: DraftTimerProps) {
-  const [timeRemaining, setTimeRemaining] = useState<number>(0)
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
 
   useEffect(() => {
-    if (!timerExpiresAt) {
-      setTimeRemaining(0)
-      return
-    }
+    let intervalId: number | null = null
 
     const updateTimer = () => {
-      if (status !== "in_progress") return
+      if (status === "in_progress" && timerExpiresAt) {
+        const now = new Date().getTime()
+        const expiresAt = new Date(timerExpiresAt).getTime()
+        const timeLeft = Math.max(0, expiresAt - now)
 
-      const now = new Date().getTime()
-      const expiresAt = new Date(timerExpiresAt).getTime()
-      const timeLeft = Math.max(0, expiresAt - now)
+        setTimeRemaining(timeLeft)
 
-      setTimeRemaining(timeLeft)
-
-      if (timeLeft <= 0) {
-        clearInterval(intervalId)
-        onTimerExpire() // Trigger auto-pick when the timer runs out
+        if (timeLeft === 0) {
+          onTimerExpire()
+          if (intervalId) clearInterval(intervalId)
+        }
+      } else {
+        setTimeRemaining(null)
       }
     }
 
-    updateTimer() // Run immediately to sync with the latest data
-    const intervalId = setInterval(updateTimer, 1000) // Update every second
+    updateTimer() // Run immediately
+    intervalId = window.setInterval(updateTimer, 1000) // Then every second
 
-    return () => clearInterval(intervalId)
+    return () => {
+      if (intervalId) clearInterval(intervalId)
+    }
   }, [status, timerExpiresAt, onTimerExpire])
 
-  if (timeRemaining <= 0) return <div className="text-red-500 font-bold">Time&apos;s up!</div>
+  if (timeRemaining === null) return null
 
   const minutes = Math.floor(timeRemaining / 60000)
   const seconds = Math.floor((timeRemaining % 60000) / 1000)
@@ -49,3 +50,4 @@ export function DraftTimer({ status, timerExpiresAt, onTimerExpire }: DraftTimer
     </div>
   )
 }
+
