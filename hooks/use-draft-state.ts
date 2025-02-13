@@ -19,6 +19,7 @@ export function useDraftState(leagueId: string) {
   const [matchups, setMatchups] = useState<any[]>([]);
   const [matchupsLoading, setMatchupsLoading] = useState(true);
   const [matchupsError, setMatchupsError] = useState<Error | null>(null);
+
   const supabase = createClient()
   const { toast } = useToast()  
 
@@ -110,6 +111,7 @@ export function useDraftState(leagueId: string) {
   useEffect(() => {
     fetchDraftData()
   }, [fetchDraftData])
+  
 
   const handleDraftAction = async (action: 'start' | 'pause' | 'resume') => {
     if (!draft) return;
@@ -417,33 +419,17 @@ export function useDraftState(leagueId: string) {
   useEffect(() => {
     if (!draft) return;
   
-    console.log("🕒 Listening for real-time draft & draft pick updates...");
+    console.log("🕒 Listening for real-time draft updates...");
   
     const channel = supabase.channel(`draft_room_${draft.id}`);
   
-    // ✅ Listen for draft status updates (Start, Pause, Resume, Timer Updates)
-    channel.on(
-      "postgres_changes",
-      { event: "UPDATE", schema: "public", table: "drafts", filter: `id=eq.${draft.id}` },
-      (payload) => {
-        console.log("🔄 Draft update detected!", payload.new);
-  
-        setDraft((prevDraft) => ({
-          ...prevDraft!,
-          status: payload.new.status,
-          timer_expires_at: payload.new.timer_expires_at,
-        }));
-      }
-    );
-  
-    // ✅ Listen for new draft picks (INSERT)
+    // ✅ Listen for draft pick insertions
     channel.on(
       "postgres_changes",
       { event: "INSERT", schema: "public", table: "draft_picks", filter: `draft_id=eq.${draft.id}` },
       async (payload) => {
         console.log("🔄 New draft pick detected!", payload.new);
   
-        // Fetch full pick details
         const { data: fullPick, error } = await supabase
           .from("draft_picks")
           .select("*, league_teams(*, global_teams(id, seed, logo_filename))")
@@ -455,23 +441,33 @@ export function useDraftState(leagueId: string) {
           return;
         }
   
-        // ✅ Update UI with new pick
         setDraftPicks((prevPicks) => [...prevPicks, fullPick]);
         setDraftedTeamIds((prevIds) => new Set(prevIds).add(fullPick.team_id));
         setAvailableTeams((prevTeams) => prevTeams.filter((team) => team.id !== fullPick.team_id));
   
-        fetchMatchups(); // Fetch new matchups after a pick
+        fetchMatchups(); // Ensure matchups are updated
       }
     );
   
-    // ✅ Subscribe to real-time updates
+    // ✅ Listen for updates to the draft (e.g., current_pick_number)
+    channel.on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "drafts", filter: `league_id=eq.${leagueId}` },
+      (payload) => {
+        console.log("🔥 Draft Updated!", payload.new);
+        setDraft(payload.new); // ✅ Live update when changes occur
+      }
+    )
+  
+    // ✅ Subscribe
     channel.subscribe();
   
     return () => {
-      console.log("🛑 Unsubscribing from draft & draft pick updates...");
+      console.log("🛑 Unsubscribing from draft updates...");
       supabase.removeChannel(channel);
     };
   }, [draft, leagueId, fetchMatchups]);
+  
   
   
 
@@ -498,6 +494,6 @@ export function useDraftState(leagueId: string) {
     matchups,
     matchupsLoading,
     matchupsError,
-    fetchMatchups
+    fetchMatchups,
   }
 }

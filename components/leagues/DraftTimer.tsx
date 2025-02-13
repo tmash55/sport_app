@@ -9,37 +9,36 @@ interface DraftTimerProps {
 }
 
 export function DraftTimer({ status, timerExpiresAt, onTimerExpire }: DraftTimerProps) {
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
+  const [timeRemaining, setTimeRemaining] = useState<number>(0)
 
   useEffect(() => {
-    let intervalId: number | null = null
+    if (!timerExpiresAt) {
+      setTimeRemaining(0)
+      return
+    }
 
     const updateTimer = () => {
-      if (status === "in_progress" && timerExpiresAt) {
-        const now = new Date().getTime()
-        const expiresAt = new Date(timerExpiresAt).getTime()
-        const timeLeft = Math.max(0, expiresAt - now)
+      if (status !== "in_progress") return
 
-        setTimeRemaining(timeLeft)
+      const now = new Date().getTime()
+      const expiresAt = new Date(timerExpiresAt).getTime()
+      const timeLeft = Math.max(0, expiresAt - now)
 
-        if (timeLeft === 0) {
-          onTimerExpire()
-          if (intervalId) clearInterval(intervalId)
-        }
-      } else {
-        setTimeRemaining(null)
+      setTimeRemaining(timeLeft)
+
+      if (timeLeft <= 0) {
+        clearInterval(intervalId)
+        onTimerExpire() // Trigger auto-pick when the timer runs out
       }
     }
 
-    updateTimer() // Run immediately
-    intervalId = window.setInterval(updateTimer, 1000) // Then every second
+    updateTimer() // Run immediately to sync with the latest data
+    const intervalId = setInterval(updateTimer, 1000) // Update every second
 
-    return () => {
-      if (intervalId) clearInterval(intervalId)
-    }
+    return () => clearInterval(intervalId)
   }, [status, timerExpiresAt, onTimerExpire])
 
-  if (timeRemaining === null) return null
+  if (timeRemaining <= 0) return <div className="text-red-500 font-bold">Time's up!</div>
 
   const minutes = Math.floor(timeRemaining / 60000)
   const seconds = Math.floor((timeRemaining % 60000) / 1000)
@@ -50,4 +49,3 @@ export function DraftTimer({ status, timerExpiresAt, onTimerExpire }: DraftTimer
     </div>
   )
 }
-

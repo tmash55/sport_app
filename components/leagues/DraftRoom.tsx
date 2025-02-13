@@ -44,6 +44,7 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
     matchups,
     matchupsLoading,
     matchupsError,
+    timeLeft,
   } = useDraftState(leagueId)
   const [currentView, setCurrentView] = useState<ViewType>("draftBoard")
   const [isRosterOpen, setIsRosterOpen] = useState(false)
