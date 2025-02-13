@@ -51,7 +51,7 @@ export function RecentPicks({ draftPicks, leagueMembers, currentPickNumber }: Re
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
-          className="bg-background/40 backdrop-blur-sm border border-muted rounded-lg p-2"
+          className="bg-background/40 backdrop-blur-sm border rounded-lg p-2"
         >
           <div className="grid grid-cols-3 gap-1">
             {/* Column 1: Last Pick and Pick Number */}
