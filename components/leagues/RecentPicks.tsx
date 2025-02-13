@@ -32,15 +32,18 @@ export function RecentPicks({ draftPicks, leagueMembers, currentPickNumber }: Re
     const leagueMemberCount = leagueMembers.length
     const round = Math.ceil(pickNumber / leagueMemberCount)
     const pickInRound = pickNumber % leagueMemberCount || leagueMemberCount
-    return `${round}.${pickInRound.toString().padStart(2, "0")}`
+    return { round, pickInRound: pickInRound.toString().padStart(2, "0") }
   }
 
   if (!mostRecentPick) return null
 
   const drafter = leagueMembers.find((member) => member.id === mostRecentPick.league_member_id)
+  const { round, pickInRound } = formatPickNumber(mostRecentPick.pick_number)
+  if (!mostRecentPick) return null
+
 
   return (
-    <div className="w-full sm:w-[240px] mx-auto">
+    <div className="w-full">
       <AnimatePresence mode="wait">
         <motion.div
           key={mostRecentPick.id}
@@ -48,40 +51,44 @@ export function RecentPicks({ draftPicks, leagueMembers, currentPickNumber }: Re
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
+          className="bg-background/40 backdrop-blur-sm border border-muted rounded-lg p-2"
         >
-          <Card className="bg-background/40 backdrop-blur-sm border-muted">
-            <CardContent className="p-2">
-              <div className="flex flex-col gap-1.5">
-                <div className="text-md text-muted-foreground font-medium text-left">Last Pick</div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-10 h-7 bg-background/60 rounded-full shrink-0">
-                    <span className="text-xs font-bold">{formatPickNumber(mostRecentPick.pick_number)}</span>
-                  </div>
-                  <div className="h-7 w-7 relative flex items-center justify-center bg-background/60 rounded-full p-1 shrink-0">
-                    {mostRecentPick.league_teams?.global_teams?.logo_filename ? (
-                      <Image
-                        src={getTeamLogoUrl(mostRecentPick.league_teams.global_teams.logo_filename) || ""}
-                        alt={`${mostRecentPick.league_teams.name} logo`}
-                        width={24}
-                        height={24}
-                        className="object-contain"
-                      />
-                    ) : (
-                      <Trophy className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className="font-medium text-sm truncate">
-                      ({mostRecentPick.league_teams?.seed}) {mostRecentPick.league_teams?.name}
-                    </span>
-                    <span className="text-xs text-muted-foreground truncate">
-                      {drafter?.team_name || drafter?.users?.display_name || "Unknown"}
-                    </span>
-                  </div>
-                </div>
+          <div className="grid grid-cols-3 gap-1">
+            {/* Column 1: Last Pick and Pick Number */}
+            <div className="flex flex-col items-center justify-center">
+              <div className="text-sm text-muted-foreground font-medium">Last Pick</div>
+              <div className="text-lg font-bold">
+                {round}.{pickInRound}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+
+            {/* Column 2: Team Logo */}
+            <div className="flex items-center justify-center">
+              <div className="h-12 w-12 relative flex items-center justify-center bg-background/60 rounded-full p-1">
+                {mostRecentPick.league_teams?.global_teams?.logo_filename ? (
+                  <Image
+                    src={getTeamLogoUrl(mostRecentPick.league_teams.global_teams.logo_filename) || ""}
+                    alt={`${mostRecentPick.league_teams.name} logo`}
+                    width={40}
+                    height={40}
+                    className="object-contain"
+                  />
+                ) : (
+                  <Trophy className="h-6 w-6 text-muted-foreground" />
+                )}
+              </div>
+            </div>
+
+            {/* Column 3: Team and Drafter Info */}
+            <div className="flex flex-col items-start justify-center">
+              <span className="font-medium text-sm">
+                ({mostRecentPick.league_teams?.seed}) {mostRecentPick.league_teams?.name}
+              </span>
+              <span className="text-xs text-muted-foreground truncate">
+                {drafter?.team_name || drafter?.users?.display_name || "Unknown"}
+              </span>
+            </div>
+          </div>
         </motion.div>
       </AnimatePresence>
     </div>

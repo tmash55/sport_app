@@ -134,7 +134,7 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
         isCommissioner={isCommissioner}
         leagueId={leagueId}
       />
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 h-[calc(100vh-8rem)] overflow-hidden pt-2 px-2 lg:px-4">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 h-[calc(100vh-6rem)] overflow-hidden pt-2 px-2 lg:px-4">
         <div className="w-full lg:w-[30%] xl:w-[20%] flex flex-col gap-4">
           <Card
              className={cn(
@@ -187,6 +187,13 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
               <div className="absolute inset-0 bg-white opacity-20 animate-pulse pointer-events-none"></div>
             )}
           </Card>
+          
+              <RecentPicks
+                draftPicks={draftPicks}
+                leagueMembers={leagueMembers}
+                currentPickNumber={draft?.current_pick_number || 0}
+              />
+
 
           <Card className="flex-1 overflow-hidden lg:block hidden">
             <CardContent className="p-2 lg:p-4 h-full">
@@ -213,13 +220,7 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
                 ? "Available Teams"
                 : "Bracket View"}
           </div>
-          <div className="w-full sm:w-auto">
-            <RecentPicks
-              draftPicks={draftPicks}
-              leagueMembers={leagueMembers}
-              currentPickNumber={draft?.current_pick_number || 0}
-            />
-          </div>
+         
           <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
             <Button
               onClick={() => setCurrentView("draftBoard")}

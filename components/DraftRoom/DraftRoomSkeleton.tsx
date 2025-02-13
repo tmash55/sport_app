@@ -26,6 +26,28 @@ export function DraftRoomSkeleton() {
             </CardContent>
           </Card>
 
+          {/* Recent Picks Skeleton */}
+          <div className="bg-background/40 backdrop-blur-sm border border-muted rounded-lg p-2">
+            <div className="grid grid-cols-3 gap-1">
+              {/* Column 1: Last Pick and Pick Number */}
+              <div className="flex flex-col items-center justify-center">
+                <Skeleton className="h-4 w-16 mb-2" />
+                <Skeleton className="h-6 w-12" />
+              </div>
+
+              {/* Column 2: Team Logo */}
+              <div className="flex items-center justify-center">
+                <Skeleton className="h-10 w-10 rounded-full" />
+              </div>
+
+              {/* Column 3: Team and Drafter Info */}
+              <div className="flex flex-col items-start justify-center min-w-0">
+                <Skeleton className="h-4 w-24 mb-1" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+            </div>
+          </div>
+
           <Card className="flex-1 overflow-hidden">
             <CardContent className="p-4 h-full">
               <ScrollArea className="h-full">
