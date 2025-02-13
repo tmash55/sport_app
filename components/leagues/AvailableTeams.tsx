@@ -150,7 +150,7 @@ export function AvailableTeams({
                       <TooltipContent className="max-w-xs">
                         <p className="font-medium mb-1">Strength of Schedule (SOS)</p>
                         <p>
-                          A rating of team's schedule difficulty based on the win/loss records of their opponents.
+                          A rating of team&apos;s schedule difficulty based on the win/loss records of their opponents.
                           Higher numbers indicate a more challenging schedule.
                         </p>
                       </TooltipContent>
