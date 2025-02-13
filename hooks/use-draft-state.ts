@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { createClient } from "@/libs/supabase/client"
 import type { Draft, LeagueMember, LeagueTeam, DraftPick } from "@/types/draft"
 import { useToast } from "./use-toast"
@@ -19,6 +19,7 @@ export function useDraftState(leagueId: string) {
   const [matchups, setMatchups] = useState<any[]>([]);
   const [matchupsLoading, setMatchupsLoading] = useState(true);
   const [matchupsError, setMatchupsError] = useState<Error | null>(null);
+  const subscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
 
   const supabase = createClient()
   const { toast } = useToast()  
@@ -445,64 +446,76 @@ export function useDraftState(leagueId: string) {
 
   useEffect(() => {
     if (!draft) return;
-  
-    console.log("🕒 Listening for real-time draft updates...");
-  
-    const channel = supabase.channel(`draft_room_${draft.id}`);
-  
-    // Listen for draft pick insertions
-    channel.on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "draft_picks", filter: `draft_id=eq.${draft.id}` },
-      async (payload) => {
-        console.log("🔄 New draft pick detected!", payload.new);
-  
-        const { data: fullPick, error } = await supabase
-          .from("draft_picks")
-          .select("*, league_teams(*, global_teams(*))")
-          .eq("id", payload.new.id)
-          .single();
-  
-        if (error) {
-          console.error("❌ Error fetching full pick details:", error);
-          return;
+
+    const setupSubscription = () => {
+      console.log("🕒 Setting up real-time draft updates...");
+
+      const channel = supabase.channel(`draft_room_${draft.id}`);
+
+      channel
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "draft_picks", filter: `draft_id=eq.${draft.id}` },
+          async (payload) => {
+            console.log("🔄 New draft pick detected!", payload.new);
+
+            const { data: fullPick, error } = await supabase
+              .from("draft_picks")
+              .select("*, league_teams(*, global_teams(*))")
+              .eq("id", payload.new.id)
+              .single();
+
+            if (error) {
+              console.error("❌ Error fetching full pick details:", error);
+              return;
+            }
+
+            setDraftPicks((prevPicks) => [...prevPicks, fullPick]);
+            setDraftedTeamIds((prevIds) => new Set(prevIds).add(fullPick.team_id));
+            setAvailableTeams((prevTeams) => prevTeams.filter((team) => team.id !== fullPick.team_id));
+
+            setDraft((prevDraft) => ({
+              ...prevDraft!,
+              current_pick_number: prevDraft!.current_pick_number + 1,
+              timer_expires_at: new Date(Date.now() + prevDraft!.draft_pick_timer * 1000).toISOString(),
+            }));
+
+            fetchMatchups();
+          }
+        )
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "drafts", filter: `id=eq.${draft.id}` },
+          (payload) => {
+            console.log("🔄 Draft state updated!", payload.new);
+            setDraft((prevDraft) => ({
+              ...prevDraft!,
+              current_pick_number: payload.new.current_pick_number,
+              status: payload.new.status,
+              timer_expires_at: payload.new.timer_expires_at,
+            }));
+          }
+        );
+
+      channel.subscribe();
+
+      return {
+        unsubscribe: () => {
+          console.log("🛑 Unsubscribing from draft updates...");
+          supabase.removeChannel(channel);
         }
-  
-        setDraftPicks((prevPicks) => [...prevPicks, fullPick]);
-        setDraftedTeamIds((prevIds) => new Set(prevIds).add(fullPick.team_id));
-        setAvailableTeams((prevTeams) => prevTeams.filter((team) => team.id !== fullPick.team_id));
-  
-        // Update draft state
-        setDraft((prevDraft) => ({
-          ...prevDraft!,
-          current_pick_number: prevDraft!.current_pick_number + 1,
-          timer_expires_at: new Date(Date.now() + prevDraft!.draft_pick_timer * 1000).toISOString(),
-        }));
-  
-        fetchMatchups();
-      }
-    );
-  
-    // Listen for updates to the draft
-    channel.on(
-      "postgres_changes",
-      { event: "UPDATE", schema: "public", table: "drafts", filter: `id=eq.${draft.id}` },
-      (payload) => {
-        console.log("🔄 Draft state updated!", payload.new);
-        setDraft((prevDraft) => ({
-          ...prevDraft!,
-          current_pick_number: payload.new.current_pick_number,
-          status: payload.new.status,
-          timer_expires_at: payload.new.timer_expires_at,
-        }));
-      }
-    );
-  
-    channel.subscribe();
-  
+      };
+    };
+
+    if (!subscriptionRef.current) {
+      subscriptionRef.current = setupSubscription();
+    }
+
     return () => {
-      console.log("🛑 Unsubscribing from draft updates...");
-      supabase.removeChannel(channel);
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
+      }
     };
   }, [draft, leagueId, fetchMatchups]);
   
