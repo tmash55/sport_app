@@ -64,7 +64,7 @@ export function useDraftState(leagueId: string) {
 
       const { data: teamsData, error: teamsError } = await supabase
         .from("league_teams")
-        .select("*, global_teams(id, seed, logo_filename)")
+        .select("*, global_teams(id, seed, logo_filename, conference, wins, losses, bpi_rank, ppg, oppg, sos, quality_wins, quality_losses)")
         .eq("league_id", leagueId)
       if (teamsError) throw teamsError
       setAvailableTeams(teamsData)

@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { Users2, Trophy, ListTodo, BarChart3, AlignStartVertical } from "lucide-react"
+import { Users2, Trophy, BarChart3, AlignStartVertical } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLeague } from "@/app/context/LeagueContext"
 import { cn } from "@/lib/utils"
@@ -13,12 +13,6 @@ const navigationItems = [
     icon: BarChart3,
     href: (id: string) => `/dashboard/leagues/${id}`,
     value: "league",
-  },
-  {
-    label: "Draft",
-    icon: ListTodo,
-    href: (id: string) => `/dashboard/leagues/${id}/draft`,
-    value: "draft",
   },
   {
     label: "Teams",
@@ -62,18 +56,8 @@ export function LeagueNavigation() {
   }
 
   const leagueId = leagueData.id
-  const draftStatus = leagueData.drafts?.status || "pre_draft"
-
-  const filteredNavigationItems = navigationItems.filter((item) => {
-    if (draftStatus === "completed") {
-      return item.value !== "draft"
-    } else {
-      return item.value !== "bracket"
-    }
-  })
 
   const getActiveTabValue = () => {
-    if (pathname.includes("/draft")) return "draft"
     if (pathname.includes("/team")) return "team"
     if (pathname.includes("/standings")) return "standings"
     if (pathname.includes("/bracket")) return "bracket"
@@ -87,7 +71,7 @@ export function LeagueNavigation() {
       <div className="md:hidden">
         <Tabs defaultValue={getActiveTabValue()} className="w-full">
           <TabsList className="w-full grid grid-cols-2 h-auto gap-2 bg-muted/50 p-2 rounded-lg">
-            {filteredNavigationItems.map((item) => (
+            {navigationItems.map((item) => (
               <TabsTrigger
                 key={item.value}
                 value={item.value}
@@ -106,7 +90,7 @@ export function LeagueNavigation() {
 
       {/* Desktop Navigation - Cards */}
       <div className="hidden md:grid grid-cols-4 gap-4">
-        {filteredNavigationItems.map((item) => {
+        {navigationItems.map((item) => {
           const isActive = pathname === item.href(leagueId)
           return (
             <Link key={item.label} href={item.href(leagueId)} className="block group">

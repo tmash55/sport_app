@@ -18,6 +18,15 @@ export interface GlobalTeam {
   seed: number;
   created_at: string;
   logo_filename: string;
+  wins: number;
+  losses: number;
+  bpi_rank: number;
+  ppg: number;
+  oppg: number;
+  sos: number;
+  quality_wins: number;
+  quality_losses: number;
+  conference: string;
 }
 
 export interface LeagueTeam {
