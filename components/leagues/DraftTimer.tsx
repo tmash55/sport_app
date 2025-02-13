@@ -38,7 +38,7 @@ export function DraftTimer({ status, timerExpiresAt, onTimerExpire }: DraftTimer
     return () => clearInterval(intervalId)
   }, [status, timerExpiresAt, onTimerExpire])
 
-  if (timeRemaining <= 0) return <div className="text-red-500 font-bold">Time's up!</div>
+  if (timeRemaining <= 0) return <div className="text-red-500 font-bold">Time&apos;s up!</div>
 
   const minutes = Math.floor(timeRemaining / 60000)
   const seconds = Math.floor((timeRemaining % 60000) / 1000)
