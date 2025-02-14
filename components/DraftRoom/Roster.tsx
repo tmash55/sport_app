@@ -18,19 +18,17 @@ export function Roster({ draftPicks, currentLeagueMemberId, maxTeams, leagueMemb
   const [selectedUser, setSelectedUser] = useState(currentLeagueMemberId)
 
   const userRoster = useMemo(() => {
-    if (!selectedUser) return [];
-  
-    const uniquePicks = new Map(); // 🔥 Prevent duplicates
+    if (!selectedUser) return []
+
+    const uniquePicks = new Map() // 🔥 Prevent duplicates
     draftPicks.forEach((pick) => {
       if (pick.league_member_id === selectedUser && !uniquePicks.has(pick.id)) {
-        uniquePicks.set(pick.id, pick);
+        uniquePicks.set(pick.id, pick)
       }
-    });
-  
-    return Array.from(uniquePicks.values()).sort((a, b) => a.pick_number - b.pick_number);
-  }, [draftPicks, selectedUser, maxTeams]);
-  
-  
+    })
+
+    return Array.from(uniquePicks.values()).sort((a, b) => a.pick_number - b.pick_number)
+  }, [draftPicks, selectedUser])
 
   const totalPicks = Math.floor(64 / maxTeams)
   const remainingPicks = totalPicks - userRoster.length
@@ -59,18 +57,18 @@ export function Roster({ draftPicks, currentLeagueMemberId, maxTeams, leagueMemb
               key={pick.id}
               className="flex items-center gap-2 p-1.5 sm:p-2 bg-secondary rounded-md hover:bg-secondary/80 transition-colors"
             >
-              <div className="w-6 h-6 sm:w-8 sm:h-8 relative flex-shrink-0">
+              <div className="relative flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8">
                 {pick?.league_teams?.global_teams?.logo_filename ? (
-                  <Image
-                  src={`/images/team-logos/${pick.league_teams.global_teams.logo_filename}`}
-                  alt={`${pick.league_teams.name} logo`}
-                  width={40} // Example size, modify as needed
-                  height={40} // Example size, modify as needed
-                  className="object-contain"
-                  style={{ width: "auto", height: "auto" }} // Ensures aspect ratio is maintained
-                  sizes="(max-width: 640px) 24px, 32px"
-                />
-                
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={`/images/team-logos/${pick.league_teams.global_teams.logo_filename}`}
+                      alt={`${pick.league_teams.name} logo`}
+                      fill
+                      className="object-contain p-0.5"
+                      sizes="(max-width: 640px) 24px, 32px"
+                      priority={userRoster.indexOf(pick) < 3}
+                    />
+                  </div>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-primary/10 rounded-full">
                     <Trophy className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />

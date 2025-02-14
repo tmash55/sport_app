@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { DraftBoard } from "./DraftBoard"
 import { AvailableTeams } from "./AvailableTeams"
-
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 import { ScrollArea, ScrollBar } from "../ui/scroll-area"
 import { BracketView } from "../DraftRoom/BracketView"
 import { DraftRoomSkeleton } from "../DraftRoom/DraftRoomSkeleton"
@@ -14,7 +15,7 @@ import { DraftHeader } from "../DraftRoom/DraftHeader"
 import { cn } from "@/lib/utils"
 import { useDraftState } from "@/hooks/use-draft-state"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu } from "lucide-react"
+import { Menu, Info } from "lucide-react"
 import { RecentPicks } from "./RecentPicks"
 import DraftTimer from "./DraftTimer"
 
@@ -49,7 +50,8 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
   } = useDraftState(leagueId)
   const [currentView, setCurrentView] = useState<ViewType>("draftBoard")
   const [isRosterOpen, setIsRosterOpen] = useState(false)
-
+  const [showPausedAlert, setShowPausedAlert] = useState(false)
+  const [isExiting, setIsExiting] = useState(false)
   const handleStartDraft = () => handleDraftAction("start")
   const handlePauseDraft = () => handleDraftAction("pause")
   const handleResumeDraft = () => handleDraftAction("resume")
@@ -58,6 +60,13 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
     () => leagueMembers.find((member) => member.user_id === currentUser),
     [leagueMembers, currentUser],
   )
+  useEffect(() => {
+    if (draft?.status === "paused") {
+      setIsExiting(false)
+    } else {
+      setIsExiting(true)
+    }
+  }, [draft?.status])
 
   const currentLeagueMemberId = currentLeagueMember?.id ?? ""
 
@@ -135,6 +144,32 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
         isCommissioner={isCommissioner}
         leagueId={leagueId}
       />
+      {draft?.status === "paused" && (
+        <div
+        className={`fixed inset-x-0 top-0 z-50 transition-all duration-150 ${
+          isExiting ? "animate-out fade-out slide-out-to-top-4" : "animate-in fade-in slide-in-from-top-4"
+        }`}
+      >
+        <div className="container mx-auto px-4">
+          <div className="relative mx-auto max-w-3xl mt-2 rounded-lg bg-red-500/10 px-4 py-3">
+            <div className="flex items-center justify-between gap-x-4">
+              <div className="flex items-center gap-x-2">
+                <Info className="h-5 w-5 text-red-400" aria-hidden="true" />
+                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-x-2">
+                  <p className="text-sm font-medium text-red-400">Draft Paused</p>
+                  <p className="text-sm text-red-300">The draft has been paused by the commissioner.</p>
+                </div>
+              </div>
+              {isCommissioner && (
+                <button onClick={handleResumeDraft} className="text-sm font-medium text-red-400 hover:text-red-300">
+                  Resume Draft
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+      )}
       <div className="flex-1 flex flex-col lg:flex-row gap-4 h-[calc(100vh-6rem)] overflow-hidden pt-2 px-2 lg:px-4">
         <div className="w-full lg:w-[30%] xl:w-[20%] flex flex-col gap-4">
           <Card

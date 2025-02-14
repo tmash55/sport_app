@@ -5,7 +5,7 @@ import { useToast } from "./use-toast"
 
 
 
-export function useDraftState(leagueId: string) {
+export function useDraftState(leagueId: string, ) {
   const [draft, setDraft] = useState<Draft | null>(null)
   const [leagueMembers, setLeagueMembers] = useState<LeagueMember[]>([])
   const [availableTeams, setAvailableTeams] = useState<LeagueTeam[]>([])
@@ -23,68 +23,52 @@ export function useDraftState(leagueId: string) {
   const supabase = createClient()
   const { toast } = useToast()  
 
+  
+
+  //fetch user on mount
+  useEffect(() => {
+    const initializeUser = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error("Error fetching user:", error);
+        return;
+      }
+      setCurrentUser(user?.id || null);
+    };
+
+    initializeUser();
+  }, []);
+
+
   // ✅ Fetch initial draft data
   const fetchDraftData = useCallback(async () => {
-    setIsLoading(true)
+    if (!currentUser) return; // Ensure we have a user before fetching draft data
+    setIsLoading(true);
+  
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      if (userError) throw userError
-      setCurrentUser(user?.id || null)
-
-      const { data: draftData, error: draftError } = await supabase
-        .from("drafts")
-        .select("*")
-        .eq("league_id", leagueId)
-        .single()
-      if (draftError) throw draftError
-      setDraft(draftData)
+      const { data, error } = await supabase.rpc("get_draft_data", {
+        p_league_id: leagueId,
+      });
+  
+      if (error) throw error;
+  
+      // ✅ Set all the state variables from the single response
+      setDraft(data.draft);
+      setLeagueName(data.league.name);
+      setIsCommissioner(data.league.commissioner_id === currentUser);
+      setMaxTeams(data.settings.max_teams);
+      setLeagueMembers(data.members || []);
+      setAvailableTeams(data.teams || []);
+      setDraftPicks(data.picks || []);
       
-
-      const { data: leagueData, error: leagueError } = await supabase
-        .from("leagues")
-        .select("commissioner_id, name")
-        .eq("id", leagueId)
-        .single()
-      if (leagueError) throw leagueError
-      setIsCommissioner(leagueData.commissioner_id === user?.id)
-      setLeagueName(leagueData.name)
-
-      const { data: settingsData, error: settingsError } = await supabase
-        .from("league_settings")
-        .select("max_teams")
-        .eq("league_id", leagueId)
-        .single()
-      if (settingsError) throw settingsError
-      setMaxTeams(settingsData.max_teams)
-
-      const { data: membersData, error: membersError } = await supabase
-        .from("league_members")
-        .select("*, users(email, first_name, last_name)")
-        .eq("league_id", leagueId)
-      if (membersError) throw membersError
-      setLeagueMembers(membersData)
-
-      const { data: teamsData, error: teamsError } = await supabase
-        .from("league_teams")
-        .select("*, global_teams(id, seed, logo_filename, conference, wins, losses, bpi_rank, ppg, oppg, sos, quality_wins, quality_losses)")
-        .eq("league_id", leagueId)
-      if (teamsError) throw teamsError
-      setAvailableTeams(teamsData)
-
-      const { data: picksData, error: picksError } = await supabase
-        .from("draft_picks")
-        .select("*, league_teams(*, global_teams(id, seed, logo_filename)), users(email, first_name, last_name)")
-        .eq("draft_id", draftData.id)
-      if (picksError) throw picksError
-      setDraftPicks(picksData)
-      setDraftedTeamIds(new Set(picksData.map((pick) => pick.team_id)))
-
+      setDraftedTeamIds(new Set((data.picks || []).map((pick: any) => pick.team_id)));
+  
     } catch (error) {
-      console.error("Error fetching draft data:", error)
+      console.error("Error fetching draft data:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [leagueId])
+  }, [leagueId, currentUser]);
   // ✅ Fetch Matchups Data
   const fetchMatchups = async () => {
     setMatchupsLoading(true)
@@ -112,11 +96,8 @@ export function useDraftState(leagueId: string) {
   useEffect(() => {
     fetchDraftData()
   }, [fetchDraftData])
+  console.log(draftPicks)
   
-
-  
-  
-
   const handleSettingsChange = useCallback(
     async (newSettings: { leagueName: string; minutesPerPick: number }) => {
       try {
@@ -286,18 +267,11 @@ export function useDraftState(leagueId: string) {
                 .eq("id", draft.id);
         }
 
-        toast({
-            title: "Auto Pick",
-            description: `${currentDrafter.team_name || "Team"} auto-drafted ${nextAvailableTeam.global_teams.name}.`,
-        });
+       
 
     } catch (error) {
         console.error("❌ Error making auto pick:", error);
-        toast({
-            title: "Error",
-            description: "Failed to make auto pick. Please try again.",
-            variant: "destructive",
-        });
+        
     }
 };
 
@@ -316,10 +290,7 @@ export function useDraftState(leagueId: string) {
 
         if (error) throw error;
 
-        toast({
-            title: "Team Drafted",
-            description: "You have successfully made your pick.",
-        });
+        
 
         // No need to manually update local state
         // The Supabase subscription will automatically update the UI
@@ -327,11 +298,7 @@ export function useDraftState(leagueId: string) {
 
     } catch (error) {
         console.error("Error making draft pick:", error);
-        toast({
-            title: "Error",
-            description: "Failed to make draft pick. Please try again.",
-            variant: "destructive",
-        });
+      
     }
 };  
 
