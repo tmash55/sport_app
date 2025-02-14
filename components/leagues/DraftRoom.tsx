@@ -4,7 +4,7 @@ import { useState, useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { DraftBoard } from "./DraftBoard"
 import { AvailableTeams } from "./AvailableTeams"
-import { DraftTimer } from "./DraftTimer"
+
 import { ScrollArea, ScrollBar } from "../ui/scroll-area"
 import { BracketView } from "../DraftRoom/BracketView"
 import { DraftRoomSkeleton } from "../DraftRoom/DraftRoomSkeleton"
@@ -16,6 +16,7 @@ import { useDraftState } from "@/hooks/use-draft-state"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu } from "lucide-react"
 import { RecentPicks } from "./RecentPicks"
+import DraftTimer from "./DraftTimer"
 
 interface DraftRoomProps {
   leagueId: string
