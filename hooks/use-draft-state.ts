@@ -225,6 +225,10 @@ export function useDraftState(leagueId: string, ) {
 
             if (error) throw error;
         } else {
+          const totalPicks = Math.floor(64 / maxTeams) * maxTeams;
+            const nextPickNumber = draft.current_pick_number + 1;
+
+            const isDraftCompleted = nextPickNumber > totalPicks;
             // 🚨 If there's no user_id, manually insert the pick
             const { error } = await supabase
                 .from("draft_picks")
@@ -240,16 +244,28 @@ export function useDraftState(leagueId: string, ) {
             if (error) throw error;
 
             // ✅ Manually update the draft state since the RPC function isn't handling it
-            const timerExpiresAt = new Date(Date.now() + draft.draft_pick_timer * 1000).toISOString();
+            if (isDraftCompleted) {
+              // ✅ Mark draft as completed
+              await supabase
+                  .from("drafts")
+                  .update({
+                      status: "completed",
+                      end_time: new Date().toISOString()
+                  })
+                  .eq("id", draft.id);
+          } else {
+              // ✅ Update draft with next pick and timer
+              const newTimerExpiresAt = new Date(Date.now() + draft.draft_pick_timer * 1000).toISOString();
 
-            await supabase
-                .from("drafts")
-                .update({
-                    current_pick_number: draft.current_pick_number + 1,
-                    timer_expires_at: timerExpiresAt
-                })
-                .eq("id", draft.id);
+              await supabase
+                  .from("drafts")
+                  .update({
+                      current_pick_number: nextPickNumber,
+                      timer_expires_at: newTimerExpiresAt
+                  })
+                  .eq("id", draft.id);
         }
+      }
 
        
 
