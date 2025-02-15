@@ -15,7 +15,7 @@ export default function MyPoolsPage() {
 
   const filteredLeagues = useMemo(() => {
     if (!leagues) return []
-    console.log("All leagues:", leagues)
+    
 
     return leagues
       .filter((league: any) => {
@@ -23,7 +23,7 @@ export default function MyPoolsPage() {
           league.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           league.contests.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           league.contests.sport.toLowerCase().includes(searchQuery.toLowerCase())
-
+          console.log("league data:", league)
         const matchesTab =
           activeTab === "all" ||
           (activeTab === "active" && league.contests.status === "active") ||

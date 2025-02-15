@@ -7,13 +7,13 @@ import { DraftTimeModal } from "./DraftTimeModal"
 import { DraftCountdown } from "./DraftCountdown"
 import { InviteMembers } from "./InviteMembers"
 import { DraftOrderManager } from "./DraftOrderManager"
+import { CommissionerGuide } from "./CommissionerGuide"
 import Link from "next/link"
 import { Trophy, Users, ArrowRight, Clock, AlertTriangle, ShieldCheck } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import { EnergizedButton } from "../ui/energized-button"
 import ButtonCheckout from "../ButtonCheckout"
 import config from "@/config"
-import ButtonAccount from "../ButtonAccount"
 
 const LeagueHeaderSkeleton = () => (
   <Card className="mb-4 sm:mb-6">
@@ -48,17 +48,14 @@ export function LeagueHeader() {
   console.log(leagueData)
   const { id: leagueId, name, contests, league_members, drafts, user_id, payment_status, league_settings } = leagueData
 
-  const userLeagueRole = league_members.find(
-    (member: any) => member.user_id === user_id
-  )?.role;
-  
-  const isCommissioner = userLeagueRole === "commissioner";
-  
+  const userLeagueRole = league_members.find((member: any) => member.user_id === user_id)?.role
+
+  const isCommissioner = userLeagueRole === "commissioner"
+
   const isLeagueFull = league_members.every((member: any) => member.user_id !== null)
   const needsPayment = isCommissioner && payment_status !== "paid"
   const isDraftCompleted = drafts.status === "completed"
   const maxTeams = league_settings[0].max_teams
-  
 
   return (
     <Card className="mb-4 sm:mb-6">
@@ -79,7 +76,9 @@ export function LeagueHeader() {
               <Separator orientation="vertical" className="h-4" />
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-primary" />
-                <span className="font-medium"> Draft{" "}
+                <span className="font-medium">
+                  {" "}
+                  Draft{" "}
                   {drafts.status === "pre_draft"
                     ? "Pre Draft"
                     : drafts.status === "in_progress"
@@ -94,12 +93,19 @@ export function LeagueHeader() {
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-start gap-4">
-          {isCommissioner && drafts.status === "pre_draft" && (
-            <>
-              <DraftOrderManager leagueId={leagueId} maxTeams={maxTeams} onOrderUpdated={() => {}} />
-              <DraftTimeModal />
-            </>
-          )}
+            {isCommissioner && drafts.status === "pre_draft" && (
+              <>
+                <DraftOrderManager leagueId={leagueId} maxTeams={maxTeams} onOrderUpdated={() => {}} />
+                <DraftTimeModal />
+                <CommissionerGuide
+                  leagueId={leagueId}
+                  hasSetDraftTime={Boolean(drafts.start_time)}
+                  hasDraftOrder={league_members.every((member: any) => member.draft_position !== null)}
+                  memberCount={league_members.length}
+                  maxMembers={maxTeams}
+                />
+              </>
+            )}
           </div>
         </div>
 
@@ -113,6 +119,12 @@ export function LeagueHeader() {
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1 relative z-10" />
                 </Link>
               </EnergizedButton>
+            )}
+            {!isLeagueFull && isCommissioner && (
+              <>
+                <Separator className="my-6" />
+                <InviteMembers leagueId={leagueId} />
+              </>
             )}
 
             {needsPayment && (
@@ -145,13 +157,6 @@ export function LeagueHeader() {
               </div>
             )}
           </div>
-        )}
-
-        {!isLeagueFull && isCommissioner && (
-          <>
-            <Separator className="my-6" />
-            <InviteMembers leagueId={leagueId} />
-          </>
         )}
       </CardContent>
     </Card>

@@ -4,6 +4,7 @@ import type React from "react"
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
 import { createClient } from "@/libs/supabase/client"
 import { useToast } from "@/hooks/use-toast"
+import { useUser } from "./UserProvider"
 
 interface LeagueContextType {
   leagueData: any
@@ -39,12 +40,13 @@ export function LeagueProvider({
   const [error, setError] = useState<Error | null>(null)
   const supabase = createClient()
   const { toast } = useToast()
+  const { user } = useUser()
 
   const fetchLeagueData = useCallback(async () => {
+    if (!user) return
     try {
       setIsLoading(true)
-      const { data: userData } = await supabase.auth.getUser()
-      const userId = userData.user?.id
+      const userId = user.id
 
       const { data, error } = await supabase
         .from("leagues")
@@ -154,10 +156,13 @@ export function LeagueProvider({
     } finally {
       setIsLoading(false)
     }
-  }, [leagueId, supabase, toast])
+  }, [leagueId, supabase, toast, user])
 
   useEffect(() => {
-    fetchLeagueData()
+    if (user) {
+      // Only fetch data if there's a user
+      fetchLeagueData()
+    }
 
     const leagueChannel = supabase
       .channel("league_changes")
@@ -187,7 +192,7 @@ export function LeagueProvider({
     return () => {
       supabase.removeChannel(leagueChannel)
     }
-  }, [leagueId, supabase, fetchLeagueData])
+  }, [user, leagueId, supabase, fetchLeagueData])
 
   const refreshLeagueData = useCallback(async () => {
     await fetchLeagueData()

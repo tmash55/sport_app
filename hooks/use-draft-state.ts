@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/libs/supabase/client"
 import type { Draft, LeagueMember, LeagueTeam, DraftPick } from "@/types/draft"
 import { useToast } from "./use-toast"
+import { useUser } from "@/app/context/UserProvider"
+
 
 
 
@@ -22,81 +24,63 @@ export function useDraftState(leagueId: string, ) {
 
   const supabase = createClient()
   const { toast } = useToast()  
+  const { user } = useUser()
 
-  
-
-  //fetch user on mount
-  useEffect(() => {
-    const initializeUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error("Error fetching user:", error);
-        return;
-      }
-      setCurrentUser(user?.id || null);
-    };
-
-    initializeUser();
-  }, []);
-
-
-  // ✅ Fetch initial draft data
+  // ✅ Fetch draft data efficiently
   const fetchDraftData = useCallback(async () => {
-    if (!currentUser) return; // Ensure we have a user before fetching draft data
+    if (!user) return;
     setIsLoading(true);
-  
+
     try {
       const { data, error } = await supabase.rpc("get_draft_data", {
         p_league_id: leagueId,
       });
-  
+
       if (error) throw error;
-  
-      // ✅ Set all the state variables from the single response
+
       setDraft(data.draft);
       setLeagueName(data.league.name);
-      setIsCommissioner(data.league.commissioner_id === currentUser);
+      setIsCommissioner(data.league.commissioner_id === user.id);
       setMaxTeams(data.settings.max_teams);
       setLeagueMembers(data.members || []);
       setAvailableTeams(data.teams || []);
       setDraftPicks(data.picks || []);
-      
-      setDraftedTeamIds(new Set((data.picks || []).map((pick: any) => pick.team_id)));
-  
+
+      // Optimize drafted team IDs update
+      setDraftedTeamIds(new Set(data.picks?.map((pick: any) => pick.team_id) || []));
+
     } catch (error) {
       console.error("Error fetching draft data:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [leagueId, currentUser]);
-  // ✅ Fetch Matchups Data
-  const fetchMatchups = async () => {
-    setMatchupsLoading(true)
-    setMatchupsError(null)
+  }, [leagueId, user, supabase]);
 
-    const { data, error } = await supabase.rpc("get_matchups", { p_league_id: leagueId })
+  // ✅ Fetch matchups efficiently
+  const fetchMatchups = useCallback(async () => {
+    setMatchupsLoading(true);
+    setMatchupsError(null);
+
+    const { data, error } = await supabase.rpc("get_matchups", { p_league_id: leagueId });
 
     if (error) {
-      console.error("Error fetching matchups:", error)
-      setMatchupsError(new Error(error.message))
+      console.error("Error fetching matchups:", error);
+      setMatchupsError(new Error(error.message));
     } else {
-      setMatchups(data)
+      setMatchups(data);
     }
 
-    setMatchupsLoading(false)
-  }
-
-  // ✅ Ensure Matchups are fetched on mount
-  useEffect(() => {
-    fetchMatchups()
-  }, [leagueId])
+    setMatchupsLoading(false);
+  }, [leagueId]);
   
 
-  // ✅ Fetch data on mount
+   // ✅ Combined useEffect for fetching data only once when user is ready
   useEffect(() => {
-    fetchDraftData()
-  }, [fetchDraftData])
-  console.log(draftPicks)
+    if (user) {
+      fetchDraftData();
+      fetchMatchups();
+    }
+  }, [user, fetchDraftData, fetchMatchups]);
   
   const handleSettingsChange = useCallback(
     async (newSettings: { leagueName: string; minutesPerPick: number }) => {
@@ -143,7 +127,7 @@ export function useDraftState(leagueId: string, ) {
   }
   const isUsersTurn = () => {
     const currentDrafter = getCurrentDrafter()
-    return currentDrafter?.user_id === currentUser
+    return currentDrafter?.user_id === user?.id
   }
 
   const handleDraftAction = async (action: "start" | "pause" | "resume") => {
@@ -284,7 +268,7 @@ export function useDraftState(leagueId: string, ) {
         const { error } = await supabase.rpc("make_draft_pick", {
             p_draft_id: draft.id,
             p_league_id: leagueId,
-            p_user_id: currentUser,
+            p_user_id: user.id,
             p_team_id: teamId
         });
 
@@ -364,7 +348,7 @@ useEffect(() => {
     leagueMembers,
     availableTeams,
     draftPicks,
-    currentUser,
+    currentUser: user,
     isLoading,
     isCommissioner,
     maxTeams,

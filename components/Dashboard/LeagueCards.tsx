@@ -69,6 +69,7 @@ export function LeagueCards({ league, isCommissioner }: LeagueCardsProps) {
   const contestType = league.contest?.contest_type || "Unknown"
   const sportColor = getSportColor(sport)
   const isNowDrafting = league.draft_status === "in_progress" || league.draft_status === "paused"
+  console.log('league data (card):', league)
 
   const getDraftStatusDisplay = () => {
     switch (league.draft_status) {
@@ -78,7 +79,9 @@ export function LeagueCards({ league, isCommissioner }: LeagueCardsProps) {
       case "paused":
         return "Now Drafting"
       case "pre_draft":
-        return "Pre Draft"
+        return league.draft_start_time
+        ? `Draft: ${format(new Date(league.draft_start_time), "MMM d, h:mm a")}`
+        : "Draft Scheduled"
       case "scheduled":
         return league.draft_start_time
           ? `Draft: ${format(new Date(league.draft_start_time), "MMM d, h:mm a")}`

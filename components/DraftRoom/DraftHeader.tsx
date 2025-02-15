@@ -1,4 +1,5 @@
 "use client"
+
 import { LogOut, Info, Pause, Play, Menu, Sun, Moon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -6,6 +7,7 @@ import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Alert } from "@/components/ui/alert"
 import { ThemeSwitchingLogo } from "../ui/ThemeSwitchingLogo"
 
 interface DraftHeaderProps {
@@ -37,30 +39,32 @@ export function DraftHeader({
   const isDark = theme === "dark"
 
   return (
-    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto py-2 md:py-4">
+    <header className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto py-2">
         <div className="flex items-center justify-between">
           {/* League Info */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center pr-2">
-              <ThemeSwitchingLogo />
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center">
+              <ThemeSwitchingLogo className="h-8 w-8" />
             </div>
-            <div
-              className={cn("w-2 h-2 md:w-3 md:h-3 rounded-full", {
-                "bg-yellow-500": draftStatus === "pre_draft",
-                "bg-green-500": draftStatus === "in_progress",
-                "bg-red-500": draftStatus === "paused",
-                "bg-gray-500": draftStatus === "completed",
-              })}
-            />
-            <div>
-              <h1 className="text-lg md:text-2xl font-bold truncate max-w-[150px] md:max-w-none">{leagueName}</h1>
-              <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">
-                {minutesPerPick < 1
-                  ? `${Math.round(minutesPerPick * 60)} Seconds Per Pick`
-                  : `${minutesPerPick} ${minutesPerPick === 1 ? "Minute" : "Minutes"} Per Pick`}{" "}
-                · {maxTeams} Teams · {totalRounds} Rounds
-              </p>
+            <div className="flex items-center gap-2">
+              <div
+                className={cn("w-1.5 h-1.5 rounded-full", {
+                  "bg-yellow-500/70": draftStatus === "pre_draft",
+                  "bg-green-500/70": draftStatus === "in_progress",
+                  "bg-red-500/70": draftStatus === "paused",
+                  "bg-gray-500/70": draftStatus === "completed",
+                })}
+              />
+              <div>
+                <h1 className="text-base font-semibold leading-none mb-0.5">{leagueName}</h1>
+                <p className="text-xs text-muted-foreground leading-none">
+                  {minutesPerPick < 1
+                    ? `${Math.round(minutesPerPick * 60)} Seconds Per Pick`
+                    : `${minutesPerPick} ${minutesPerPick === 1 ? "Minute" : "Minutes"} Per Pick`}{" "}
+                  · {maxTeams} Teams · {totalRounds} Rounds
+                </p>
+              </div>
             </div>
           </div>
 
@@ -68,8 +72,8 @@ export function DraftHeader({
           <div className="sm:hidden">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-10 w-10">
-                  <Menu className="h-5 w-5" />
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Menu className="h-4 w-4" />
                   <span className="sr-only">Open menu</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -115,18 +119,18 @@ export function DraftHeader({
           </div>
 
           {/* Desktop Actions */}
-          <div className="hidden sm:flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-1.5">
             <TooltipProvider>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="icon"
-                      className="h-10 w-10"
+                      className="h-8 w-8"
                       onClick={() => window.open("/how-to-play/march-madness-draft", "_blank")}
                     >
-                      <Info className="h-5 w-5" />
+                      <Info className="h-4 w-4" />
                       <span className="sr-only">Rules</span>
                     </Button>
                   </TooltipTrigger>
@@ -138,12 +142,12 @@ export function DraftHeader({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="icon"
-                      className="h-10 w-10"
+                      className="h-8 w-8"
                       onClick={() => setTheme(isDark ? "light" : "dark")}
                     >
-                      {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                       <span className="sr-only">Toggle theme</span>
                     </Button>
                   </TooltipTrigger>
@@ -156,9 +160,9 @@ export function DraftHeader({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="icon"
-                        className="h-10 w-10"
+                        className="h-8 w-8"
                         onClick={
                           draftStatus === "pre_draft"
                             ? onStartDraft
@@ -167,9 +171,9 @@ export function DraftHeader({
                               : onResumeDraft
                         }
                       >
-                        {draftStatus === "pre_draft" && <Play className="h-5 w-5" />}
-                        {draftStatus === "in_progress" && <Pause className="h-5 w-5" />}
-                        {draftStatus === "paused" && <Play className="h-5 w-5" />}
+                        {draftStatus === "pre_draft" && <Play className="h-4 w-4" />}
+                        {draftStatus === "in_progress" && <Pause className="h-4 w-4" />}
+                        {draftStatus === "paused" && <Play className="h-4 w-4" />}
                         <span className="sr-only">
                           {draftStatus === "pre_draft"
                             ? "Start Draft"
@@ -193,9 +197,9 @@ export function DraftHeader({
 
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-10 w-10" asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                       <Link href={`/dashboard/leagues/${leagueId}`}>
-                        <LogOut className="h-5 w-5" />
+                        <LogOut className="h-4 w-4" />
                         <span className="sr-only">Exit to Dashboard</span>
                       </Link>
                     </Button>
@@ -209,6 +213,37 @@ export function DraftHeader({
           </div>
         </div>
       </div>
+
+      {/* Pause Alert */}
+      {draftStatus === "paused" && (
+        <div
+          className={cn(
+            "w-full bg-red-950/95 backdrop-blur supports-[backdrop-filter]:bg-red-950/80",
+            "animate-in fade-in slide-in-from-top duration-150",
+          )}
+        >
+          <div className="container mx-auto">
+            <Alert variant="destructive" className="rounded-none border-0 bg-transparent py-2.5">
+              <div className="flex items-center gap-3">
+                <Info className="h-5 w-5 text-red-400/70" />
+                <div className="flex items-center gap-2 min-w-0">
+                  <p className="text-sm font-medium text-red-300">Draft Paused</p>
+                  <p className="text-sm text-red-200/90">The draft has been paused by the commissioner.</p>
+                </div>
+                {isCommissioner && (
+                  <Button
+                    variant="link"
+                    className="ml-auto text-sm font-medium text-red-300 hover:text-red-200 h-auto p-0"
+                    onClick={onResumeDraft}
+                  >
+                    Resume Draft
+                  </Button>
+                )}
+              </div>
+            </Alert>
+          </div>
+        </div>
+      )}
     </header>
   )
 }

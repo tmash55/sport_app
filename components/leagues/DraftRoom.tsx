@@ -57,7 +57,7 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
   const handleResumeDraft = () => handleDraftAction("resume")
 
   const currentLeagueMember = useMemo(
-    () => leagueMembers.find((member) => member.user_id === currentUser),
+    () => leagueMembers.find((member) => member.user_id === currentUser.id),
     [leagueMembers, currentUser],
   )
   useEffect(() => {
@@ -144,32 +144,7 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
         isCommissioner={isCommissioner}
         leagueId={leagueId}
       />
-      {draft?.status === "paused" && (
-        <div
-        className={`fixed inset-x-0 top-0 z-50 transition-all duration-150 ${
-          isExiting ? "animate-out fade-out slide-out-to-top-4" : "animate-in fade-in slide-in-from-top-4"
-        }`}
-      >
-        <div className="container mx-auto px-4">
-          <div className="relative mx-auto max-w-3xl mt-2 rounded-lg bg-red-500/10 px-4 py-3">
-            <div className="flex items-center justify-between gap-x-4">
-              <div className="flex items-center gap-x-2">
-                <Info className="h-5 w-5 text-red-400" aria-hidden="true" />
-                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-x-2">
-                  <p className="text-sm font-medium text-red-400">Draft Paused</p>
-                  <p className="text-sm text-red-300">The draft has been paused by the commissioner.</p>
-                </div>
-              </div>
-              {isCommissioner && (
-                <button onClick={handleResumeDraft} className="text-sm font-medium text-red-400 hover:text-red-300">
-                  Resume Draft
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-      )}
+      
       <div className="flex-1 flex flex-col lg:flex-row gap-4 h-[calc(100vh-6rem)] overflow-hidden pt-2 px-2 lg:px-4">
         <div className="w-full lg:w-[30%] xl:w-[20%] flex flex-col gap-4">
           <Card
@@ -230,7 +205,7 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
                 currentPickNumber={draft?.current_pick_number || 0}
               />
 
-
+              
           <Card className="flex-1 overflow-hidden lg:block hidden">
             <CardContent className="p-2 lg:p-4 h-full">
               <ScrollArea className="h-full">

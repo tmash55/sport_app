@@ -9,43 +9,36 @@ import { Separator } from "@/components/ui/separator"
 import { Trophy } from "lucide-react"
 import { LeaguesProvider } from "../context/LeaguesContext"
 import { DashboardFooter } from "@/components/DashboardFooter"
+import { UserProvider } from "../context/UserProvider"
 
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: ReactNode
 }) {
-  const supabase = createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect(config.auth.loginUrl)
-  }
-
   return (
-    <LeaguesProvider>
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset className="flex flex-col">
-          <header className="sticky top-0 z-10 flex h-20 shrink-0 items-center justify-between gap-2 border-b px-4 bg-sidebar text-foreground">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger className="-ml-1" />
-              <Separator orientation="vertical" className="mr-2 h-4" />
-              <div className="min-h-[22px]">
-                <DynamicBreadcrumb />
+    <UserProvider>
+      <LeaguesProvider>
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarInset className="flex flex-col">
+            <header className="sticky top-0 z-10 flex h-20 shrink-0 items-center justify-between gap-2 border-b px-4 bg-sidebar text-foreground">
+              <div className="flex items-center gap-2">
+                <SidebarTrigger className="-ml-1" />
+                <Separator orientation="vertical" className="mr-2 h-4" />
+                <div className="min-h-[22px]">
+                  <DynamicBreadcrumb />
+                </div>
               </div>
-            </div>
-          </header>
-          <main className="flex-1 overflow-y-auto ">
-            <div className="flex flex-col gap-4 p-4 ">{children}</div>
-          </main>
-          <DashboardFooter/>
-        </SidebarInset>
-      </SidebarProvider>
-    </LeaguesProvider>
+            </header>
+            <main className="flex-1 overflow-y-auto">
+              <div className="flex flex-col gap-4 p-4">{children}</div>
+            </main>
+            <DashboardFooter />
+          </SidebarInset>
+        </SidebarProvider>
+      </LeaguesProvider>
+    </UserProvider>
   )
 }
 
