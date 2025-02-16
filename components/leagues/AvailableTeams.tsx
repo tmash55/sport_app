@@ -230,7 +230,7 @@ export function AvailableTeams({
                         </TooltipTrigger>
                         <TooltipContent>
                           <p className="font-medium mb-1">Strength of Schedule (SOS)</p>
-                          <p>Rating of schedule difficulty based on opponents' records.</p>
+                          <p>Rating of schedule difficulty based on opponents&apos; records.</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
