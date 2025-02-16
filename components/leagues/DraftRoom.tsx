@@ -86,7 +86,7 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
       case "availableTeams":
         return (
           <ScrollArea className="h-full w-full">
-            <div className="p-4">
+          <div className="px-0 sm:px-4">
               <AvailableTeams
                 leagueId={leagueId}
                 draftId={draft.id}
@@ -205,7 +205,7 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
                 currentPickNumber={draft?.current_pick_number || 0}
               />
 
-              
+            
           <Card className="flex-1 overflow-hidden lg:block hidden">
             <CardContent className="p-2 lg:p-4 h-full">
               <ScrollArea className="h-full">
@@ -266,7 +266,7 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
             <Card className="h-full">
               <CardContent className="h-full p-2 lg:p-4 overflow-auto">
                 <ScrollArea className="h-full">
-                  <div className="min-w-[800px] lg:min-w-0">{renderMainContent()}</div>
+                <div className={cn("w-full", currentView === "availableTeams" ? "min-w-0" : "min-w-[800px] lg:min-w-0")}>{renderMainContent()}</div>
                   <ScrollBar orientation="horizontal" />
                 </ScrollArea>
               </CardContent>

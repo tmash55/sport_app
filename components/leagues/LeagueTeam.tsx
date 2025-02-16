@@ -3,14 +3,17 @@
 import { useEffect, useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Trophy, X, ChevronUp, ChevronDown, ChevronsUpDown, ChevronDownIcon, CheckIcon } from "lucide-react"
+import { Trophy, X, ChevronUp, ChevronDown, ChevronsUpDown, ChevronDownIcon, CheckIcon, Edit2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
-import { useLeague } from "@/app/context/LeagueContext"
+import { useLeague,  } from "@/app/context/LeagueContext"
 import Image from "next/image"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { updateTeamName } from "@/app/actions/updateTeamName"
+import { Input } from "../ui/input"
+
 
 type LeagueMember = {
   id: string
@@ -53,11 +56,13 @@ type SortConfig = {
 }
 
 export function LeagueTeam() {
-  const { leagueData, isLoading, error } = useLeague()
+  const { leagueData, isLoading, error, refreshLeagueData } = useLeague()
   const { toast } = useToast()
   const [imagesLoaded, setImagesLoaded] = useState(false)
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "totalScore", direction: "descending" })
+  const [isEditingTeamName, setIsEditingTeamName] = useState(false)
+  const [newTeamName, setNewTeamName] = useState("")
   const { leagueMember, draftedTeams } = useMemo(() => {
     if (!leagueData) return { leagueMember: null, draftedTeams: [] }
 
@@ -98,6 +103,53 @@ export function LeagueTeam() {
       })
     }
   }, [error, toast])
+  const MAX_TEAM_NAME_LENGTH = 25
+
+  const handleEditTeamName = () => {
+    if (!leagueMember) return
+    setNewTeamName(leagueMember.team_name || "")
+    setIsEditingTeamName(true)
+  }
+
+  const handleSaveTeamName = async () => {
+    if (!leagueMember) return
+
+    // Trim the team name and check if it's empty or too long
+    const trimmedName = newTeamName.trim()
+    if (trimmedName.length === 0) {
+      toast({
+        title: "Error",
+        description: "Team name cannot be empty.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (trimmedName.length > MAX_TEAM_NAME_LENGTH) {
+      toast({
+        title: "Error",
+        description: `Team name must be ${MAX_TEAM_NAME_LENGTH} characters or less.`,
+        variant: "destructive",
+      })
+      return
+    }
+
+    const result = await updateTeamName(leagueMember.id, trimmedName)
+    if (result.success) {
+      setIsEditingTeamName(false)
+      refreshLeagueData()
+      toast({
+        title: "Team name updated",
+        description: "Your team name has been successfully updated.",
+      })
+    } else {
+      toast({
+        title: "Error",
+        description: result.error || "Failed to update team name. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
 
   useEffect(() => {
     if (draftedTeams.length > 0) {
@@ -173,9 +225,39 @@ export function LeagueTeam() {
       <CardHeader className="space-y-4 p-4 sm:px-6 sm:pb-0">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-4 pb-4 sm:pb-0">
           <div className="flex flex-col items-start gap-2">
-            <CardTitle className="text-xl sm:text-2xl font-bold whitespace-nowrap bg-gradient-to-r from-primary/90 to-primary bg-clip-text text-transparent">
-              {leagueMember?.team_name || leagueMember?.users.display_name || "User's Team"}
-            </CardTitle>
+            <div className="flex items-center gap-2">
+              {isEditingTeamName ? (
+                <>
+                  <Input
+                    value={newTeamName}
+                    onChange={(e) => setNewTeamName(e.target.value)}
+                    className="text-xl sm:text-2xl font-bold"
+                  />
+                  <Button onClick={handleSaveTeamName} size="sm" variant="default">
+                    Save
+                  </Button>
+                  <Button onClick={() => setIsEditingTeamName(false)} size="sm" variant="outline">
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <CardTitle className="text-xl sm:text-2xl font-bold whitespace-nowrap bg-gradient-to-r from-primary/90 to-primary bg-clip-text text-transparent">
+                    {leagueMember?.team_name || leagueMember?.users.display_name || "User's Team"}
+                  </CardTitle>
+                  {leagueMember?.user_id === leagueData?.user_id && (
+                    <Button
+                      onClick={handleEditTeamName}
+                      size="sm"
+                      variant="link"
+                      className="flex items-center gap-2"
+                    >
+                      <Edit2 className="h-3 w-3" />
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
             <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80">
               Total Score: {draftedTeams.reduce((sum: any, team: any) => sum + team.totalScore, 0)}
             </div>

@@ -1,15 +1,19 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import Image from "next/image"
-import { Search, HelpCircle, Filter } from "lucide-react"
+import { Search, Filter, LayoutGrid, Table2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { LeagueTeam, DraftPick } from "@/types/draft"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card } from "@/components/ui/card"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { useMediaQuery } from "@/hooks/use-media-query"
+
+type ViewMode = "card" | "table"
 
 interface AvailableTeamsProps {
   leagueId: string
@@ -34,6 +38,12 @@ export function AvailableTeams({
   const [selectedConference, setSelectedConference] = useState<string>("all")
   const [sortColumn, setSortColumn] = useState<keyof LeagueTeam["global_teams"] | "name">("seed")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const isMobile = useMediaQuery("(max-width: 768px)")
+  const [viewMode, setViewMode] = useState<ViewMode>("table")
+
+  useEffect(() => {
+    setViewMode(isMobile ? "card" : "table")
+  }, [isMobile])
 
   const draftedTeamIds = useMemo(() => new Set(draftPicks.map((pick) => pick.team_id)), [draftPicks])
 
@@ -76,22 +86,25 @@ export function AvailableTeams({
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex flex-col sm:flex-row gap-4 mb-4 px-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Search teams by name..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-8"
-          />
-        </div>
+    <div className="flex flex-col h-full space-y-4">
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="text"
+          placeholder="Search teams by name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-9 pr-4"
+        />
+      </div>
+
+      {/* Filters Row */}
+      <div className="grid grid-cols-2 gap-2">
         <Select value={selectedConference} onValueChange={setSelectedConference}>
-          <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectTrigger>
             <Filter className="mr-2 h-4 w-4" />
-            <SelectValue placeholder="Conference" />
+            <SelectValue placeholder="All Conferences" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Conferences</SelectItem>
@@ -102,86 +115,57 @@ export function AvailableTeams({
             ))}
           </SelectContent>
         </Select>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <ToggleGroup type="single" value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)}>
+                <ToggleGroupItem value="card" aria-label="Card View" className="flex-1">
+                  <LayoutGrid className="h-4 w-4" />
+                </ToggleGroupItem>
+                <ToggleGroupItem value="table" aria-label="Table View" className="flex-1">
+                  <Table2 className="h-4 w-4" />
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>{viewMode === "card" ? "Switch to Table View" : "Switch to Card View"}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
-      <ScrollArea className="flex-1 px-2">
-        <Table>
-          <TableHeader className="sticky top-0 bg-background/95 backdrop-blur">
-            <TableRow>
-              <TableHead className="w-[100px]"></TableHead>
-              <TableHead className="w-[250px]">Team</TableHead>
-              <TableHead className="hidden sm:table-cell cursor-pointer" onClick={() => handleSort("conference")}>
-                Conference {sortColumn === "conference" && (sortDirection === "asc" ? "↑" : "↓")}
-              </TableHead>
-              <TableHead className="text-center cursor-pointer" onClick={() => handleSort("wins")}>
-                Record {sortColumn === "wins" && (sortDirection === "asc" ? "↑" : "↓")}
-              </TableHead>
-              <TableHead className="hidden md:table-cell text-center">
-                <div className="flex items-center justify-center gap-1">
-                  <span className="cursor-pointer" onClick={() => handleSort("bpi_rank")}>
-                    BPI {sortColumn === "bpi_rank" && (sortDirection === "asc" ? "↑" : "↓")}
-                  </span>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p className="font-medium mb-1">Basketball Power Index (BPI)</p>
-                        <p>
-                          A measure of team strength that accounts for game-by-game efficiency, strength of schedule,
-                          pace, days of rest, game location, and key player availability.
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </TableHead>
-              <TableHead className="hidden lg:table-cell text-center">
-                <div className="flex items-center justify-center gap-1">
-                  <span className="cursor-pointer" onClick={() => handleSort("sos")}>
-                    SOS {sortColumn === "sos" && (sortDirection === "asc" ? "↑" : "↓")}
-                  </span>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p className="font-medium mb-1">Strength of Schedule (SOS)</p>
-                        <p>
-                          A rating of team&apos;s schedule difficulty based on the win/loss records of their opponents.
-                          Higher numbers indicate a more challenging schedule.
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </TableHead>
-              <TableHead className="hidden md:table-cell text-center">
-                <div className="flex items-center justify-center gap-1">
-                  <span className="cursor-pointer" onClick={() => handleSort("quality_wins")}>
-                    QUAL WINS {sortColumn === "quality_wins" && (sortDirection === "asc" ? "↑" : "↓")}
-                  </span>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p className="font-medium mb-1">Quality Wins-Losses</p>
-                        <p>Number of Wins and Losses against current top 50 BPI teams.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+      {/* Content Area */}
+      <div className="flex-1 min-h-0">
+        {viewMode === "card" && (
+          <div className="space-y-2">
             {filteredTeams.map((team) => (
-              <TableRow key={team.id} className="group">
-                <TableCell className="font-medium py-2">
+              <Card key={team.id} className="p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    {team.global_teams.logo_filename && (
+                      <div className="relative w-12 h-12 flex items-center justify-center overflow-hidden bg-white rounded-full">
+                        <Image
+                          src={getLogoUrl(team.global_teams.logo_filename) || "/placeholder.svg"}
+                          alt={`${team.name} logo`}
+                          width={48}
+                          height={48}
+                          className="object-contain"
+                        />
+                      </div>
+                    )}
+                    <div className="flex flex-col">
+                      <span className="font-medium text-base">{team.name}</span>
+                      <span className="text-sm text-muted-foreground">Seed #{team.global_teams.seed}</span>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>{team.global_teams.conference}</span>
+                        <span>•</span>
+                        <span>
+                          {team.global_teams.wins}-{team.global_teams.losses}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                   <Button
                     variant={isUsersTurn ? "default" : "outline"}
                     size="sm"
@@ -190,40 +174,130 @@ export function AvailableTeams({
                   >
                     Draft
                   </Button>
-                </TableCell>
-                <TableCell className="py-2">
-                  <div className="flex items-center gap-3">
-                    {team.global_teams.logo_filename && (
-                      <div className="relative w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center overflow-hidden bg-white rounded-full">
-                        <Image
-                          src={getLogoUrl(team.global_teams.logo_filename) || "/placeholder.svg"}
-                          alt={`${team.name} logo`}
-                          width={40}
-                          height={40}
-                          className="object-contain max-w-full max-h-full"
-                        />
-                      </div>
-                    )}
-                    <div className="flex flex-col">
-                      <span className="font-medium">{team.name}</span>
-                      <span className="text-xs sm:text-sm text-muted-foreground">Seed #{team.global_teams.seed}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-4 mt-4 text-sm">
+                  <div className="text-center">
+                    <div className="text-muted-foreground">BPI</div>
+                    <div className="font-medium">{team.global_teams.bpi_rank}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-muted-foreground">SOS</div>
+                    <div className="font-medium">{team.global_teams.sos}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-muted-foreground">Quality</div>
+                    <div className="font-medium">
+                      {team.global_teams.quality_wins}-{team.global_teams.quality_losses}
                     </div>
                   </div>
-                </TableCell>
-                <TableCell className="hidden sm:table-cell py-2">{team.global_teams.conference}</TableCell>
-                <TableCell className="text-center py-2">
-                  {team.global_teams.wins}-{team.global_teams.losses}
-                </TableCell>
-                <TableCell className="hidden md:table-cell text-center py-2">{team.global_teams.bpi_rank}</TableCell>
-                <TableCell className="hidden lg:table-cell text-center py-2">{team.global_teams.sos}</TableCell>
-                <TableCell className="hidden md:table-cell text-center py-2">
-                  {team.global_teams.quality_wins}-{team.global_teams.quality_losses}
-                </TableCell>
-              </TableRow>
+                </div>
+              </Card>
             ))}
-          </TableBody>
-        </Table>
-      </ScrollArea>
+          </div>
+        )}
+
+        {viewMode === "table" && (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[100px]"></TableHead>
+                  <TableHead className="w-[250px]">Team</TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort("conference")}>
+                    Conference {sortColumn === "conference" && (sortDirection === "asc" ? "↑" : "↓")}
+                  </TableHead>
+                  <TableHead className="text-center cursor-pointer" onClick={() => handleSort("wins")}>
+                    Record {sortColumn === "wins" && (sortDirection === "asc" ? "↑" : "↓")}
+                  </TableHead>
+                  <TableHead className="text-center">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger className="cursor-pointer" onClick={() => handleSort("bpi_rank")}>
+                          BPI {sortColumn === "bpi_rank" && (sortDirection === "asc" ? "↑" : "↓")}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="font-medium mb-1">Basketball Power Index (BPI)</p>
+                          <p>A measure of team strength that accounts for game-by-game efficiency.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableHead>
+                  <TableHead className="text-center">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger className="cursor-pointer" onClick={() => handleSort("sos")}>
+                          SOS {sortColumn === "sos" && (sortDirection === "asc" ? "↑" : "↓")}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="font-medium mb-1">Strength of Schedule (SOS)</p>
+                          <p>Rating of schedule difficulty based on opponents' records.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableHead>
+                  <TableHead className="text-center">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger className="cursor-pointer" onClick={() => handleSort("quality_wins")}>
+                          QUAL WINS {sortColumn === "quality_wins" && (sortDirection === "asc" ? "↑" : "↓")}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="font-medium mb-1">Quality Wins-Losses</p>
+                          <p>Record against top 50 BPI teams.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredTeams.map((team) => (
+                  <TableRow key={team.id}>
+                    <TableCell className="font-medium py-2">
+                      <Button
+                        variant={isUsersTurn ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => onDraftPick(team.id)}
+                        disabled={!isUsersTurn || !isDraftInProgress}
+                      >
+                        Draft
+                      </Button>
+                    </TableCell>
+                    <TableCell className="py-2">
+                      <div className="flex items-center gap-3">
+                        {team.global_teams.logo_filename && (
+                          <div className="relative w-10 h-10 flex items-center justify-center overflow-hidden bg-white rounded-full">
+                            <Image
+                              src={getLogoUrl(team.global_teams.logo_filename) || "/placeholder.svg"}
+                              alt={`${team.name} logo`}
+                              width={40}
+                              height={40}
+                              className="object-contain"
+                            />
+                          </div>
+                        )}
+                        <div className="flex flex-col">
+                          <span className="font-medium">{team.name}</span>
+                          <span className="text-sm text-muted-foreground">Seed #{team.global_teams.seed}</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-2">{team.global_teams.conference}</TableCell>
+                    <TableCell className="text-center py-2">
+                      {team.global_teams.wins}-{team.global_teams.losses}
+                    </TableCell>
+                    <TableCell className="text-center py-2">{team.global_teams.bpi_rank}</TableCell>
+                    <TableCell className="text-center py-2">{team.global_teams.sos}</TableCell>
+                    <TableCell className="text-center py-2">
+                      {team.global_teams.quality_wins}-{team.global_teams.quality_losses}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
