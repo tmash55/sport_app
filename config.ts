@@ -44,12 +44,13 @@ const config = {
         priceId:
           process.env.NODE_ENV === "development"
             ? "price_1QqRMu2Npb9RmZDEf0R0tPPi"
-            : "price_1Qr4Xe2Npb9RmZDEicEduQ3I",
+            : "price_1QtFZO2Npb9RmZDEcDhak5d3",
+
         // This plan will look different on the pricing page, it will be highlighted. You can only have one plan with isFeatured: true
         isFeatured: true,
         name: "PoolPass",
         description: "One-time fee to unlock your league after the draft.",
-        price: 25,
+        price: 30,
         priceAnchor: 299,
         features: [
           { name: "Full league access after the draft" },

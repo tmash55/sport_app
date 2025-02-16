@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation" // ✅ Get current path
 import {
   Menu,
   ChevronDown,
@@ -14,6 +15,7 @@ import {
   HelpCircle,
   Newspaper,
   Home,
+  DollarSign,
 } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
@@ -27,7 +29,6 @@ const menuItems = [
   {
     name: "Start a Pool",
     href: "/pools/start",
-    isButton: true,
     icon: PlusCircle,
   },
   {
@@ -45,6 +46,11 @@ const menuItems = [
         icon: Football,
       },
     ],
+  },
+  {
+    name: "Pricing",
+    href: "/pricing",
+    icon: DollarSign,
   },
   {
     name: "More",
@@ -67,6 +73,7 @@ const menuItems = [
 export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [openSection, setOpenSection] = useState<string | null>(null)
+  const pathname = usePathname() // ✅ Get the current route
 
   useEffect(() => {
     const handleScroll = () => {
@@ -99,7 +106,10 @@ export function Navigation() {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors"
+                      className={cn(
+                        "flex items-center gap-1 text-sm font-medium transition-colors",
+                        pathname.startsWith(item.dropdown[0].href) ? "text-primary" : "text-foreground hover:text-primary"
+                      )}
                     >
                       {item.name}
                       <ChevronDown className="h-4 w-4" />
@@ -108,22 +118,31 @@ export function Navigation() {
                   <DropdownMenuContent>
                     {item.dropdown.map((subItem) => (
                       <DropdownMenuItem key={subItem.name} asChild>
-                        <Link href={subItem.href} className="w-full">
+                        <Link
+                          href={subItem.href}
+                          className={cn(
+                            "w-full text-sm font-medium",
+                            pathname === subItem.href ? "text-primary font-semibold" : "text-foreground hover:text-primary"
+                          )}
+                        >
                           {subItem.name}
                         </Link>
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-              ) : item.isButton ? (
-                <Button key={item.name} asChild variant="default" size="sm">
-                  <Link href={item.href}>{item.name}</Link>
-                </Button>
               ) : (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                  className={cn(
+                    "text-sm font-medium transition-colors",
+                    item.name === "Start a Pool"
+                      ? "text-primary font-semibold hover:text-primary/80"
+                      : pathname === item.href
+                      ? "text-primary font-semibold"
+                      : "text-foreground hover:text-primary"
+                  )}
                 >
                   {item.name}
                 </Link>
@@ -177,7 +196,10 @@ export function Navigation() {
                                 <Link
                                   key={subItem.name}
                                   href={subItem.href}
-                                  className="flex items-center gap-2 p-2 rounded-md hover:bg-accent text-sm"
+                                  className={cn(
+                                    "flex items-center gap-2 p-2 rounded-md text-sm",
+                                    pathname === subItem.href ? "text-primary font-semibold" : "hover:bg-accent"
+                                  )}
                                 >
                                   <subItem.icon className="h-4 w-4" />
                                   {subItem.name}
@@ -192,9 +214,7 @@ export function Navigation() {
                           href={item.href}
                           className={cn(
                             "flex items-center gap-2 p-2 rounded-md",
-                            item.isButton
-                              ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                              : "hover:bg-accent",
+                            pathname === item.href ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-accent"
                           )}
                         >
                           <item.icon className="h-5 w-5" />
@@ -204,12 +224,6 @@ export function Navigation() {
                     )}
                   </nav>
                 </div>
-                <div className="absolute bottom-0 left-0 right-0 border-t">
-                  <div className="p-6 flex flex-col gap-4">
-                    <ThemeToggle />
-                    <AuthButtons />
-                  </div>
-                </div>
               </SheetContent>
             </Sheet>
           </div>
@@ -218,4 +232,3 @@ export function Navigation() {
     </nav>
   )
 }
-

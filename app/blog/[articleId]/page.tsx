@@ -85,7 +85,7 @@ export default async function Article({
       />
 
       {/* GO BACK LINK */}
-      <div>
+      <div className="pt-8">
         <Link
           href="/blog"
           className="link !no-underline text-base-content/80 hover:text-base-content inline-flex items-center gap-1"

@@ -272,15 +272,13 @@ export default function MarchMadnessHowToPlay() {
               <li className="flex items-center gap-2">
                 <ChevronRight className="h-4 w-4 text-primary" />
                 <span>
-                  <strong>Creating a pool is free</strong>—you can invite members and complete the draft without
-                  payment.
+                  <strong>Creating a pool is free</strong>—you can invite members and complete the draft without payment.
                 </span>
               </li>
               <li className="flex items-center gap-2">
                 <ChevronRight className="h-4 w-4 text-primary" />
                 <span>
-                  To unlock scoring, live updates, standings, and bracket view, the commissioner must pay a one-time
-                  pool fee.
+                  To unlock scoring, live updates, standings, and bracket view, the commissioner must pay a one-time pool fee.
                 </span>
               </li>
               <li className="flex items-center gap-2">
@@ -288,6 +286,17 @@ export default function MarchMadnessHowToPlay() {
                 <span>The commissioner can pay before or after the draft to activate these features.</span>
               </li>
             </ul>
+            
+            {/* CTA Link to Pricing Page */}
+            <div className="mt-6">
+              <Link
+                href="/pricing"
+                className="inline-flex items-center gap-2 text-primary font-semibold hover:underline"
+              >
+                Learn more about pricing
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            </div>
           </CardContent>
         </Card>
 
