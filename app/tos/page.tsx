@@ -76,7 +76,7 @@ Users may not resell, redistribute, or misuse any part of Dryft’s software or 
 3. User Data and Privacy
 
 We collect and store user data, including name, email, and payment information, to provide our services.
-For details on how we handle your data, please refer to our Privacy Policy at https://dryftsportspools.com/privacy-policy.
+For details on how we handle your data, please refer to our Privacy Policy at https://dryftplay.com/privacy-policy.
 
 4. Non-Personal Data Collection
 
