@@ -3,6 +3,11 @@ import { Button } from "@/components/ui/button"
 import { Trophy, Users, Star, ChevronRight, Info, Zap, DollarSign, HelpCircle, Clock } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import Link from "next/link"
+import Image from "next/image"
+import draftBoard1 from "@/public/landing-page/draft-board1.png"
+import bracket1 from "@/public/landing-page/bracket.png"
+import leagueStandings from "@/public/landing-page/league_standings.png"
+import teamStandings from "@/public/landing-page/team_standings.png"
 
 export default function MarchMadnessHowToPlay() {
   return (
@@ -145,33 +150,33 @@ export default function MarchMadnessHowToPlay() {
               <li className="flex items-center gap-2">
                 <ChevronRight className="h-4 w-4 text-primary" />
                 <span>
-                  <strong>Draft Timer</strong> – The Pool Commissioner sets the draft timer duration, controlling how long
-                each player has to make their pick. If the user does not make the pick in the time limit they will get auto drafted a team.
+                  <strong>Draft Timer</strong> – The Pool Commissioner sets the draft timer duration, controlling how
+                  long each player has to make their pick. If the user does not make the pick in the time limit they
+                  will get auto drafted a team.
                 </span>
               </li>
               <li className="flex items-center gap-2">
                 <ChevronRight className="h-4 w-4 text-primary" />
                 <span>
-                  <strong>Commissioner Control</strong> – The Commissioner has the power to pause and resume the draft at
-                any time, allowing for flexibility in managing the draft process.
+                  <strong>Commissioner Control</strong> – The Commissioner has the power to pause and resume the draft
+                  at any time, allowing for flexibility in managing the draft process.
                 </span>
               </li>
               <li className="flex items-center gap-2">
                 <ChevronRight className="h-4 w-4 text-primary" />
                 <span>
                   <strong>No Trades</strong> – Once a team is drafted, it cannot be traded or swapped. This rule ensures
-                fairness and simplifies pool management.
+                  fairness and simplifies pool management.
                 </span>
               </li>
               <li className="flex items-center gap-2">
                 <ChevronRight className="h-4 w-4 text-primary" />
                 <span>
-                  <strong>Season-Long Commitment</strong> – The teams you draft are yours for the entire tournament. Choose
-                wisely, as your selections will impact your entire pool experience!
+                  <strong>Season-Long Commitment</strong> – The teams you draft are yours for the entire tournament.
+                  Choose wisely, as your selections will impact your entire pool experience!
                 </span>
               </li>
             </ul>
-            
           </CardContent>
         </Card>
 
@@ -212,6 +217,68 @@ export default function MarchMadnessHowToPlay() {
             <p className="mt-4 text-lg font-semibold text-primary">
               This isn&apos;t just a bracket pool—it&apos;s a fully immersive experience!
             </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-background/60 dark:bg-background/40 backdrop-blur-sm hover:bg-background/80 dark:hover:bg-background/60 transition-colors border-primary/10">
+          <CardContent className="p-6 sm:p-8">
+            <h2 className="text-2xl font-bold mb-4 dark:text-foreground text-[#11274F] flex items-center gap-2">
+              Visual Guide
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-2 dark:text-foreground text-[#11274F]">Draftboard</h3>
+                <Image
+                  src={draftBoard1}
+                  alt="Draftboard example"
+                  width={500}
+                  height={300}
+                  className="rounded-lg shadow-md"
+                />
+                <p className="mt-2 text-sm text-muted-foreground">
+                  The draftboard shows all teams selected by each player during the draft.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2 dark:text-foreground text-[#11274F]">Team Standings</h3>
+                <Image
+                  src={teamStandings}
+                  alt="Team standings example"
+                  width={500}
+                  height={300}
+                  className="rounded-lg shadow-md"
+                />
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Track how each NCAA team is performing throughout the tournament.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2 dark:text-foreground text-[#11274F]">League Standings</h3>
+                <Image
+                  src={leagueStandings}
+                  alt="League standings example"
+                  width={500}
+                  height={300}
+                  className="rounded-lg shadow-md"
+                />
+                <p className="mt-2 text-sm text-muted-foreground">
+                  See how you stack up against other players in your pool.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2 dark:text-foreground text-[#11274F]">Bracket View</h3>
+                <Image
+                  src={bracket1}
+                  alt="Bracket view example"
+                  width={500}
+                  height={300}
+                  className="rounded-lg shadow-md"
+                />
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Visualize the tournament bracket with team ownership information.
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -272,13 +339,15 @@ export default function MarchMadnessHowToPlay() {
               <li className="flex items-center gap-2">
                 <ChevronRight className="h-4 w-4 text-primary" />
                 <span>
-                  <strong>Creating a pool is free</strong>—you can invite members and complete the draft without payment.
+                  <strong>Creating a pool is free</strong>—you can invite members and complete the draft without
+                  payment.
                 </span>
               </li>
               <li className="flex items-center gap-2">
                 <ChevronRight className="h-4 w-4 text-primary" />
                 <span>
-                  To unlock scoring, live updates, standings, and bracket view, the commissioner must pay a one-time pool fee.
+                  To unlock scoring, live updates, standings, and bracket view, the commissioner must pay a one-time
+                  pool fee.
                 </span>
               </li>
               <li className="flex items-center gap-2">
@@ -286,7 +355,7 @@ export default function MarchMadnessHowToPlay() {
                 <span>The commissioner can pay before or after the draft to activate these features.</span>
               </li>
             </ul>
-            
+
             {/* CTA Link to Pricing Page */}
             <div className="mt-6">
               <Link
