@@ -91,7 +91,7 @@ export function Footer() {
         <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} dryft. All rights reserved.</p>
           <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-            <Link href="mailto:contact@dryft.com" className="flex items-center hover:text-primary transition-colors">
+            <Link href="mailto:support@dryftplay.com" className="flex items-center hover:text-primary transition-colors">
               <Mail className="h-4 w-4 mr-2" />
               {config.resend.supportEmail}
             </Link>
