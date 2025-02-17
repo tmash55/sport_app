@@ -37,7 +37,7 @@ export function Hero() {
           </h1>
 
           <p className="mt-6 text-xl text-max-w-2xl mx-auto dark:text-foreground/90 text-[#11274F]/90 hidden sm:block">
-            The strategy of fantasy sports meets the thrill of March Madness. Draft teams, track wins, and score big!
+          Forget the busted brackets. Experience March Madness like never before—draft teams, compete with friends, and track your points as the tournament unfolds.
           </p>
 
           <p className="mt-4 text-xl font-medium text-primary">
@@ -46,7 +46,7 @@ export function Hero() {
 
           <div className="mt-12 flex flex-col sm:flex-row gap-6 justify-center w-full sm:w-auto">
             <PulseButton size="lg" className="w-full sm:w-auto text-lg px-8 py-4 text-white">
-              <Link href="/pools/start">Create a Pool Now</Link>
+              <Link href="/pools/start">Start Your Pool – It&apos;s Free!</Link>
             </PulseButton>
             <Button
               size="lg"

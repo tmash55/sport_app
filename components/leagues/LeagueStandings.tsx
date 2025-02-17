@@ -129,7 +129,7 @@ export function LeagueStandings() {
                             Team Name
                           </th>
                           <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[150px]">
-                            Teams Active
+                            Teams Remaining
                           </th>
                           <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-[100px]">
                             R1

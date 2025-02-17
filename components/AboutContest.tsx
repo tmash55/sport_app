@@ -3,7 +3,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Trophy, Users, Star, TrendingUp, UserPlus, UsersRound, Gift } from "lucide-react"
 import Link from "next/link"
 import { PulseButton } from "./StyledButton"
-
+import Image from "next/image"
+import draftBoard1 from "@/public/landing-page/draft-board1.png"
 
 const steps = [
   {
@@ -27,10 +28,34 @@ const steps = [
 ]
 
 const contestFeatures = [
-  { icon: Trophy, title: "Draft Teams", description: "Draft your lineup of college basketball teams" },
-  { icon: Users, title: "Compete", description: "Compete with friends and other fans" },
-  { icon: Star, title: "Score Points", description: "Earn points for each win your teams secure" },
-  { icon: TrendingUp, title: "Bonus for Upsets", description: "Rack up extra points when underdogs triumph" },
+  {
+    icon: Trophy,
+    title: "Draft Teams",
+    description: "Draft your lineup of college basketball teams",
+    image: draftBoard1,
+    color: "from-blue-500/10 to-blue-500/5",
+  },
+  {
+    icon: Users,
+    title: "Compete",
+    description: "Compete with friends and other fans",
+    image: "/placeholder.svg?height=400&width=600",
+    color: "from-purple-500/10 to-purple-500/5",
+  },
+  {
+    icon: Star,
+    title: "Score Points",
+    description: "Earn points for each win your teams secure",
+    image: "/placeholder.svg?height=400&width=600",
+    color: "from-orange-500/10 to-orange-500/5",
+  },
+  {
+    icon: TrendingUp,
+    title: "Bonus for Upsets",
+    description: "Rack up extra points when underdogs triumph",
+    image: "/placeholder.svg?height=400&width=600",
+    color: "from-green-500/10 to-green-500/5",
+  },
 ]
 
 export function AboutContest() {
@@ -72,51 +97,56 @@ export function AboutContest() {
         </div>
 
         {/* Contest Features */}
-        <div className="grid md:grid-cols-2 gap-12 mb-16">
-          <div className="space-y-6">
-            <h3 className="text-2xl font-semibold mb-6 dark:text-foreground text-[#11274F]">How It Works</h3>
-            <div className="grid gap-4">
-              {contestFeatures.map((feature, index) => (
-                <Card
-                  key={index}
-                  className="group relative overflow-hidden border-muted-foreground/10 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 dark:border-primary/20"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <CardContent className="flex items-center gap-6 p-6">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-primary/10 blur-xl rounded-full transform group-hover:scale-125 transition-transform duration-300" />
-                      <div className="relative h-14 w-14 rounded-xl bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center text-primary-foreground shadow-lg">
-                        <feature.icon className="h-7 w-7" />
+        <div className="mb-16">
+          <h3 className="text-2xl font-semibold mb-8 dark:text-foreground text-[#11274F]">How It Works</h3>
+          <div className="grid sm:grid-cols-2 gap-6">
+            {" "}
+            {/* Updated grid layout */}
+            {contestFeatures.map((feature, index) => (
+              <Card
+                key={index}
+                className="group overflow-hidden border-muted-foreground/10 transition-all duration-300 hover:shadow-lg"
+              >
+                <CardContent className="p-0">
+                  <div className="relative aspect-[16/9] w-full">
+                    {" "}
+                    {/* Updated aspect ratio */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${feature.color}`} />
+                    <Image
+                      src={feature.image || "/placeholder.svg"}
+                      alt={feature.title}
+                      fill
+                      className="object-cover opacity-90 group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <div className="p-8">
+                    {" "}
+                    {/* Updated padding */}
+                    <div className="flex items-center gap-4 mb-4">
+                      {" "}
+                      {/* Updated margin */}
+                      <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center text-primary-foreground">
+                        <feature.icon className="h-6 w-6" />
                       </div>
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-lg font-semibold mb-1 group-hover:text-primary transition-colors duration-300 dark:text-foreground text-[#11274F]">
+                      <h4 className="text-xl font-semibold group-hover:text-primary transition-colors duration-300 dark:text-foreground text-[#11274F]">
                         {feature.title}
                       </h4>
-                      <p className="text-muted-foreground text-sm">{feature.description}</p>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-          <div className="flex items-center justify-center">
-            <div className="relative w-full aspect-video bg-muted rounded-xl overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20" />
-              <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-primary">
-                Contest Explainer Video
-              </div>
-            </div>
+                    <p className="text-base text-muted-foreground">{feature.description}</p> {/* Updated text size */}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
 
         {/* CTA Buttons */}
         <div className="flex justify-center gap-6">
           <Button size="lg" variant="outline" className="text-lg px-8 dark:text-foreground text-[#11274F]">
-          <Link href="/how-to-play/march-madness-draft">View Rules</Link>
+            <Link href="/how-to-play/march-madness-draft">View Rules</Link>
           </Button>
           <PulseButton size="lg" className="text-lg px-8">
-          <Link href="/pools/start">Create Now!</Link>
+            <Link href="/pools/start">Create Now!</Link>
           </PulseButton>
         </div>
       </div>

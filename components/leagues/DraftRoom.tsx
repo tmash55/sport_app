@@ -185,7 +185,7 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
                   </p>
                   <p
                     className={cn(
-                      "text-base lg:text-lg xl:text-xl font-bold mt-1",
+                      "text-base lg:text-lg xl:text-xl font-bold mt-1 text-center",
                       isUsersTurn() ? "text-white" : "text-foreground",
                     )}
                   >

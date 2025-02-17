@@ -1,10 +1,8 @@
-import React from "react"
 import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-import { ChevronRight, Info } from "lucide-react"
+import { ChevronRight, ChevronLeft } from "lucide-react"
 import { useTheme } from "next-themes"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface MatchProps {
   match: {
@@ -195,15 +193,17 @@ function TeamInfo({
             </div>
           </div>
           <div className="flex items-center gap-0.5">
-            {game_status === "completed" && isWinner && (
-              <ChevronRight
-                className={cn(
-                  "h-2 w-2 sm:h-3 sm:w-3 text-primary",
-                  isRtl && "rotate-180",
-                  isSpecial && "h-3 w-3 sm:h-4 sm:w-4",
-                )}
-              />
-            )}
+            {game_status === "completed" &&
+              isWinner &&
+              (isRtl ? (
+                <ChevronRight
+                  className={cn("h-2 w-2 sm:h-3 sm:w-3 text-primary", isSpecial && "h-3 w-3 sm:h-4 sm:w-4")}
+                />
+              ) : (
+                <ChevronRight
+                  className={cn("h-2 w-2 sm:h-3 sm:w-3 text-primary", isSpecial && "h-3 w-3 sm:h-4 sm:w-4")}
+                />
+              ))}
             {score !== null && (
               <span
                 className={cn(
