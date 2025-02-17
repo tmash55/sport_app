@@ -5,6 +5,9 @@ import Link from "next/link"
 import { PulseButton } from "./StyledButton"
 import Image from "next/image"
 import draftBoard1 from "@/public/landing-page/draft-board1.png"
+import upset1 from "@/public/landing-page/upset1.png"
+import leagueStandings from "@/public/landing-page/league_standings.png"
+import teamStandings from "@/public/landing-page/team_standings.png"
 
 const steps = [
   {
@@ -39,21 +42,21 @@ const contestFeatures = [
     icon: Users,
     title: "Compete",
     description: "Compete with friends and other fans",
-    image: "/placeholder.svg?height=400&width=600",
+    image: leagueStandings,
     color: "from-purple-500/10 to-purple-500/5",
   },
   {
     icon: Star,
     title: "Score Points",
     description: "Earn points for each win your teams secure",
-    image: "/placeholder.svg?height=400&width=600",
+    image: teamStandings,
     color: "from-orange-500/10 to-orange-500/5",
   },
   {
     icon: TrendingUp,
     title: "Bonus for Upsets",
     description: "Rack up extra points when underdogs triumph",
-    image: "/placeholder.svg?height=400&width=600",
+    image: upset1,
     color: "from-green-500/10 to-green-500/5",
   },
 ]
