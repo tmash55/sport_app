@@ -116,7 +116,7 @@ export function UserLeagues({ leagues, isLoading, error }: UserLeaguesProps) {
   }
 
   if (!leagues || leagues.length === 0) {
-    return <div>Create your first pool!</div>
+    return <div></div>
   }
 
   return (

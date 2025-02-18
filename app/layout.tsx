@@ -17,7 +17,6 @@ const font = Lato({ subsets: ["latin"], weight: ["400", "700"] })
 
 export const viewport: Viewport = {
   // Will use the primary color of your theme to show a nice theme color in the URL bar of supported browsers
-  themeColor: config.colors.main,
   width: "device-width",
   initialScale: 1,
 };

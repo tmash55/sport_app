@@ -21,6 +21,7 @@ interface DraftHeaderProps {
   onResumeDraft: () => void
   isCommissioner: boolean
   leagueId: string
+  isDraftOrderSet: boolean
 }
 
 export function DraftHeader({
@@ -34,9 +35,47 @@ export function DraftHeader({
   onResumeDraft,
   isCommissioner,
   leagueId,
+  isDraftOrderSet,
 }: DraftHeaderProps) {
   const { theme, setTheme } = useTheme()
   const isDark = theme === "dark"
+
+  const handleDraftAction = () => {
+    if (draftStatus === "pre_draft") {
+      if (isDraftOrderSet) {
+        onStartDraft()
+      } else {
+        // You might want to show a toast or alert here
+        console.log("Please set the draft order before starting the draft")
+      }
+    } else if (draftStatus === "in_progress") {
+      onPauseDraft()
+    } else if (draftStatus === "paused") {
+      onResumeDraft()
+    }
+  }
+
+  const getDraftActionText = () => {
+    if (draftStatus === "pre_draft") {
+      return isDraftOrderSet ? "Start Draft" : "You need to set the draft order first."
+    } else if (draftStatus === "in_progress") {
+      return "Pause Draft"
+    } else if (draftStatus === "paused") {
+      return "Resume Draft"
+    }
+    return ""
+  }
+
+  const getDraftActionIcon = () => {
+    if (draftStatus === "pre_draft") {
+      return isDraftOrderSet ? <Play className="h-4 w-4" /> : <Play className="h-4 w-4" />
+    } else if (draftStatus === "in_progress") {
+      return <Pause className="h-4 w-4" />
+    } else if (draftStatus === "paused") {
+      return <Play className="h-4 w-4" />
+    }
+    return null
+  }
 
   return (
     <header className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -87,25 +126,9 @@ export function DraftHeader({
                   <span>{isDark ? "Light Mode" : "Dark Mode"}</span>
                 </DropdownMenuItem>
                 {isCommissioner && draftStatus !== "completed" && (
-                  <DropdownMenuItem
-                    onClick={
-                      draftStatus === "pre_draft"
-                        ? onStartDraft
-                        : draftStatus === "in_progress"
-                          ? onPauseDraft
-                          : onResumeDraft
-                    }
-                  >
-                    {draftStatus === "pre_draft" && <Play className="mr-2 h-4 w-4" />}
-                    {draftStatus === "in_progress" && <Pause className="mr-2 h-4 w-4" />}
-                    {draftStatus === "paused" && <Play className="mr-2 h-4 w-4" />}
-                    <span>
-                      {draftStatus === "pre_draft"
-                        ? "Start Draft"
-                        : draftStatus === "in_progress"
-                          ? "Pause Draft"
-                          : "Resume Draft"}
-                    </span>
+                  <DropdownMenuItem onClick={handleDraftAction}>
+                    {getDraftActionIcon()}
+                    <span className="ml-2">{getDraftActionText()}</span>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem asChild>
@@ -160,37 +183,17 @@ export function DraftHeader({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        variant="ghost"
+                        variant={draftStatus === "pre_draft" && !isDraftOrderSet ? "secondary" : "ghost"}
                         size="icon"
                         className="h-8 w-8"
-                        onClick={
-                          draftStatus === "pre_draft"
-                            ? onStartDraft
-                            : draftStatus === "in_progress"
-                              ? onPauseDraft
-                              : onResumeDraft
-                        }
+                        onClick={handleDraftAction}
                       >
-                        {draftStatus === "pre_draft" && <Play className="h-4 w-4" />}
-                        {draftStatus === "in_progress" && <Pause className="h-4 w-4" />}
-                        {draftStatus === "paused" && <Play className="h-4 w-4" />}
-                        <span className="sr-only">
-                          {draftStatus === "pre_draft"
-                            ? "Start Draft"
-                            : draftStatus === "in_progress"
-                              ? "Pause Draft"
-                              : "Resume Draft"}
-                        </span>
+                        {getDraftActionIcon()}
+                        <span className="sr-only">{getDraftActionText()}</span>
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>
-                        {draftStatus === "pre_draft"
-                          ? "Start Draft"
-                          : draftStatus === "in_progress"
-                            ? "Pause Draft"
-                            : "Resume Draft"}
-                      </p>
+                      <p>{getDraftActionText()}</p>
                     </TooltipContent>
                   </Tooltip>
                 )}

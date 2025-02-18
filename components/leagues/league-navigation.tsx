@@ -6,6 +6,7 @@ import { Users2, Trophy, BarChart3, AlignStartVertical } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLeague } from "@/app/context/LeagueContext"
 import { cn } from "@/lib/utils"
+import { Skeleton } from "../ui/skeleton"
 
 const navigationItems = [
   {
@@ -34,16 +35,28 @@ const navigationItems = [
   },
 ]
 
+const LeagueNavigationSkeleton = () => (
+  <div className="bg-background shadow-md rounded-lg p-2 md:p-4 mb-4 md:mb-6">
+    {/* Mobile Navigation Skeleton */}
+    <div className="md:hidden">
+      <Skeleton className="w-full h-[72px] rounded-lg" />
+    </div>
+
+    {/* Desktop Navigation Skeleton */}
+    <div className="hidden md:grid grid-cols-4 gap-4">
+      {[...Array(4)].map((_, index) => (
+        <Skeleton key={index} className="h-[52px] rounded-lg" />
+      ))}
+    </div>
+  </div>
+)
+
 export function LeagueNavigation() {
   const pathname = usePathname()
   const { leagueData, isLoading, error } = useLeague()
 
   if (isLoading) {
-    return (
-      <div className="text-center p-4">
-        <p>Loading league data...</p>
-      </div>
-    )
+    return <LeagueNavigationSkeleton />
   }
 
   if (error) {

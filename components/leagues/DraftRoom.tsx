@@ -55,6 +55,7 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
   const handleStartDraft = () => handleDraftAction("start")
   const handlePauseDraft = () => handleDraftAction("pause")
   const handleResumeDraft = () => handleDraftAction("resume")
+  console.log(leagueMembers)
 
   const currentLeagueMember = useMemo(
     () => leagueMembers.find((member) => member.user_id === currentUser.id),
@@ -67,6 +68,10 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
       setIsExiting(true)
     }
   }, [draft?.status])
+
+  const isDraftOrderSet = useMemo(() => {
+    return leagueMembers.every((member) => member.draft_position !== null)
+  }, [leagueMembers])
 
   const currentLeagueMemberId = currentLeagueMember?.id ?? ""
 
@@ -143,6 +148,7 @@ export function DraftRoom({ leagueId }: DraftRoomProps) {
         onResumeDraft={handleResumeDraft}
         isCommissioner={isCommissioner}
         leagueId={leagueId}
+        isDraftOrderSet={isDraftOrderSet}
       />
       
       <div className="flex-1 flex flex-col lg:flex-row gap-4 h-[calc(100vh-6rem)] overflow-hidden pt-2 px-2 lg:px-4">

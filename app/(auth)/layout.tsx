@@ -1,6 +1,7 @@
 import { type ReactNode, Suspense } from "react"
 import config from "@/config"
 import { getSEOTags } from "@/libs/seo"
+import { AuthSkeleton } from "@/components/Auth/AuthSkeleton"
 
 export const metadata = getSEOTags({
   title: `Sign-in to ${config.appName}`,
@@ -8,6 +9,5 @@ export const metadata = getSEOTags({
 })
 
 export default function Layout({ children }: { children: ReactNode }) {
-  return <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
-}
+  return <Suspense fallback={<AuthSkeleton />}>{children}</Suspense>}
 
