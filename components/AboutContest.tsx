@@ -85,7 +85,7 @@ export function AboutContest() {
 
           {steps.map((step, index) => (
             <div key={index} className="relative">
-              <Card className="relative h-full bg-gradient-to-b from-muted/50 to-muted border-muted-foreground/10">
+              <Card className="relative h-full bg-gradient-to-b from-muted/50 to-muted border-muted-foreground/10 ">
                 <CardContent className="pt-12 pb-8 px-6 text-center relative">
                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-primary flex items-center justify-center text-xl font-bold text-primary-foreground">
                     {step.number}
@@ -108,7 +108,7 @@ export function AboutContest() {
             {contestFeatures.map((feature, index) => (
               <Card
                 key={index}
-                className="group overflow-hidden border-muted-foreground/10 transition-all duration-300 hover:shadow-lg"
+                className="group overflow-hidden border-muted-foreground/10 transition-all duration-300 hover:shadow-lg dark:border-primary/20"
               >
                 <CardContent className="p-0">
                   <div className="relative aspect-[16/9] w-full">

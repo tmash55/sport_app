@@ -49,7 +49,7 @@ export function DashboardHeader() {
       </div>
       <div className="mt-1 flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Manage your leagues and contests
+          Manage your pools and contests
         </p>
         <StyledButton asChild className="hidden md:inline-flex">
           <Link href="/pools/start">

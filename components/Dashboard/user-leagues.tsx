@@ -112,11 +112,11 @@ export function UserLeagues({ leagues, isLoading, error }: UserLeaguesProps) {
   }
 
   if (error) {
-    return <div>Error loading leagues: {error.message}</div>
+    return <div>Error loading pools: {error.message}</div>
   }
 
   if (!leagues || leagues.length === 0) {
-    return <div>No leagues joined yet.</div>
+    return <div>Create your first pool!</div>
   }
 
   return (
