@@ -113,8 +113,8 @@ const renderDraftBoard = (
                     <Image
                       src={getTeamLogoUrl(pick.league_teams.global_teams.logo_filename) || "/placeholder.svg"}
                       alt={`${pick.league_teams.name} logo`}
-                      width={64}
-                      height={64}
+                      width={isMobileView ? 64 : 128}
+                      height={isMobileView ? 64 : 128}
                       className="object-contain"
                       loading="eager"
                       priority={true}
@@ -127,16 +127,16 @@ const renderDraftBoard = (
                   <div
                     className={cn(
                       "flex items-center justify-center rounded-full bg-background/80 backdrop-blur-sm",
-                      isMobileView ? "w-6 h-6 sm:w-8 sm:h-8" : "w-10 h-10",
-                      isUserPick && "ring-2 ring-primary ring-offset-1",
+                      isMobileView ? "w-6 h-6 sm:w-8 sm:h-8" : "w-12 h-12",
+                      
                     )}
                   >
                     {pick?.league_teams?.global_teams?.logo_filename ? (
                       <Image
                         src={getTeamLogoUrl(pick.league_teams.global_teams.logo_filename) || "/placeholder.svg"}
                         alt={`${pick.league_teams.name} logo`}
-                        width={isMobileView ? 16 : 32}
-                        height={isMobileView ? 16 : 32}
+                        width={isMobileView ? 16 : 40}
+                        height={isMobileView ? 16 : 40}
                         className="object-contain"
                         loading="eager"
                         priority={true}
@@ -148,7 +148,7 @@ const renderDraftBoard = (
                   <span
                     className={cn(
                       "mt-0.5 text-[8px] sm:text-xs font-medium truncate bg-background/80 backdrop-blur-sm px-1 py-0.5 rounded max-w-full",
-                      isUserPick && "text-primary",
+                      isUserPick && "",
                     )}
                   >
                     <span className="text-muted-foreground">({pick.league_teams?.seed})</span> {pick.league_teams?.name}

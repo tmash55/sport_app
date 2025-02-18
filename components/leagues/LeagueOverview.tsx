@@ -37,6 +37,8 @@ export function LeagueOverview() {
   const { toast } = useToast()
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
+  
+
   useEffect(() => {
     if (error) {
       toast({

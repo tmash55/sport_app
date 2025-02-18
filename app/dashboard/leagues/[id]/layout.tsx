@@ -12,6 +12,7 @@ import { LeagueLockedMessage } from "@/components/leagues/LeagueLockedMessage"
 
 type LeagueDataType = {
   id: string
+  contest_id: string
   name: string
   commissioner_id: string
   payment_status: string
@@ -40,6 +41,7 @@ export default async function LeagueLayout({
     .select(
       `
       id,
+      contest_id,
       name,
       commissioner_id,
       payment_status,
@@ -84,7 +86,7 @@ export default async function LeagueLayout({
           <div className="flex flex-col min-h-[calc(100vh-5rem)]">
             <div className="flex-grow overflow-y-auto">
               <div className="container max-w-7xl mx-auto px-4 py-6 space-y-6 border border-r-1 rounded-2xl">
-                <CommissionerPaymentPrompt leagueId={params.id} leagueName={leagueData.name} />
+                <CommissionerPaymentPrompt leagueId={params.id} leagueName={leagueData.name} contestId={leagueData.contest_id}/>
               </div>
             </div>
           </div>

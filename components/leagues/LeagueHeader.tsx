@@ -1,5 +1,6 @@
 "use client"
-
+import { getPriceIndexForUser, getUserPaidLeagues } from "@/utils/paymentHelper"
+import { useEffect, useState } from "react"
 import { useLeague } from "@/app/context/LeagueContext"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -33,7 +34,22 @@ const LeagueHeaderSkeleton = () => (
 
 export function LeagueHeader() {
   const { leagueData, isLoading, error } = useLeague()
+  const [priceIndex, setPriceIndex] = useState(0)
 
+  useEffect(() => {
+    if (leagueData && leagueData.user_id) {
+      const fetchPriceIndex = async () => {
+        try {
+          const paidLeagues = await getUserPaidLeagues(leagueData.user_id, leagueData.contests.id)
+          const newPriceIndex = getPriceIndexForUser(paidLeagues)
+          setPriceIndex(newPriceIndex)
+        } catch (err) {
+          console.error("Error fetching price index:", err)
+        }
+      }
+      fetchPriceIndex()
+    }
+  }, [leagueData])
   if (isLoading) return <LeagueHeaderSkeleton />
 
   if (error || !leagueData) {
@@ -46,6 +62,8 @@ export function LeagueHeader() {
     )
   }
 
+  
+
   const { id: leagueId, name, contests, league_members, drafts, user_id, payment_status, league_settings } = leagueData
 
   const userLeagueRole = league_members.find((member: any) => member.user_id === user_id)?.role
@@ -56,6 +74,9 @@ export function LeagueHeader() {
   const needsPayment = isCommissioner && payment_status !== "paid"
   const isDraftCompleted = drafts.status === "completed"
   const maxTeams = league_settings[0].max_teams
+
+ 
+  
 
   return (
     <Card className="mb-4 sm:mb-6">
@@ -134,15 +155,15 @@ export function LeagueHeader() {
                   </div>
                 </div>
                 <div className="flex flex-col items-center">
-                  <ButtonCheckout
-                    priceId={config.stripe.plans[1].priceId}
-                    leagueId={leagueId}
-                    mode="payment"
-                    metadata={{ leagueId }}
-                    className="w-full sm:w-auto py-3 sm:py-4 px-6 sm:px-8 text-base sm:text-lg font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition-transform hover:scale-105"
-                  >
-                    Lock in Your Spot - Pay Now!
-                  </ButtonCheckout>
+                <ButtonCheckout
+                  priceId={config.stripe.plans[priceIndex].priceId}
+                  leagueId={leagueId}
+                  mode="payment"
+                  metadata={{ leagueId }}
+                  className="w-full sm:w-auto py-3 sm:py-4 px-6 sm:px-8 text-base sm:text-lg font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition-transform hover:scale-105"
+                >
+                  Lock in Your Spot - Pay Now!
+                </ButtonCheckout>
                   <div className="flex items-center text-xs text-muted-foreground mt-2 sm:mt-3">
                     <ShieldCheck className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                     Secure checkout via Stripe – Trusted by millions
