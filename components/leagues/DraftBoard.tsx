@@ -1,23 +1,25 @@
-import { DraftPick, LeagueMember } from "@/types/draft";
-import { Trophy, ArrowRight, ArrowDown, ArrowLeft } from 'lucide-react';
-import Image from "next/image";
-import { useMemo } from "react";
+"use client"
 
-const currentPickClass = "border-2 border-primary animate-pulse";
+import type { DraftPick, LeagueMember } from "@/types/draft"
+import { Trophy, ArrowRight, ArrowDown, ArrowLeft } from "lucide-react"
+import Image from "next/image"
+import { useMemo, useState, useEffect } from "react"
+import { cn } from "@/lib/utils"
+
+const currentPickClass = "border-2 border-primary animate-pulse"
 
 interface DraftBoardProps {
-  leagueMembers: LeagueMember[];
-  draftPicks: DraftPick[];
-  currentPickNumber: number;
-  maxTeams: number;
-  isDraftCompleted: boolean;
+  leagueMembers: LeagueMember[]
+  draftPicks: DraftPick[]
+  currentPickNumber: number
+  maxTeams: number
+  isDraftCompleted: boolean
   currentLeagueMemberId: string
 }
 
 const getTeamLogoUrl = (filename: string | null | undefined) => {
-  return filename ? `/images/team-logos/${filename}` : "";
-};
-
+  return filename ? `/images/team-logos/${filename}` : ""
+}
 
 const renderDraftBoard = (
   leagueMembers: LeagueMember[],
@@ -25,150 +27,159 @@ const renderDraftBoard = (
   currentPickNumber: number,
   maxTeams: number,
   isDraftCompleted: boolean,
-  currentLeagueMemberId: string // ✅ Pass current user ID
+  currentLeagueMemberId: string,
+  isMobileView: boolean,
 ) => {
-  const TOTAL_SLOTS = maxTeams;
-  const TOTAL_ROUNDS = Math.floor(64 / maxTeams);
-  const board = [];
+  const TOTAL_SLOTS = maxTeams
+  const TOTAL_ROUNDS = Math.floor(64 / maxTeams)
+  const board = []
 
   // Header row with member names
-  const headerRow = [];
+  const headerRow = []
   for (let slot = 0; slot < TOTAL_SLOTS; slot++) {
-    const member = leagueMembers.find((m) => m.draft_position === slot + 1);
+    const member = leagueMembers.find((m) => m.draft_position === slot + 1)
     headerRow.push(
       <div
         key={`header-${slot}`}
-        className={`p-2 font-semibold text-center truncate ${
-          member?.id === currentLeagueMemberId ? "bg-primary text-white rounded-md" : ""
-        }`} // ✅ Highlight current user’s team
+        className={cn(
+          "p-1 sm:p-2 font-semibold text-center truncate",
+          isMobileView ? "text-xs" : "text-sm",
+          member?.id === currentLeagueMemberId && "bg-primary/10 text-primary rounded-md",
+        )}
       >
         {member ? member.team_name || member.users.display_name : "Empty"}
-      </div>
-    );
+      </div>,
+    )
   }
   board.push(
     <div key="header" className="contents">
       {headerRow}
-    </div>
-  );
+    </div>,
+  )
 
   // Draft board rows
   for (let round = 0; round < TOTAL_ROUNDS; round++) {
-    const rowCells = [];
+    const rowCells = []
     for (let slot = 0; slot < TOTAL_SLOTS; slot++) {
-      const isSnakeRound = round % 2 === 0;
-      const currentSlot = isSnakeRound ? slot : TOTAL_SLOTS - slot - 1;
-      const pickNumber = round * TOTAL_SLOTS + currentSlot + 1;
-      const pick = draftPicks.find((p) => p.pick_number === pickNumber);
+      const isSnakeRound = round % 2 === 0
+      const currentSlot = isSnakeRound ? slot : TOTAL_SLOTS - slot - 1
+      const pickNumber = round * TOTAL_SLOTS + currentSlot + 1
+      const pick = draftPicks.find((p) => p.pick_number === pickNumber)
       const isLastPickOfRound = isSnakeRound ? slot === TOTAL_SLOTS - 1 : slot === 0
       const isFirstPickOfRound = isSnakeRound ? slot === 0 : slot === TOTAL_SLOTS - 1
-      const isUserPick = pick?.league_member_id === currentLeagueMemberId; // ✅ Check if current user owns this pick
+      const isUserPick = pick?.league_member_id === currentLeagueMemberId
 
       rowCells.push(
         <div
           key={`${round}-${currentSlot}`}
-          className={`relative bg-secondary p-2 rounded border ${
-            pick ? "border-secondary-foreground/10" : "border-secondary-foreground/20"
-          } ${pickNumber === currentPickNumber && !isDraftCompleted ? currentPickClass : ""}
-          ${isUserPick ? "" : ""} // ✅ Highlight user's pick
-          overflow-hidden`}
+          className={cn(
+            "relative bg-secondary rounded border",
+            isMobileView ? "p-0.5 sm:p-1" : "p-1 sm:p-2",
+            pick ? "border-secondary-foreground/10" : "border-secondary-foreground/20",
+            pickNumber === currentPickNumber && !isDraftCompleted && currentPickClass,
+            isUserPick && "bg-primary/5",
+            "overflow-hidden",
+          )}
         >
-          <div className="absolute bottom-1 left-2 text-xs text-muted-foreground">
+          <div className="absolute bottom-0.5 left-1 text-xs text-muted-foreground">
             {pickNumber !== TOTAL_SLOTS * TOTAL_ROUNDS &&
               (isLastPickOfRound ? (
-                <ArrowDown className="w-4 h-4" />
+                <ArrowDown className="w-3 h-3 sm:w-4 sm:h-4" />
               ) : isFirstPickOfRound && round !== 0 ? (
                 isSnakeRound ? (
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
                 ) : (
-                  <ArrowLeft className="w-4 h-4" />
+                  <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
                 )
               ) : isSnakeRound ? (
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
               ) : (
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
               ))}
           </div>
-          <div className="absolute top-1 right-2 text-xs text-muted-foreground">
+          <div className="absolute top-0.5 right-1 text-[8px] sm:text-xs text-muted-foreground">
             {`${round + 1}.${(currentSlot + 1).toString().padStart(2, "0")}`}
           </div>
-          <div className="h-20 rounded flex flex-col items-center justify-center p-1">
+          <div
+            className={cn(
+              "rounded flex flex-col items-center justify-center",
+              isMobileView ? "h-10 sm:h-14" : "h-16 sm:h-20",
+            )}
+          >
             {pick ? (
               <div className="relative w-full h-full flex items-center justify-center">
                 <div className="absolute inset-0 flex items-center justify-center opacity-10">
                   {pick?.league_teams?.global_teams?.logo_filename ? (
                     <Image
-                      src={getTeamLogoUrl(pick.league_teams.global_teams.logo_filename)}
+                      src={getTeamLogoUrl(pick.league_teams.global_teams.logo_filename) || "/placeholder.svg"}
                       alt={`${pick.league_teams.name} logo`}
-                      width={128}
-                      height={128}
+                      width={64}
+                      height={64}
                       className="object-contain"
                       loading="eager"
                       priority={true}
-                      placeholder="blur"
-                      blurDataURL="/icon.png"
                     />
                   ) : (
-                    <Trophy className="w-24 h-24 text-secondary-foreground/50" />
+                    <Trophy className="w-12 h-12 sm:w-16 sm:h-16 text-secondary-foreground/50" />
                   )}
                 </div>
                 <div className="relative z-10 flex flex-col items-center justify-center">
                   <div
-                    className={`w-12 h-12 flex items-center justify-center rounded-full bg-background/80 backdrop-blur-sm ${
-                      isUserPick ? "" : ""
-                    }`} // ✅ Highlight user's pick
+                    className={cn(
+                      "flex items-center justify-center rounded-full bg-background/80 backdrop-blur-sm",
+                      isMobileView ? "w-6 h-6 sm:w-8 sm:h-8" : "w-10 h-10",
+                      isUserPick && "ring-2 ring-primary ring-offset-1",
+                    )}
                   >
                     {pick?.league_teams?.global_teams?.logo_filename ? (
                       <Image
-                        src={getTeamLogoUrl(pick.league_teams.global_teams.logo_filename)}
+                        src={getTeamLogoUrl(pick.league_teams.global_teams.logo_filename) || "/placeholder.svg"}
                         alt={`${pick.league_teams.name} logo`}
-                        width={40}
-                        height={40}
+                        width={isMobileView ? 16 : 32}
+                        height={isMobileView ? 16 : 32}
                         className="object-contain"
                         loading="eager"
                         priority={true}
-                        placeholder="blur"
-                        blurDataURL="/icon.png"
                       />
                     ) : (
-                      <Trophy className="h-6 w-6 text-secondary-foreground/50" />
+                      <Trophy className="h-3 w-3 sm:h-4 sm:w-4 text-secondary-foreground/50" />
                     )}
                   </div>
                   <span
-                    className={`text-xs font-medium truncate bg-background/80 backdrop-blur-sm px-2 py-0.5 rounded ${
-                      isUserPick ? "" : ""
-                    }`} // ✅ Highlight user's pick
+                    className={cn(
+                      "mt-0.5 text-[8px] sm:text-xs font-medium truncate bg-background/80 backdrop-blur-sm px-1 py-0.5 rounded max-w-full",
+                      isUserPick && "text-primary",
+                    )}
                   >
-                    <span className="text-muted-foreground">({pick.league_teams?.seed})</span>{" "}
-                    {pick.league_teams?.name}
+                    <span className="text-muted-foreground">({pick.league_teams?.seed})</span> {pick.league_teams?.name}
                   </span>
                 </div>
               </div>
             ) : (
               <span
-                className={`text-xs ${
+                className={cn(
+                  "text-[8px] sm:text-xs",
                   pickNumber === currentPickNumber && !isDraftCompleted
                     ? "text-primary font-semibold"
-                    : "text-muted-foreground"
-                }`}
+                    : "text-muted-foreground",
+                )}
               >
                 {pickNumber === currentPickNumber && !isDraftCompleted ? "On the Clock" : ""}
               </span>
             )}
           </div>
-        </div>
-      );
+        </div>,
+      )
     }
     board.push(
       <div key={round} className="contents">
         {rowCells}
-      </div>
-    );
+      </div>,
+    )
   }
 
-  return board;
-};
-
+  return board
+}
 
 export function DraftBoard({
   leagueMembers,
@@ -176,8 +187,19 @@ export function DraftBoard({
   currentPickNumber,
   maxTeams,
   isDraftCompleted,
-  currentLeagueMemberId
+  currentLeagueMemberId,
 }: DraftBoardProps) {
+  const [isMobileView, setIsMobileView] = useState(false)
+
+  useEffect(() => {
+    const checkMobileView = () => {
+      setIsMobileView(window.innerWidth < 768)
+    }
+    checkMobileView()
+    window.addEventListener("resize", checkMobileView)
+    return () => window.removeEventListener("resize", checkMobileView)
+  }, [])
+
   const board = useMemo(
     () =>
       renderDraftBoard(
@@ -186,21 +208,24 @@ export function DraftBoard({
         currentPickNumber,
         maxTeams,
         isDraftCompleted,
-        currentLeagueMemberId
+        currentLeagueMemberId,
+        isMobileView,
       ),
-    [leagueMembers, draftPicks, currentPickNumber, maxTeams, isDraftCompleted, currentLeagueMemberId]
-  );
+    [leagueMembers, draftPicks, currentPickNumber, maxTeams, isDraftCompleted, currentLeagueMemberId, isMobileView],
+  )
 
   return (
-    <div
-      className="gap-1 min-w-[800px]"
-      style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${maxTeams}, minmax(0, 1fr))`,
-      }}
-    >
-      {board}
+    <div className="space-y-2">
+      <div
+        className={cn("gap-0.5 sm:gap-1 w-full")}
+        style={{
+          display: "grid",
+          gridTemplateColumns: `repeat(${maxTeams}, minmax(0, 1fr))`,
+        }}
+      >
+        {board}
+      </div>
     </div>
-  );
+  )
 }
 

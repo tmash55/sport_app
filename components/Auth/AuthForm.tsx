@@ -14,10 +14,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import toast from "react-hot-toast";
-import { isUsernameAvailable, debounce } from "@/utils/auth";
 
 type AuthFormProps = {
   type: "signin" | "signup";
@@ -30,74 +28,46 @@ export default function AuthForm({ type, onSuccess }: AuthFormProps) {
   const [username, setUsername] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isUsernameValid, setIsUsernameValid] = useState<boolean | null>(null);
-  const [isPasswordValid, setIsPasswordValid] = useState<boolean>(false)
   const supabase = createClient();
-
-  
-
-  const debouncedCheckUsername = React.useCallback(
-    debounce(async (username: string) => {
-      if (username.length >= 3) {
-        const available = await isUsernameAvailable(username);
-        setIsUsernameValid(available);
-      } else {
-        setIsUsernameValid(null);
-      }
-    }, 500),
-    []
-  );
-
-  
-
-  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newUsername = e.target.value;
-    setUsername(newUsername);
-    if (newUsername.length >= 3) {
-      debouncedCheckUsername(newUsername);
-    } else {
-      setIsUsernameValid(null);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-
+  
     try {
       if (type === "signup") {
+        // ✅ Check if the username is already taken
         const { data: existingUser, error: checkError } = await supabase
           .from("users")
           .select("id")
           .eq("display_name", username)
           .single();
-
-        if (checkError && checkError.code !== "PGRST116") {
-          throw checkError;
-        }
-
+  
         if (existingUser) {
-          throw new Error("Username is already taken");
+          setError("This username is already taken. Please choose another.");
+          setIsLoading(false);
+          return;
         }
-
+  
+        // ✅ Proceed with signup
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: { data: { full_name: username } }, // ✅ Store username as full_name
         });
-        if (error) throw error;
-        if (data.user) {
-          const { error: updateError } = await supabase
-            .from("users")
-            .update({ display_name: username })
-            .eq("id", data.user.id);
-
-          if (updateError) throw updateError;
-
-          toast.success("Signed up successfully!");
-          onSuccess(data.user.id);
+  
+        if (error) {
+          throw error;
         }
+        if (!data.user) {
+          throw new Error("An error occurred while creating your account. Please try again.");
+        }
+  
+        toast.success("Signed up successfully!");
+        onSuccess(data.user.id);
       } else {
+        // ✅ Handle sign-in
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -106,44 +76,39 @@ export default function AuthForm({ type, onSuccess }: AuthFormProps) {
         toast.success("Signed in successfully!");
         onSuccess(data.user.id);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Authentication error:", error);
-      setError(error.message || "An unexpected error occurred");
+      
+      // ✅ Handle specific username error message
+      if (error.message.includes("Database error saving new user")) {
+        setError("This username is already taken.");
+      } else {
+        setError(error.message || "An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+
+  const handleOAuthSignIn = async (provider: Provider) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({ provider });
+      if (error) throw error;
+      if (data.url) window.location.href = data.url;
+    } catch (error) {
+      console.error("OAuth sign-in error:", error);
+      setError(error.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleOAuthSignIn = async (provider: Provider) => {
-    setIsLoading(true)
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider,
-      })
-      if (error) throw error
-  
-      if (data.url) {
-        // Redirect the user to the OAuth provider's login page
-        window.location.href = data.url
-      } else {
-        // This else block might not be necessary, but we'll keep it for now
-        console.log("OAuth sign-in initiated, but no redirect URL was provided.")
-      }
-    } catch (error) {
-      console.error("OAuth sign-in error:", error)
-      setError(error.message)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-  
-
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>
-          {type === "signup" ? "Create an account" : "Sign in"}
-        </CardTitle>
+        <CardTitle>{type === "signup" ? "Create an account" : "Sign in"}</CardTitle>
         <CardDescription>
           {type === "signup"
             ? `Enter your details below to create your account`
@@ -160,16 +125,10 @@ export default function AuthForm({ type, onSuccess }: AuthFormProps) {
                 type="text"
                 placeholder="Enter a unique username (min 3 characters)"
                 value={username}
-                onChange={handleUsernameChange}
+                onChange={(e) => setUsername(e.target.value)}
                 required
                 minLength={3}
               />
-              {username.length >= 3 && isUsernameValid === false && (
-                <p className="text-sm text-red-500">Username is already taken</p>
-              )}
-              {username.length >= 3 && isUsernameValid === true && (
-                <p className="text-sm text-green-500">Username is available</p>
-              )}
             </div>
           )}
           <div className="space-y-2">
@@ -199,16 +158,10 @@ export default function AuthForm({ type, onSuccess }: AuthFormProps) {
             </Alert>
           )}
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading
-              ? "Loading..."
-              : type === "signup"
-              ? "Sign up"
-              : "Sign in"}
+            {isLoading ? "Loading..." : type === "signup" ? "Sign up" : "Sign in"}
           </Button>
         </form>
       </CardContent>
-     
     </Card>
   );
 }
-
