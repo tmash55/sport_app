@@ -19,6 +19,7 @@ interface Contest {
   min_players: number
   setup_time: number
   status: "active" | "coming_soon"
+  leagues: string
 }
 
 interface ContestCardProps {
@@ -78,13 +79,10 @@ export function ContestCard({ contest }: ContestCardProps) {
               </div>
               <div className="flex-1 space-y-1">
                 <div className="flex items-center gap-2 mb-3">
-                  <Badge
-                    variant="secondary"
-                    className="text-xs font-medium py-1.5 px-3 flex items-center gap-2 bg-secondary/20"
-                  >
-                    <SportIcon sport={sport} className="h-4 w-4" />
-                    {contest.sport.toUpperCase()}
-                  </Badge>
+                <Badge variant="secondary" className="text-xs font-medium py-1.5 px-3 flex items-center gap-2 bg-secondary/20">
+                  <SportIcon sport={sport} className="h-4 w-4" />
+                  {sport.toLowerCase() === "football" ? contest.leagues.toUpperCase() : contest.sport.toUpperCase()}
+                </Badge>
                 </div>
                 <h2
                   className={`
