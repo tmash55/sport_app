@@ -24,7 +24,7 @@ export default function HelpPage() {
             </CardHeader>
             <CardContent>
               <p className="mb-6 text-muted-foreground">
-                Can't find what you're looking for? Send us a message and we'll get back to you as soon as possible.
+                Can&apos;t find what you&apos;re looking for? Send us a message and we&apos;ll get back to you as soon as possible.
               </p>
               <FeedbackForm />
             </CardContent>
