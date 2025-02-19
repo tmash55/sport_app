@@ -23,12 +23,12 @@ export default function NFLDraftHowToPlay() {
             </h2>
             <p className="text-lg text-muted-foreground leading-relaxed mb-4">
               Our NFL Draft Pool will bring the excitement of the NFL Draft to your friend group or office. Instead of
-              just watching the draft, you'll be competing to build the best team of rookies.
+              just watching the draft, you&apos;ll be competing to build the best team of rookies.
             </p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-              <li>Draft rookie players in a snake-style draft format.</li>
-              <li>Earn points based on your players' actual NFL Draft positions.</li>
-              <li>Compete against friends in a dynamic, engaging format that lasts throughout the entire NFL Draft.</li>
+              <li>Select rookie players in a DFS format.</li>
+              <li>Earn points based on your players&apos; actual NFL Draft positions.</li>
+              <li>Compete against friends in a dynamic, engaging format that lasts throughout the entire NFL Draft or as many rounds as the pool commissioner selects.</li>
             </ul>
           </CardContent>
         </Card>
@@ -40,7 +40,7 @@ export default function NFLDraftHowToPlay() {
               More Details Coming Soon
             </h2>
             <p className="text-lg text-muted-foreground leading-relaxed mb-4">
-              We're working hard to bring you an immersive NFL Draft experience. Stay tuned for more information about:
+              We&apos;re working hard to bring you an immersive NFL Draft experience. Stay tuned for more information about:
             </p>
             <ul className="space-y-2 text-muted-foreground">
               <li className="flex items-center gap-2">
@@ -49,7 +49,7 @@ export default function NFLDraftHowToPlay() {
               </li>
               <li className="flex items-center gap-2">
                 <ChevronRight className="h-4 w-4 text-primary" />
-                <span>Draft settings and strategies</span>
+                <span>Pool settings and strategies</span>
               </li>
               <li className="flex items-center gap-2">
                 <ChevronRight className="h-4 w-4 text-primary" />
@@ -67,7 +67,7 @@ export default function NFLDraftHowToPlay() {
           <CardContent className="p-6 sm:p-8">
             <h2 className="text-2xl font-bold mb-4 dark:text-foreground text-[#11274F] flex items-center gap-2">
               <Zap className="h-6 w-6 text-primary" />
-              Why You'll Love It
+              Why You&apos;ll Love It
             </h2>
             <ul className="space-y-2 text-muted-foreground">
               <li className="flex items-center gap-2">
@@ -79,7 +79,7 @@ export default function NFLDraftHowToPlay() {
               <li className="flex items-center gap-2">
                 <ChevronRight className="h-4 w-4 text-primary" />
                 <span>
-                  <strong>Strategic Depth:</strong> Balance between drafting top prospects and finding late-round
+                  <strong>Strategic Depth:</strong> Balance between selecting top prospects and finding late-round
                   steals.
                 </span>
               </li>
@@ -111,7 +111,7 @@ export default function NFLDraftHowToPlay() {
                   When will the NFL Draft Pool be available?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  We're aiming to launch our NFL Draft Pool feature in time for the upcoming NFL Draft in April. Stay
+                  We&apos;re aiming to launch our NFL Draft Pool feature in time for the upcoming NFL Draft in April. Stay
                   tuned for the exact launch date!
                 </AccordionContent>
               </AccordionItem>
@@ -120,8 +120,8 @@ export default function NFLDraftHowToPlay() {
                   How will scoring work?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  We're finalizing the details of our scoring system. It will likely be based on the actual draft
-                  positions of your selected players, with bonuses for accurately predicting draft order.
+                  We&apos;re finalizing the details of our scoring system. It will likely be based on the actual draft
+                  positions of your selected players.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-3">
@@ -129,7 +129,7 @@ export default function NFLDraftHowToPlay() {
                   Can I create a private pool for my friends or office?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Yes, you'll be able to create both public and private pools. More details on pool creation and
+                  Yes, you&apos;ll be able to create both public and private pools. More details on pool creation and
                   management will be available soon.
                 </AccordionContent>
               </AccordionItem>
@@ -141,7 +141,7 @@ export default function NFLDraftHowToPlay() {
       <div className="text-center pb-6">
         <h2 className="text-2xl font-bold mb-4 dark:text-foreground text-[#11274F]">Stay Updated</h2>
         <p className="text-lg text-muted-foreground mb-8">
-          Don't miss out on the launch of our NFL Draft Pool. Sign up for updates and be the first to know when it's
+          Don&apos;t miss out on the launch of our NFL Draft Pool. Sign up for updates and be the first to know when it&apos;s
           live!
         </p>
         <Button asChild size="lg" className="text-lg px-8">
