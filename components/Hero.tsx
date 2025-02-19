@@ -5,7 +5,6 @@ import { ArrowRight } from "lucide-react"
 import { DeviceFrame } from "./device-frame"
 import { PulseButton } from "./StyledButton"
 import Link from "next/link"
-import Image from "next/image"
 
 export function Hero() {
   return (
@@ -37,7 +36,8 @@ export function Hero() {
           </h1>
 
           <p className="mt-6 text-xl text-max-w-2xl mx-auto dark:text-foreground/90 text-[#11274F]/90 hidden sm:block">
-          Forget the busted brackets. Experience March Madness like never before—draft teams, compete with friends, and track your points as the tournament unfolds.
+            Forget the busted brackets. Experience March Madness like never before—draft teams, compete with friends,
+            and track your points as the tournament unfolds.
           </p>
 
           <p className="mt-4 text-xl font-medium text-primary">
@@ -60,20 +60,25 @@ export function Hero() {
             </Button>
           </div>
 
-          {/* Device Frame for desktop, Image for mobile */}
+          {/* Device Frame for desktop, Video for mobile */}
           <div className="mt-20 w-full px-4 sm:px-6 lg:px-8 pb-16 pt-6">
             <div className="hidden sm:block">
-              <DeviceFrame src="/placeholder.svg?height=750&width=1200" alt="Dryft Application Interface" />
+              <DeviceFrame src="/landing-page/hero_video.mp4" alt="March Madness Fantasy Interface" />
             </div>
             <div className="sm:hidden">
-              <Image
-                src="/placeholder.svg?height=750&width=1200"
-                alt="Dryft Application Interface"
-                width={1200}
-                height={750}
-                className="w-full rounded-lg shadow-2xl"
-                priority
-              />
+              <div className="w-full rounded-lg overflow-hidden shadow-2xl">
+                <video
+                  src="/landing-page/hero_video.mp4"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  poster="/landing-page/hero_video_poster.jpg"
+                  className="w-full h-auto object-cover"
+                >
+                  Your browser does not support the video tag.
+                </video>
+              </div>
             </div>
           </div>
         </div>

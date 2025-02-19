@@ -1,3 +1,4 @@
+import config from '@/config';
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -12,7 +13,7 @@ export async function sendInviteEmail(to: string, inviteLink: string, leagueName
 
   try {
     const { data, error } = await resend.emails.send({
-      from: 'March Madness Fantasy <onboarding@resend.dev>',
+      from: 'Dryft <no-reply@dryftplay.com>',
       to: [to],
       subject: subject,
       html: html,
@@ -61,31 +62,33 @@ export async function sendVerificationEmail(to: string, verificationLink: string
 }
 
 export async function sendPasswordResetEmail(to: string, resetLink: string) {
-  const subject = 'Reset your password for March Madness Fantasy';
+  const subject = "Reset your password for March Madness Fantasy"
   const html = `
     <h1>Reset your password for March Madness Fantasy</h1>
     <p>You have requested to reset your password. Click the button below to proceed:</p>
     <a href="${resetLink}" style="background-color: #008CBA; border: none; color: white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer;">Reset Password</a>
-  `;
+    <p>If you didn't request this, you can safely ignore this email.</p>
+    <p>This link will expire in 1 hour for security reasons.</p>
+  `
 
   try {
     const { data, error } = await resend.emails.send({
-      from: 'March Madness Fantasy <noreply@yourdomain.com>',
+      from: config.resend.fromAdmin,
       to: [to],
       subject: subject,
       html: html,
-    });
+    })
 
     if (error) {
-      console.error('Error sending password reset email:', error);
-      throw error;
+      console.error("Error sending password reset email:", error)
+      throw error
     }
 
-    console.log('Password reset email sent successfully:', data);
-    return data;
+    console.log("Password reset email sent successfully:", data)
+    return data
   } catch (error) {
-    console.error('Error sending password reset email:', error);
-    throw error;
+    console.error("Error sending password reset email:", error)
+    throw error
   }
 }
 

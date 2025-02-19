@@ -267,7 +267,7 @@ export function LeagueOverview() {
                             { round: "Sweet 16 (Round 3)", points: 4 },
                             { round: "Elite 8 (Round 4)", points: 8 },
                             { round: "Final Four (Round 5)", points: 16 },
-                            { round: "Championship (Round 6)", points: 16 },
+                            { round: "Championship (Round 6)", points: 32 },
                           ].map(({ round, points }) => (
                             <li key={round} className="flex items-center gap-4">
                               <span className="flex-1">{round}</span>

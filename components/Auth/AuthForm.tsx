@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import toast from "react-hot-toast";
+import Link from "next/link";
 
 type AuthFormProps = {
   type: "signin" | "signup";
@@ -160,6 +161,7 @@ export default function AuthForm({ type, onSuccess }: AuthFormProps) {
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Loading..." : type === "signup" ? "Sign up" : "Sign in"}
           </Button>
+          
         </form>
       </CardContent>
     </Card>

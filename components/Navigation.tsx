@@ -62,8 +62,8 @@ const menuItems = [
         icon: Newspaper,
       },
       {
-        name: "Support",
-        href: "/support",
+        name: "Help",
+        href: "/help",
         icon: HelpCircle,
       },
     ],
