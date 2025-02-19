@@ -1,4 +1,5 @@
 import { useIntersectionObserver } from "@/hooks/user-intersection-observer"
+import type React from "react"
 
 
 interface DeviceFrameProps {
@@ -10,10 +11,13 @@ export function DeviceFrame({ src, alt }: DeviceFrameProps) {
   const [ref, isIntersecting] = useIntersectionObserver({
     rootMargin: "200px",
     threshold: 0,
-  })
+  }) as [React.RefObject<HTMLDivElement>, boolean]
 
   return (
-    <div className="relative w-full max-w-[1400px] mx-auto px-2 sm:px-4 lg:px-6">
+    <div
+      className="relative w-full max-w-[1400px] mx-auto px-2 sm:px-4 lg:px-6"
+      ref={ref as React.RefObject<HTMLDivElement>}
+    >
       {/* Device Frame */}
       <div className="relative rounded-2xl sm:rounded-[2rem] border-2 sm:border-[8px] border-[#11274F] bg-[#11274F] dark:border-zinc-800 dark:bg-zinc-800 shadow-lg sm:shadow-xl p-0.5 sm:p-1.5">
         {/* Screen */}
@@ -24,7 +28,7 @@ export function DeviceFrame({ src, alt }: DeviceFrameProps) {
             </video>
           )}
           {/* Fade overlay */}
-         
+          <div className="absolute bottom-0 left-0 right-0 h-[33%] bg-gradient-to-t from-background to-transparent" />
         </div>
 
         {/* Bottom Bar */}

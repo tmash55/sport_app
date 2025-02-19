@@ -1,10 +1,12 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect, useRef } from "react"
 
-export function useIntersectionObserver(options = {}) {
+export function useIntersectionObserver(options = {}): [React.RefObject<HTMLDivElement>, boolean] {
   const [isIntersecting, setIsIntersecting] = useState(false)
-  const ref = useRef(null)
+  const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => {

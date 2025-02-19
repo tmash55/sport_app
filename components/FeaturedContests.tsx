@@ -1,34 +1,37 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { CalendarIcon, Users, Trophy, ClubIcon as GolfClub, Shield, ArrowRight } from "lucide-react"
+import { CalendarIcon, Users, Trophy, ArrowRight } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { PulseButton } from "./StyledButton"
 import Link from "next/link"
+import { PiFootballLight as football, PiGolf as golf } from "react-icons/pi";
+
 
 const otherContests = [
-  {
-    name: "Masters Golf Pool",
-    description:
-      "Draft golfers to your team and earn points as they compete for the green jacket. A fresh take on fantasy golf that puts you in control of your roster.",
-    icon: GolfClub,
-    status: "Coming April",
-    highlight: true,
-  },
+  
   {
     name: "NFL Draft Contest",
     description:
       "Build your lineup from incoming rookies and score points based on their draft positions. A new way to experience the NFL draft.",
-    icon: Shield,
-    status: "Coming Soon",
+    icon: football,
+    status: "Coming April",
     highlight: true,
   },
   {
-    name: "NCAA Pick'em Challenge",
+    name: "Golf Majors",
+    description:
+      "Draft golfers to your team and earn points as they compete for the Trophy. A fresh take on fantasy golf that puts you in control of your roster.",
+    icon: golf,
+    status: "Coming May",
+    highlight: true,
+  },
+  {
+    name: "NCAAF Pick'em Challenge",
     description:
       "Predict the winners of each game throughout the tournament. Classic bracket-style competition with a modern twist.",
-    icon: Trophy,
+    icon: football,
     status: "Coming Next Season",
   },
 ]

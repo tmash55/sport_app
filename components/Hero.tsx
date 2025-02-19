@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight } from 'lucide-react'
 import { DeviceFrame } from "./device-frame"
 import { PulseButton } from "./StyledButton"
 import Link from "next/link"
@@ -36,8 +36,7 @@ export function Hero() {
           </h1>
 
           <p className="mt-6 text-xl text-max-w-2xl mx-auto dark:text-foreground/90 text-[#11274F]/90 hidden sm:block">
-            Forget the busted brackets. Experience March Madness like never before—draft teams, compete with friends,
-            and track your points as the tournament unfolds.
+            Forget the busted brackets. Experience March Madness like never before—draft teams, compete with friends, and track your points as the tournament unfolds.
           </p>
 
           <p className="mt-4 text-xl font-medium text-primary">
@@ -73,7 +72,6 @@ export function Hero() {
                   loop
                   muted
                   playsInline
-                  poster="/landing-page/hero_video_poster.jpg"
                   className="w-full h-auto object-cover"
                 >
                   Your browser does not support the video tag.
@@ -86,4 +84,3 @@ export function Hero() {
     </div>
   )
 }
-
