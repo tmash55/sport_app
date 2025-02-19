@@ -145,7 +145,7 @@ export default function NFLDraftHowToPlay() {
           live!
         </p>
         <Button asChild size="lg" className="text-lg px-8">
-          <Link href="/nfl-draft-updates" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             Get Notified
             <ChevronRight className="h-5 w-5" />
           </Link>
