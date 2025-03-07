@@ -30,13 +30,15 @@ export function useLeague() {
 export function LeagueProvider({
   children,
   leagueId,
+  initialLeagueData,
 }: {
   children: React.ReactNode
   leagueId: string
+  initialLeagueData?: any;
 }) {
-  const [leagueData, setLeagueData] = useState<any>(null)
+  const [leagueData, setLeagueData] = useState<any>(initialLeagueData || null)
   const [matchups, setMatchups] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(!initialLeagueData)
   const [error, setError] = useState<Error | null>(null)
   const supabase = createClient()
   const { toast } = useToast()
@@ -159,40 +161,26 @@ export function LeagueProvider({
   }, [leagueId, supabase, toast, user])
 
   useEffect(() => {
-    if (user) {
-      // Only fetch data if there's a user
-      fetchLeagueData()
+    if (!initialLeagueData) {
+      fetchLeagueData();
     }
 
-    const leagueChannel = supabase
-      .channel("league_changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "leagues", filter: `id=eq.${leagueId}` },
-        fetchLeagueData,
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "league_settings", filter: `league_id=eq.${leagueId}` },
-        fetchLeagueData,
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "league_members", filter: `league_id=eq.${leagueId}` },
-        fetchLeagueData,
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "draft_picks", filter: `league_id=eq.${leagueId}` },
-        fetchLeagueData,
-      )
-      .on("postgres_changes", { event: "*", schema: "public", table: "matchups" }, fetchLeagueData)
-      .subscribe()
-
+  
+    const leagueChannel = supabase.channel("league_changes");
+  
+    const tablesToWatch = ["leagues", "league_settings", "league_members", "draft_picks", "matchups"];
+  
+    tablesToWatch.forEach((table) => {
+      leagueChannel.on("postgres_changes", { event: "*", schema: "public", table, filter: `league_id=eq.${leagueId}` }, fetchLeagueData);
+    });
+  
+    leagueChannel.subscribe();
+  
     return () => {
-      supabase.removeChannel(leagueChannel)
-    }
-  }, [user, leagueId, supabase, fetchLeagueData])
+      supabase.removeChannel(leagueChannel);
+    };
+  }, [user, leagueId, supabase, fetchLeagueData]);
+  
 
   const refreshLeagueData = useCallback(async () => {
     await fetchLeagueData()

@@ -21,7 +21,7 @@ export function Footer() {
             </p>
             <div className="flex space-x-4">
               <Button variant="ghost" size="icon" asChild className="hover:text-primary">
-                <Link href="https://twitter.com/dryft" target="_blank" rel="noopener noreferrer">
+                <Link href="https://x.com/DryftSports" target="_blank" rel="noopener noreferrer">
                   <Twitter className="h-4 w-4" />
                   <span className="sr-only">Twitter</span>
                 </Link>

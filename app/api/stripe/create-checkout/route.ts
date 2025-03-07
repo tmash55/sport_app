@@ -58,9 +58,9 @@ export async function POST(req: NextRequest) {
       priceId: priceId || process.env.STRIPE_PRICE_ID!, // Use provided priceId or fallback to env variable
       mode: mode || "payment",
       successUrl:
-        successUrl || `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard/leagues/${leagueId}?payment_success=true`,
+        successUrl || `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard/pools/march-madness-draft/${leagueId}?payment_success=true`,
       cancelUrl:
-        cancelUrl || `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard/leagues/${leagueId}?payment_cancelled=true`,
+        cancelUrl || `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard/pools/march-madness-draft/${leagueId}?payment_cancelled=true`,
       clientReferenceId: leagueId,
       metadata: { ...metadata, leagueId }, // Include all metadata
       user: {

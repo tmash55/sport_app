@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect } from "react"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 
@@ -21,7 +20,13 @@ interface LeagueGeneralSettingsProps {
   onUpdate: (updatedData: any) => Promise<void>
 }
 
-export function LeagueGeneralSettings({ leagueId, isCommissioner, league, leagueSettings, onUpdate }: LeagueGeneralSettingsProps) {
+export function LeagueGeneralSettings({
+  leagueId,
+  isCommissioner,
+  league,
+  leagueSettings,
+  onUpdate,
+}: LeagueGeneralSettingsProps) {
   const [leagueName, setLeagueName] = useState(league.name)
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
@@ -44,7 +49,7 @@ export function LeagueGeneralSettings({ leagueId, isCommissioner, league, league
       if (Object.keys(updatedData).length === 0) {
         toast({
           title: "No Changes",
-          description: "No changes were made to the league settings.",
+          description: "No changes were made to the pool settings.",
         })
         setIsLoading(false)
         return
@@ -54,13 +59,13 @@ export function LeagueGeneralSettings({ leagueId, isCommissioner, league, league
 
       toast({
         title: "Success",
-        description: "League name updated successfully.",
+        description: "Pool name updated successfully.",
       })
     } catch (error) {
-      console.error("Error updating league settings:", error)
+      console.error("Error updating pool settings:", error)
       toast({
         title: "Error",
-        description: "Failed to update league name. Please try again.",
+        description: "Failed to update pool name. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -69,23 +74,28 @@ export function LeagueGeneralSettings({ leagueId, isCommissioner, league, league
   }, [isCommissioner, leagueName, league, onUpdate, toast])
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="leagueName">League Name</Label>
-        <Input
-          id="leagueName"
-          value={leagueName}
-          onChange={(e) => setLeagueName(e.target.value)}
-          disabled={!isCommissioner || isLoading}
-        />
+    <div className="space-y-8">
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Pool Name</h2>
+          <Input
+            value={leagueName}
+            onChange={(e) => setLeagueName(e.target.value)}
+            disabled={!isCommissioner || isLoading}
+            className="max-w-2xl"
+            placeholder="Enter pool name"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold">Pool Members</h2>
+          <p className="text-lg font-semibold">{league.max_teams} members</p>
+          <p className="text-muted-foreground text-sm">
+            The total number of players for this pool is fixed and cannot be changed.
+          </p>
+        </div>
       </div>
-      <div className="space-y-2">
-        <Label>Max Teams</Label>
-        <p className="text-sm font-medium">{league.max_teams} teams</p>
-        <p className="text-sm text-muted-foreground mt-1">
-          The maximum number of teams for this league is fixed and cannot be changed.
-        </p>
-      </div>
+
       <Button onClick={handleSave} disabled={!isCommissioner || isLoading}>
         {isLoading ? "Saving..." : "Save Changes"}
       </Button>

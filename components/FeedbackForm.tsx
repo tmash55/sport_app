@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Loader2 } from "lucide-react"
+import { AlertCircle, CheckCircle, Loader2 } from "lucide-react"
 
 const inquiryTypes = [
   { value: "general", label: "General Inquiry" },
@@ -95,13 +95,20 @@ export default function FeedbackForm() {
         />
       </div>
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="border-red-500/50 bg-red-50 dark:bg-red-900/20">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
       {success && (
-        <Alert>
-          <AlertDescription>Your feedback has been sent successfully. Thank you!</AlertDescription>
+        <Alert className="border-green-500/50 bg-green-50 bg-green-50 dark:bg-green-900/20">
+          <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <AlertTitle>Thank you for your feedback!</AlertTitle>
+          <AlertDescription className="mt-1">
+            We appreciate you taking the time to share your thoughts with us. Our team will review your message and get
+            back to you as soon as possible.
+          </AlertDescription>
         </Alert>
       )}
       <Button type="submit" disabled={isLoading} className="w-full">

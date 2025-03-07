@@ -5,7 +5,7 @@ const config = {
   appName: "Dryft",
   // REQUIRED: a short description of your app for SEO tags (can be overwritten)
   appDescription:
-    "The NextJS boilerplate with all you need to build your SaaS, AI tool, or any other web app.",
+    "Dryft delivers innovative and engaging sports pools, redefining the way fans compete with dynamic, strategy-driven formats beyond traditional brackets.",
   // REQUIRED (no https://, not trialing slash at the end, just the naked domain)
   domainName: "shipfa.st",
   crisp: {

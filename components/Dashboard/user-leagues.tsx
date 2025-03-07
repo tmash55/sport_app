@@ -23,6 +23,7 @@ interface League {
   status: "active" | "archived" | "upcoming"
   contests: {
     sport: string
+    name: string
   }
 }
 
@@ -63,6 +64,9 @@ export function UserLeagues({ leagues, isLoading, error }: UserLeaguesProps) {
   const toggleSport = (sport: string) => {
     setOpenSports((prev) => (prev.includes(sport) ? prev.filter((s) => s !== sport) : [...prev, sport]))
   }
+  const getContestPath = (contestName: string) => {
+    return contestName.toLowerCase().replace(/\s+/g, '-')
+  }
 
   const getSportIcon = (sport: string) => {
     switch (sport.toLowerCase()) {
@@ -71,7 +75,7 @@ export function UserLeagues({ leagues, isLoading, error }: UserLeaguesProps) {
       case "pga":
         return <PiGolf className="w-5 h-5 mr-2 text-green-500 dark:text-green-400" />
       case "football":
-        return <IoMdFootball className="w-5 h-5 mr-2 text-brown-500" />
+        return <PiFootballHelmetBold className="w-5 h-5 mr-2 text-brown-500" />
       case "soccer":
         return <MdSportsSoccer className="w-5 h-5 mr-2 text-blue-500" />
       default:
@@ -145,10 +149,11 @@ export function UserLeagues({ leagues, isLoading, error }: UserLeaguesProps) {
                   <SidebarMenuSubItem key={league.id}>
                     <SidebarMenuSubButton
                       asChild
-                      isActive={pathname.startsWith(`/dashboard/leagues/${league.id}`)}
+                      isActive={pathname.startsWith(`/dashboard/pools/${getContestPath(league.contests.name)}/${league.id}`)}
                       className="hover:bg-accent hover:text-accent-foreground transition-colors"
                     >
-                      <Link href={`/dashboard/leagues/${league.id}`} className="flex items-center">
+                        <Link href={`/dashboard/pools/${getContestPath(league.contests.name)}/${league.id}`} className="flex items-center">
+
                         <div className="w-2 h-2 rounded-full mr-2 bg-[#11274F] dark:bg-slate-300" ></div>
                         {league.name}
                       </Link>

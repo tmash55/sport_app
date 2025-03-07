@@ -80,7 +80,7 @@ export default async function DraftLayout({
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
           <Button asChild className="w-full">
-            <Link href={`/dashboard/leagues/${params.leagueid}`}>Manage League</Link>
+            <Link href={`/dashboard/pools/march-madness-draft/${params.leagueid}`}>Manage League</Link>
           </Button>
           <Button asChild variant="outline" className="w-full">
             <Link href="/dashboard">Back to Dashboard</Link>

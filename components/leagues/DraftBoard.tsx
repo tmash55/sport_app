@@ -74,7 +74,7 @@ const renderDraftBoard = (
           key={`${round}-${currentSlot}`}
           className={cn(
             "relative bg-secondary rounded border",
-            isMobileView ? "p-0.5 sm:p-1" : "p-1 sm:p-2",
+            isMobileView ? "p-0.5" : "p-1 sm:p-2",
             pick ? "border-secondary-foreground/10" : "border-secondary-foreground/20",
             pickNumber === currentPickNumber && !isDraftCompleted && currentPickClass,
             isUserPick && "bg-primary/5",

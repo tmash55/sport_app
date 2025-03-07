@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { createContext, useContext, useEffect, useState } from "react"
-import { createClient } from "@/libs/supabase/client"
-import type { User } from "@supabase/supabase-js"
-import { useRouter } from "next/navigation"
-import config from "@/config"
+import type React from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { createClient } from "@/libs/supabase/client";
+import type { User } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
+import config from "@/config";
 
 // Create Supabase client once (outside the component)
 const supabase = createClient();
@@ -27,22 +27,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        // 🔹 First check if we have a session before making an extra API call
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
-
+        // ✅ Get session once (this already includes the user)
+        const { data, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) throw sessionError;
-        if (!session?.user) {
-          router.push(config.auth.loginUrl);
-          return;
-        }
 
-        // 🔹 Fetch full user details only if session exists
-        const { data, error } = await supabase.auth.getUser();
-        if (error) throw error;
-        setUser(data.user);
+        const sessionUser = data?.session?.user ?? null;
+        setUser(sessionUser);
+
+        // ✅ Redirect only if there's no user
+        if (!sessionUser) {
+          router.push(config.auth.loginUrl);
+        }
       } catch (e) {
         setError(e instanceof Error ? e : new Error("An unknown error occurred"));
         router.push(config.auth.loginUrl);
@@ -53,17 +48,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     fetchUser();
 
+    // ✅ Optimize auth listener (runs only when state actually changes)
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
+      const newUser = session?.user ?? null;
+      if (newUser !== user) {
+        setUser(newUser);
+      }
+
       if (event === "SIGNED_OUT") {
         router.push(config.auth.loginUrl);
       }
     });
 
     return () => {
-      if (authListener?.subscription) {
-        authListener.subscription.unsubscribe();
-      }
+      authListener?.subscription?.unsubscribe();
     };
   }, [router]);
 

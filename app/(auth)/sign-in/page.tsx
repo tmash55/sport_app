@@ -27,12 +27,7 @@ export default function SignIn() {
         <div className="w-full max-w-md mx-auto">
           <h1 className="text-2xl font-bold text-center mb-6">Sign in to {config.appName}</h1>
           <AuthForm type="signin" onSuccess={handleAuthSuccess} />
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link href="/sign-up" className="font-medium text-primary hover:text-primary/80">
-              Sign up
-            </Link>
-          </p>
+          
         </div>
       </div>
 

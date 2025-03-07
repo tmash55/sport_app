@@ -126,13 +126,21 @@ export function DraftHeader({
                   <span>{isDark ? "Light Mode" : "Dark Mode"}</span>
                 </DropdownMenuItem>
                 {isCommissioner && draftStatus !== "completed" && (
-                  <DropdownMenuItem onClick={handleDraftAction}>
+                  <DropdownMenuItem
+                    onClick={handleDraftAction}
+                    disabled={draftStatus === "pre_draft" && !isDraftOrderSet}
+                    className={cn(
+                      draftStatus === "pre_draft" || draftStatus === "paused"
+                        ? "bg-green-600/10 text-green-600 hover:bg-green-600/20 hover:text-green-700"
+                        : "bg-red-600/10 text-red-600 hover:bg-red-600/20 hover:text-red-700",
+                    )}
+                  >
                     {getDraftActionIcon()}
                     <span className="ml-2">{getDraftActionText()}</span>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem asChild>
-                  <Link href={`/dashboard/leagues/${leagueId}`} className="flex items-center">
+                  <Link href={`/dashboard/pools/march-madness-draft/${leagueId}`} className="flex items-center">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Exit to Dashboard</span>
                   </Link>
@@ -182,11 +190,17 @@ export function DraftHeader({
                 {isCommissioner && draftStatus !== "completed" && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
-                        variant={draftStatus === "pre_draft" && !isDraftOrderSet ? "secondary" : "ghost"}
-                        size="icon"
-                        className="h-8 w-8"
+                    <Button
+                        variant="default"
+                        size="sm"
+                        className={cn(
+                          "h-8 px-3 flex items-center gap-1.5",
+                          draftStatus === "pre_draft" || draftStatus === "paused"
+                            ? "bg-green-600 hover:bg-green-700 text-white"
+                            : "bg-red-600 hover:bg-red-700 text-white",
+                        )}
                         onClick={handleDraftAction}
+                        disabled={draftStatus === "pre_draft" && !isDraftOrderSet}
                       >
                         {getDraftActionIcon()}
                         <span className="sr-only">{getDraftActionText()}</span>
@@ -201,7 +215,7 @@ export function DraftHeader({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                      <Link href={`/dashboard/leagues/${leagueId}`}>
+                      <Link href={`/dashboard/pools/march-madness-draft/${leagueId}`}>
                         <LogOut className="h-4 w-4" />
                         <span className="sr-only">Exit to Dashboard</span>
                       </Link>
@@ -221,22 +235,22 @@ export function DraftHeader({
       {draftStatus === "paused" && (
         <div
           className={cn(
-            "w-full bg-red-950/95 backdrop-blur supports-[backdrop-filter]:bg-red-950/80",
+            "w-full bg-red-600 backdrop-blur supports-[backdrop-filter]:bg-red-700",
             "animate-in fade-in slide-in-from-top duration-150",
           )}
         >
           <div className="container mx-auto">
             <Alert variant="destructive" className="rounded-none border-0 bg-transparent py-2.5">
               <div className="flex items-center gap-3">
-                <Info className="h-5 w-5 text-red-400/70" />
+                <Info className="h-5 w-5 text-white" />
                 <div className="flex items-center gap-2 min-w-0">
-                  <p className="text-sm font-medium text-red-300">Draft Paused</p>
-                  <p className="text-sm text-red-200/90">The draft has been paused by the commissioner.</p>
+                  <p className="text-sm font-medium text-white">Draft Paused</p>
+                  <p className="text-sm text-slate-100">The draft has been paused by the commissioner.</p>
                 </div>
                 {isCommissioner && (
                   <Button
                     variant="link"
-                    className="ml-auto text-sm font-medium text-red-300 hover:text-red-200 h-auto p-0"
+                    className="ml-auto text-sm font-medium text-white hover:text-slate-200 h-auto p-0"
                     onClick={onResumeDraft}
                   >
                     Resume Draft

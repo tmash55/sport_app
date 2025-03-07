@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
 import { Trophy } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
 import type { DraftPick, LeagueMember } from "@/types/draft"
 
 interface RecentPicksProps {
@@ -17,10 +16,23 @@ export function RecentPicks({ draftPicks, leagueMembers, currentPickNumber }: Re
   const [mostRecentPick, setMostRecentPick] = useState<DraftPick | null>(null)
 
   useEffect(() => {
-    const lastPick =
-      draftPicks
-        .filter((pick) => pick.pick_number < currentPickNumber)
-        .sort((a, b) => b.pick_number - a.pick_number)[0] || null
+    // Check if the draft is completed
+    const isDraftCompleted =
+      currentPickNumber > draftPicks.length || draftPicks.length === draftPicks.filter((p) => p.pick_number).length
+
+    let lastPick
+
+    if (isDraftCompleted) {
+      // If draft is completed, get the actual final pick
+      lastPick = draftPicks.sort((a, b) => b.pick_number - a.pick_number)[0] || null
+    } else {
+      // Otherwise, get the most recent pick before the current one
+      lastPick =
+        draftPicks
+          .filter((pick) => pick.pick_number < currentPickNumber)
+          .sort((a, b) => b.pick_number - a.pick_number)[0] || null
+    }
+
     setMostRecentPick(lastPick)
   }, [draftPicks, currentPickNumber])
 
@@ -41,7 +53,6 @@ export function RecentPicks({ draftPicks, leagueMembers, currentPickNumber }: Re
   const { round, pickInRound } = formatPickNumber(mostRecentPick.pick_number)
   if (!mostRecentPick) return null
 
-
   return (
     <div className="w-full">
       <AnimatePresence mode="wait">
@@ -56,7 +67,9 @@ export function RecentPicks({ draftPicks, leagueMembers, currentPickNumber }: Re
           <div className="grid grid-cols-3 gap-1">
             {/* Column 1: Last Pick and Pick Number */}
             <div className="flex flex-col items-center justify-center">
-              <div className="text-sm text-muted-foreground font-medium">Last Pick</div>
+              <div className="text-sm text-muted-foreground font-medium">
+                {currentPickNumber > draftPicks.length ? "Final Pick" : "Last Pick"}
+              </div>
               <div className="text-lg font-bold">
                 {round}.{pickInRound}
               </div>

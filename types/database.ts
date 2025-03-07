@@ -364,11 +364,13 @@ export interface LeagueMember {
   league_id: string;
   user_id: string;
   joined_at: string;
+  team_name: string;
   draft_position: number | null;
   users: {
     email: string;
     first_name: string;
     last_name: string;
+    display_name: string;
   };
 }
 

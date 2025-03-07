@@ -346,7 +346,7 @@ export function LeagueTeam() {
                       className={cn(
                         "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
                         team.global_teams.is_eliminated
-                          ? "!bg-destructive/20 dark:!bg-destructive/30 hover:!bg-destructive/30 dark:hover:!bg-destructive/40 border-destructive/50"
+                          ? "!bg-destructive/20 dark:!bg-destructive/50 hover:!bg-destructive/30 dark:hover:!bg-destructive/40 border-destructive/50"
                           : "even:bg-muted/5",
                       )}
                     >
@@ -385,7 +385,7 @@ export function LeagueTeam() {
                       </td>
                       <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
                         {team.global_teams.is_eliminated ? (
-                          <span className="inline-flex items-center rounded-full bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive">
+                          <span className="inline-flex items-center rounded-full bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive dark:bg-slate-300">
                             <X className="mr-1 h-3 w-3" />
                             Eliminated
                           </span>
@@ -454,7 +454,7 @@ function TeamCard({
       className={cn(
         "transition-colors cursor-pointer hover:bg-muted/50",
         team.global_teams.is_eliminated &&
-          "bg-destructive/20 dark:bg-destructive/30 hover:bg-destructive/30 dark:hover:bg-destructive/40 border-destructive/50",
+          "bg-destructive/20 dark:bg-destructive/50 hover:bg-destructive/30 dark:hover:bg-destructive/40 border-destructive/50",
       )}
     >
       <CardContent className="p-4">
@@ -494,12 +494,12 @@ function TeamCard({
             </div>
           </div>
           {team.global_teams.is_eliminated ? (
-            <span className="text-xs bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full flex items-center">
+            <span className="text-xs bg-destructive dark:text-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full flex items-center dark:bg-slate-300">
               <X className="w-3 h-3 mr-1" />
               Eliminated
             </span>
           ) : (
-            <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full">Active</span>
+            <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full flex items-center"><CheckIcon className="w-3 h-3 mr-1"/>Active</span>
           )}
         </div>
         <div className="grid grid-cols-3 gap-2 mb-4">
@@ -550,7 +550,7 @@ function TeamCard({
             <div
               className={cn(
                 "flex h-8 sm:h-10 min-w-[3rem] sm:min-w-[4rem] items-center justify-center rounded-lg font-semibold px-2 sm:px-3 text-sm sm:text-base",
-                team.global_teams.is_eliminated ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary",
+                team.global_teams.is_eliminated ? "bg-muted text-destructive dark:text-primary" : "bg-primary/10 text-primary",
               )}
             >
               {team.totalScore}

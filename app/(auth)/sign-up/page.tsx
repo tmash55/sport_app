@@ -22,15 +22,7 @@ export default function SignUp() {
           Create an account on {config.appName}
         </h1>
         <AuthForm type="signup" onSuccess={handleAuthSuccess}/>
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link
-            href="/sign-in"
-            className="font-medium text-primary hover:text-primary/80"
-          >
-            Sign in
-          </Link>
-        </p>
+        
       </div>
     </div>
   );

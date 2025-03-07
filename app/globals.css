@@ -119,3 +119,18 @@
     @apply bg-background dark:text-foreground text-[#11274F];
   }
 }
+
+
+
+
+
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

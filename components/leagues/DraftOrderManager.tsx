@@ -164,7 +164,7 @@ export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftO
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full sm:w-auto border-primary">
+        <Button variant="default" className="w-full sm:w-auto ">
           Manage Draft Order
         </Button>
       </DialogTrigger>

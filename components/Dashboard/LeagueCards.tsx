@@ -3,12 +3,14 @@
 import Link from "next/link"
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Users, Clock, Zap, ArrowRight } from "lucide-react"
+import { Users, Clock, Zap, ArrowRight, Plus, ListOrdered, Crown } from "lucide-react"
 import { PiFootballHelmetBold, PiGolf, PiTrophy, PiBasketball } from "react-icons/pi"
 import { CiBaseball } from "react-icons/ci"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
+import MyEntriesPage from "@/app/dashboard/pools/nfl-draft/[id]/my-entries/page"
+import { useNflDraft } from "@/app/context/NflDraftContext"
 
 interface Contest {
   id: string
@@ -22,10 +24,14 @@ interface League {
   name: string
   commissioner_id: string
   memberCount: number
-  totalSlots: number
+  totalSlots?: number
+  entryCount?: number // Total entries created
   contest: Contest
   draft_start_time?: string
   draft_status: "completed" | "scheduled" | "not_scheduled" | "in_progress" | "paused" | "pre_draft"
+  settings?: string // JSON string for league settings
+  userEntryCount?: number // How many entries the user has
+  maxEntries?: number // Max entries allowed per user
 }
 
 interface LeagueCardsProps {
@@ -64,12 +70,25 @@ const getSportColor = (sport: string): string => {
   }
 }
 
+const getContestPath = (contestName: string) => {
+  return contestName.toLowerCase().replace(/\s+/g, '-')
+}
+
 export function LeagueCards({ league, isCommissioner }: LeagueCardsProps) {
   const sport = league.contest?.sport || "Unknown"
   const contestType = league.contest?.contest_type || "Unknown"
   const sportColor = getSportColor(sport)
+  const isNFLDraft = league.contest?.name.toLowerCase().includes("nfl draft") // Detect NFL Draft format
+
   const isNowDrafting = league.draft_status === "in_progress" || league.draft_status === "paused"
-  console.log('league data (card):', league)
+
+  // ✅ Parse settings JSON if available
+  const settings = league.settings ? JSON.parse(league.settings) : {}
+  const pickDeadline = settings.lock_entries_at ? new Date(settings.lock_entries_at) : null
+  const isDeadlinePassed = pickDeadline ? new Date() > pickDeadline : false
+  const maxEntries = settings.max_entries_per_user || league.maxEntries || 1
+  const userEntryCount = league.userEntryCount || 0
+  const canCreateEntry = userEntryCount < maxEntries && !isDeadlinePassed
 
   const getDraftStatusDisplay = () => {
     switch (league.draft_status) {
@@ -80,8 +99,8 @@ export function LeagueCards({ league, isCommissioner }: LeagueCardsProps) {
         return "Now Drafting"
       case "pre_draft":
         return league.draft_start_time
-        ? `Draft: ${format(new Date(league.draft_start_time), "MMM d, h:mm a")}`
-        : "Draft Scheduled"
+          ? `Draft: ${format(new Date(league.draft_start_time), "MMM d, h:mm a")}`
+          : "Draft Scheduled"
       case "scheduled":
         return league.draft_start_time
           ? `Draft: ${format(new Date(league.draft_start_time), "MMM d, h:mm a")}`
@@ -92,7 +111,7 @@ export function LeagueCards({ league, isCommissioner }: LeagueCardsProps) {
   }
 
   return (
-    <Link href={`/dashboard/leagues/${league.id}`} passHref>
+    <Link href={`/dashboard/pools/${getContestPath(league.contest.name)}/${league.id}`} passHref>
       <Card
         className={`group h-full transition-all hover:shadow-md hover:-translate-y-1 ${
           isNowDrafting ? "border-primary shadow-sm" : ""
@@ -112,41 +131,85 @@ export function LeagueCards({ league, isCommissioner }: LeagueCardsProps) {
           <h3 className="text-lg font-semibold mt-2 group-hover:text-primary transition-colors">{league.name}</h3>
           <p className="text-sm text-muted-foreground">{league.contest?.name}</p>
         </CardHeader>
+
         <CardContent className="pb-2">
           <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <Users className="h-4 w-4" />
-              <span>
-                {league.memberCount}/{league.totalSlots}
-              </span>
-            </div>
+            {isNFLDraft ? (
+              // 📌 NFL DRAFT: Show Member Count & Entry Count
+              <>
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <Users className="h-4 w-4" />
+                  <span>{league.memberCount} Members</span>
+                </div>
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <ListOrdered className="h-4 w-4" />
+                  <span>{league.entryCount|| 0} Entries</span>
+                </div>
+              </>
+            ) : (
+              // 📌 OTHER CONTESTS: Show Member Count / Total Slots
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Users className="h-4 w-4" />
+                <span>
+                  {league.memberCount}/{league.totalSlots}
+                </span>
+              </div>
+            )}
             {isCommissioner && (
-              <Badge variant="secondary" className="text-xs font-normal">
-                Commissioner
-              </Badge>
+               <Badge variant="default" className="bg-amber-500 hover:bg-amber-600">
+               <Crown className="h-3 w-3 mr-1" /> Commissioner
+             </Badge>
             )}
           </div>
         </CardContent>
+
         <CardFooter className="pt-2 flex justify-between items-center">
-          <div
-            className={`flex items-center gap-1 text-sm ${
-              isNowDrafting ? "text-primary font-medium" : "text-muted-foreground"
-            }`}
-          >
-            {isNowDrafting ? <Zap className="h-4 w-4 animate-pulse" /> : <Clock className="h-4 w-4" />}
-            <span>{getDraftStatusDisplay()}</span>
-          </div>
-          {isNowDrafting && (
-            <Link href={`/draft/${league.id}`} passHref>
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-primary" onClick={(e) => e.stopPropagation()}>
-                Join Draft <ArrowRight className="ml-1 h-4 w-4" />
-              </Button>
-            </Link>
+          {isNFLDraft ? (
+            // 📌 NFL DRAFT (Show Pick Deadline)
+            <>
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                <span>
+                  {pickDeadline
+                    ? `Picks Due: ${format(pickDeadline, "MMM d, h:mm a")}`
+                    : "Pick Deadline Not Set"}
+                </span>
+              </div>
+              {canCreateEntry && (
+                <Link href={`/dashboard/pools/${getContestPath(league.contest.name)}/${league.id}/create-entry`} passHref>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-primary"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Create Entry  <ArrowRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </Link>
+              )}
+            </>
+          ) : (
+            // 📌 OTHER CONTESTS (Show Draft Status & Join Draft Button)
+            <>
+              <div
+                className={`flex items-center gap-1 text-sm ${
+                  isNowDrafting ? "text-primary font-medium" : "text-muted-foreground"
+                }`}
+              >
+                {isNowDrafting ? <Zap className="h-4 w-4 animate-pulse" /> : <Clock className="h-4 w-4" />}
+                <span>{getDraftStatusDisplay()}</span>
+              </div>
+              {isNowDrafting && (
+                <Link href={`/draft/${league.id}`} passHref>
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-primary" onClick={(e) => e.stopPropagation()}>
+                    Join Draft <ArrowRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </Link>
+              )}
+            </>
           )}
         </CardFooter>
-        {isNowDrafting && <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full animate-ping" />}
       </Card>
     </Link>
   )
 }
-

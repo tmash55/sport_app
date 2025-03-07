@@ -13,9 +13,10 @@ import {
 import { createClient } from "@/libs/supabase/client"
 import Link from "next/link"
 
+// Static route mapping for known paths
 const routeMap: { [key: string]: string } = {
   "/dashboard": "Dashboard",
-  "/dashboard/leagues/create": "Create League",
+  "/dashboard/pools": "Pools",
   "/dashboard/join-pool": "Join Pools",
   "/dashboard/bracket": "Tournament Bracket",
   "/dashboard/scores": "Tournament Scores",
@@ -36,12 +37,17 @@ export function DynamicBreadcrumb() {
   useEffect(() => {
     const fetchLeagueName = async () => {
       const pathSegments = pathname.split("/").filter(Boolean)
-      const leagueIndex = pathSegments.indexOf("leagues")
-      if (leagueIndex !== -1 && pathSegments[leagueIndex + 1]) {
-        const leagueId = pathSegments[leagueIndex + 1]
+
+      // Ensure we are in `/dashboard/pools/[contest-name]/[league-id]`
+      if (pathSegments[1] === "pools" && pathSegments[3]) {
+        const leagueId = pathSegments[3]
 
         if (!leagueNames[leagueId]) {
-          const { data, error } = await supabase.from("leagues").select("name").eq("id", leagueId).single()
+          const { data, error } = await supabase
+            .from("leagues")
+            .select("name")
+            .eq("id", leagueId)
+            .single()
 
           if (data && !error) {
             setLeagueNames((prev) => ({ ...prev, [leagueId]: data.name }))
@@ -59,13 +65,10 @@ export function DynamicBreadcrumb() {
 
   const pathSegments = pathname.split("/").filter(Boolean)
 
-  // Check if we're on a league page
-  const isLeaguePage = pathSegments[1] === "leagues" && pathSegments[2]
-
   return (
     <Breadcrumb>
       <BreadcrumbList>
-        {/* Dashboard link */}
+        {/* Dashboard Link */}
         <BreadcrumbItem>
           <Link href="/dashboard/my-pools" passHref legacyBehavior>
             <BreadcrumbLink className="text-muted-foreground hover:text-foreground transition-colors text-sm">
@@ -75,10 +78,10 @@ export function DynamicBreadcrumb() {
           <BreadcrumbSeparator />
         </BreadcrumbItem>
 
-        {/* Pools link (for league pages) */}
-        {isLeaguePage && (
+        {/* Pools Link */}
+        {pathSegments.includes("pools") && (
           <BreadcrumbItem>
-            <Link href="/dashboard/my-pools" passHref legacyBehavior>
+            <Link href="/dashboard/pools" passHref legacyBehavior>
               <BreadcrumbLink className="text-muted-foreground hover:text-foreground transition-colors text-sm">
                 Pools
               </BreadcrumbLink>
@@ -87,37 +90,25 @@ export function DynamicBreadcrumb() {
           </BreadcrumbItem>
         )}
 
-        {/* Dynamic segments */}
-        {pathSegments.slice(1).map((segment, index) => {
-          const path = `/${pathSegments.slice(0, index + 2).join("/")}`
-          const isLast = index === pathSegments.length - 2
-          let displayName = routeMap[path] || segment.charAt(0).toUpperCase() + segment.slice(1)
+        {/* Contest Type (e.g., "NFL Draft") */}
+        {pathSegments[2] && (
+          <BreadcrumbItem>
+            <BreadcrumbPage className="text-muted-foreground">
+              {pathSegments[2]
+                .replace(/-/g, " ") // Convert hyphens to spaces
+                .replace(/\b\w/g, (char) => char.toUpperCase())} {/* Capitalize each word */}
+            </BreadcrumbPage>
+            <BreadcrumbSeparator />
+          </BreadcrumbItem>
+        )}
 
-          // If this segment is a league ID and we have a league name, use it
-          if (pathSegments[index] === "leagues" && leagueNames[pathSegments[index + 1]]) {
-            displayName = leagueNames[pathSegments[index + 1]]
-          }
-
-          // Skip 'leagues' segment for league pages
-          if (isLeaguePage && segment === "leagues") {
-            return null
-          }
-
-          return (
-            <BreadcrumbItem key={path}>
-              {!isLast ? (
-                <>
-                  <BreadcrumbLink href={path}>{displayName}</BreadcrumbLink>
-                  <BreadcrumbSeparator />
-                </>
-              ) : (
-                <BreadcrumbPage>{displayName}</BreadcrumbPage>
-              )}
-            </BreadcrumbItem>
-          )
-        })}
+        {/* League Name (Replaces League ID) */}
+        {pathSegments[3] && leagueNames[pathSegments[3]] && (
+          <BreadcrumbItem>
+            <BreadcrumbPage>{leagueNames[pathSegments[3]]}</BreadcrumbPage>
+          </BreadcrumbItem>
+        )}
       </BreadcrumbList>
     </Breadcrumb>
   )
 }
-

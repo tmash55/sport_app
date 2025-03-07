@@ -10,6 +10,8 @@ import { Region } from "./Region"
 import { Button } from "@/components/ui/button"
 import { ChevronDownIcon } from "lucide-react"
 import { Match } from "./Match"
+import { EmptyBracket } from "./EmptyBracket"
+import { Skeleton } from "../ui/skeleton"
 
 export function Bracket() {
   const { leagueData, matchups, isLoading, error } = useLeague()
@@ -20,7 +22,24 @@ export function Bracket() {
   const selectedMember = leagueData?.league_members.find((m: any) => m.id === selectedMemberId)
 
   if (isLoading || !leagueData) {
-    return <div>Loading...</div>
+    return (
+      <Card className="relative overflow-hidden bg-gradient-to-br from-background to-muted/50 backdrop-blur border shadow-md w-full">
+        <CardContent className="p-2 sm:p-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            <h2 className="text-lg font-semibold">Tournament Bracket</h2>
+            <Button
+              variant="outline"
+              className="w-full sm:w-[250px] justify-start font-medium border-2 hover:border-primary/50 transition-colors"
+              disabled
+            >
+              <Skeleton className="h-4 w-[120px]" />
+              <ChevronDownIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </div>
+          <EmptyBracket />
+        </CardContent>
+      </Card>
+    )
   }
 
   if (error) {
@@ -69,7 +88,7 @@ export function Bracket() {
   })
 
   return (
-    <Card className="w-full">
+    <Card className="relative overflow-hidden bg-gradient-to-br from-background to-muted/50 backdrop-blur border shadow-md w-full">
       <CardContent className="p-2 sm:p-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
           <h2 className="text-lg font-semibold">Tournament Bracket</h2>

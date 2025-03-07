@@ -5,7 +5,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Handle redirects
-  if (pathname === "/dashboard" || pathname === "/dashboard/leagues") {
+  if (pathname === "/dashboard" || pathname === "/dashboard/leagues" || pathname ==="/dashboard/pools") {
     const url = request.nextUrl.clone()
     url.pathname = "/dashboard/my-pools"
     return NextResponse.redirect(url)

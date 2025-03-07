@@ -1,18 +1,23 @@
 "use client"
 
 import type React from "react"
+
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import AuthForm from "@/components/Auth/AuthForm"
 import { createClient } from "@/libs/supabase/client"
 import { createLeague } from "@/app/actions/createLeague"
-import { Trophy, Users } from "lucide-react"
+import { Info } from "lucide-react"
+import { createNFLDraftLeague } from "@/app/actions/createNFLDraftleague"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+
+const NFL_DRAFT_CONTEST_ID = "d282f9e8-4b9c-4218-a270-215c635a7e29"
 
 interface PoolDetailsFormProps {
   contestId: string
@@ -25,34 +30,17 @@ export function PoolDetailsForm({ contestId, contestName }: PoolDetailsFormProps
   const [isLoading, setIsLoading] = useState(false)
   const [showAuthForm, setShowAuthForm] = useState(false)
   const [authType, setAuthType] = useState<"signin" | "signup">("signup")
-  const [contestDetails, setContestDetails] = useState<{ name: string; contest_type: string; sport: string } | null>({
-    name: contestName,
-    contest_type: "",
-    sport: "",
-  })
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+
   const router = useRouter()
   const { toast } = useToast()
   const supabase = createClient()
 
+  const isNFLDraft = contestId === NFL_DRAFT_CONTEST_ID
+
   useEffect(() => {
-    const fetchContestDetails = async () => {
-      const { data, error } = await supabase.from("contests").select("contest_type, sport").eq("id", contestId).single()
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch contest details. Please try again.",
-          variant: "destructive",
-        })
-      } else if (data) {
-        setContestDetails((prevDetails) => ({ ...prevDetails, ...data }))
-      }
-    }
-
-    fetchContestDetails()
     checkAuthStatus()
-  }, [contestId, supabase, toast])
+  }, [])
 
   const checkAuthStatus = async () => {
     const {
@@ -76,20 +64,26 @@ export function PoolDetailsForm({ contestId, contestName }: PoolDetailsFormProps
         error: userError,
       } = await supabase.auth.getUser()
 
-      if (userError) {
+      if (userError || !user) {
         throw new Error("User not authenticated")
       }
 
-      if (user) {
-        const result = await createLeague(leagueName, contestId, Number.parseInt(maxTeams))
-        if ("error" in result) {
-          throw new Error(result.error)
-        }
-        router.push(`/dashboard/leagues/${result.leagueId}`)
+      let result
+      if (isNFLDraft) {
+        result = await createNFLDraftLeague(leagueName, contestId)
       } else {
-        setShowAuthForm(true)
-        setAuthType("signup")
+        result = await createLeague(leagueName, contestId, Number.parseInt(maxTeams))
       }
+
+      if ("error" in result) {
+        throw new Error(result.error)
+      }
+
+      router.push(
+        isNFLDraft
+          ? `/dashboard/pools/nfl-draft/${result.leagueId}`
+          : `/dashboard/pools/march-madness-draft/${result.leagueId}`,
+      )
     } catch (error) {
       toast({
         title: "Error",
@@ -101,25 +95,10 @@ export function PoolDetailsForm({ contestId, contestName }: PoolDetailsFormProps
     }
   }
 
-  const handleAuthSuccess = async (userId: string) => {
-    setShowAuthForm(false)
-    setIsAuthenticated(true)
-    const result = await createLeague(leagueName, contestId, Number.parseInt(maxTeams))
-    if ("error" in result) {
-      toast({
-        title: "Error",
-        description: result.error,
-        variant: "destructive",
-      })
-    } else {
-      router.push(`/dashboard/leagues/${result.leagueId}`)
-    }
-  }
-
   if (showAuthForm) {
     return (
       <div className="max-w-md mx-auto">
-        <AuthForm type={authType} onSuccess={handleAuthSuccess} />
+        <AuthForm type={authType} onSuccess={() => setShowAuthForm(false)} />
         <div className="mt-4 text-center">
           {authType === "signup" ? (
             <p>
@@ -142,67 +121,79 @@ export function PoolDetailsForm({ contestId, contestName }: PoolDetailsFormProps
   }
 
   return (
-    <Card className="max-w-2xl mx-auto bg-card/50 backdrop-blur">
-      <CardContent className="p-6">
-        <div className="space-y-6">
-          <div className="grid gap-4 p-4 rounded-lg bg-muted/50">
-            <div className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-primary" />
-              <span className="font-medium">Contest:</span>
-              <span>{contestDetails?.name}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              <span className="font-medium">Sport:</span>
-              <span>{contestDetails?.sport.toUpperCase()}</span>
-            </div>
-          </div>
-
+    <div className="max-w-2xl mx-auto">
+      <Card className="backdrop-blur">
+        <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="leagueName">League Name</Label>
+              <div>
                 <Input
                   id="leagueName"
                   value={leagueName}
                   onChange={(e) => setLeagueName(e.target.value)}
-                  placeholder="My March Madness Pool"
+                  placeholder="Enter pool name"
                   required
                   minLength={3}
                   maxLength={50}
-                  className="bg-background"
+                  className="text-lg py-6"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="maxTeams">Number of Teams</Label>
-                <Select value={maxTeams} onValueChange={setMaxTeams}>
-                  <SelectTrigger id="maxTeams" className="bg-background">
-                    <SelectValue placeholder="Select number of teams" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[4, 6, 8, 10, 12].map((num) => (
-                      <SelectItem key={num} value={num.toString()}>
-                        {num} Teams
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {!isNFLDraft && (
+                <div>
+                  <Select value={maxTeams} onValueChange={setMaxTeams}>
+                    <SelectTrigger className="w-full text-lg py-6">
+                      <SelectValue placeholder="Select number of members" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[4, 6, 8, 10, 12].map((num) => (
+                        <SelectItem key={num} value={num.toString()}>
+                          {num} Members
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
-            <div className="pt-4">
-              <p className="text-sm text-muted-foreground mb-6">
-                You&apos;ll be able to adjust more settings once the pool is created.
-              </p>
-              <Button type="submit" disabled={isLoading || leagueName.length < 3} className="w-full">
-                {isLoading ? "Creating..." : isAuthenticated ? "Create Pool" : "Sign Up and Create Pool"}
-              </Button>
-            </div>
+            <Alert variant="default" className="bg-card">
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                {isNFLDraft ? (
+                  <>
+                    Create your entries for free! A one-time service fee will be due when the NFL Draft starts.{" "}
+                    <Link href="/pricing" className="font-medium underline hover:text-primary">
+                      View pricing details
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    No upfront cost - invite friends and draft your teams! A one-time service fee will be due after
+                    draft completion.{" "}
+                    <Link href="/pricing" className="font-medium underline hover:text-primary">
+                      View pricing details
+                    </Link>
+                  </>
+                )}
+              </AlertDescription>
+            </Alert>
+
+            <Button
+              type="submit"
+              disabled={isLoading || leagueName.length < 3}
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-6 text-lg font-medium"
+            >
+              {isLoading ? "Creating..." : "Create Pool"}
+            </Button>
+
+            <p className="text-sm text-muted-foreground text-center">
+              Additional pool settings will be available after creation
+            </p>
           </form>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   )
 }
 

@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from "react"
 import { createClient } from "@/libs/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -8,9 +10,11 @@ import { useToast } from "@/hooks/use-toast"
 import { format } from "date-fns"
 import { useLeague } from "@/app/context/LeagueContext"
 import { Clock } from "lucide-react"
+import { sendDraftTimeNotification } from "@/app/actions/sendDraftTimeNotifications"
+
 
 export function DraftTimeModal() {
-  const { leagueData, updateLeagueData } = useLeague() // ✅ Replace `mutate` with `refreshLeagueData`
+  const { leagueData, updateLeagueData } = useLeague()
   const [isOpen, setIsOpen] = useState(false)
   const [date, setDate] = useState<Date | undefined>(
     leagueData?.draft_start_time ? new Date(leagueData.draft_start_time) : undefined,
@@ -18,6 +22,7 @@ export function DraftTimeModal() {
   const [time, setTime] = useState(
     leagueData?.draft_start_time ? format(new Date(leagueData.draft_start_time), "hh:mm a") : "12:00 PM",
   )
+  const [isSending, setIsSending] = useState(false)
   const supabase = createClient()
   const { toast } = useToast()
 
@@ -30,7 +35,7 @@ export function DraftTimeModal() {
       })
       return
     }
-  
+
     const [timeString, period] = time.split(" ")
     const [hours, minutes] = timeString.split(":").map(Number)
     const draftDateTime = new Date(date)
@@ -38,36 +43,62 @@ export function DraftTimeModal() {
       period === "PM" && hours !== 12 ? hours + 12 : hours === 12 && period === "AM" ? 0 : hours,
       minutes,
     )
-  
-    const { error } = await supabase
-      .from("leagues")
-      .update({ draft_start_time: draftDateTime.toISOString() })
-      .eq("id", leagueData?.id)
-  
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update draft time. Please try again.",
-        variant: "destructive",
-      })
-    } else {
+
+    setIsSending(true)
+
+    try {
+      // Update the draft time in the database
+      const { error } = await supabase
+        .from("leagues")
+        .update({ draft_start_time: draftDateTime.toISOString() })
+        .eq("id", leagueData?.id)
+
+      if (error) {
+        throw new Error("Failed to update draft time. Please try again.")
+      }
+
+      // Determine if this is an update or a new setting
+      const isUpdate = !!leagueData?.draft_start_time
+
+      // Send email notifications
+      const emailResult = await sendDraftTimeNotification(leagueData?.id as string, draftDateTime, isUpdate)
+
+      if (!emailResult.success) {
+        // Still close the modal and update the data, but show a warning about emails
+        setIsOpen(false)
+        updateLeagueData({ draft_start_time: draftDateTime.toISOString() })
+
+        toast({
+          title: "Draft time updated",
+          description: "Draft time saved, but there was an issue sending notification emails: " + emailResult.error,
+          variant: "default",
+        })
+        return
+      }
+
+      // Everything succeeded
       setIsOpen(false)
-  
-      // ✅ Update the local state instead of refreshing
       updateLeagueData({ draft_start_time: draftDateTime.toISOString() })
-  
+
       toast({
         title: "Success",
-        description: "Draft time has been updated.",
+        description: `Draft time has been ${isUpdate ? "updated" : "set"} and notifications sent to league members.`,
       })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSending(false)
     }
   }
-  
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="ml-2">
+        <Button variant="outline" className="w-full sm:w-auto">
           <Clock className="mr-2 h-4 w-4" />
           {leagueData?.draft_start_time ? "Update Draft Time" : "Set Draft Time"}
         </Button>
@@ -99,10 +130,11 @@ export function DraftTimeModal() {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={handleSubmit} className="w-full">
-          Save
+        <Button onClick={handleSubmit} className="w-full" disabled={isSending}>
+          {isSending ? "Saving..." : "Save"}
         </Button>
       </DialogContent>
     </Dialog>
   )
 }
+

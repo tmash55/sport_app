@@ -35,8 +35,8 @@ const ButtonCheckout: React.FC<ButtonCheckoutProps> = ({
     try {
       const { url }: { url: string } = await apiClient.post("/stripe/create-checkout", {
         priceId,
-        successUrl: `${window.location.origin}/dashboard/leagues/${leagueId}?payment=success`,
-        cancelUrl: `${window.location.origin}/dashboard/leagues/${leagueId}?payment=cancelled`,
+        successUrl: `${window.location.origin}/dashboard/pools/march-madness-draft/${leagueId}?payment=success`,
+        cancelUrl: `${window.location.origin}/dashboard/pools/march-madness-draft/${leagueId}?payment=cancelled`,
         mode,
         metadata: { ...metadata, leagueId },
       })

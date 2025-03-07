@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { Users2, Trophy, BarChart3, AlignStartVertical } from "lucide-react"
+import { Users2, Trophy, LayoutDashboard, AlignStartVertical } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLeague } from "@/app/context/LeagueContext"
 import { cn } from "@/lib/utils"
@@ -10,27 +10,27 @@ import { Skeleton } from "../ui/skeleton"
 
 const navigationItems = [
   {
-    label: "League",
-    icon: BarChart3,
-    href: (id: string) => `/dashboard/leagues/${id}`,
-    value: "league",
+    label: "Overview",
+    icon: LayoutDashboard,
+    href: (id: string) => `/dashboard/pools/march-madness-draft/${id}`,
+    value: "overview",
   },
   {
     label: "Teams",
     icon: Users2,
-    href: (id: string) => `/dashboard/leagues/${id}/team`,
+    href: (id: string) => `/dashboard/pools/march-madness-draft/${id}/team`,
     value: "team",
   },
   {
     label: "Standings",
     icon: Trophy,
-    href: (id: string) => `/dashboard/leagues/${id}/standings`,
+    href: (id: string) => `/dashboard/pools/march-madness-draft/${id}/standings`,
     value: "standings",
   },
   {
     label: "Bracket",
     icon: AlignStartVertical,
-    href: (id: string) => `/dashboard/leagues/${id}/bracket`,
+    href: (id: string) => `/dashboard/pools/march-madness-draft/${id}/bracket`,
     value: "bracket",
   },
 ]
@@ -74,8 +74,8 @@ export function LeagueNavigation() {
     if (pathname.includes("/team")) return "team"
     if (pathname.includes("/standings")) return "standings"
     if (pathname.includes("/bracket")) return "bracket"
-    if (pathname === `/dashboard/leagues/${leagueId}`) return "league"
-    return "league"
+    if (pathname === `/dashboard/pools/march-madness-draft/${leagueId}`) return "overview"
+    return "overview"
   }
 
   return (

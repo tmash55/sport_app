@@ -12,10 +12,8 @@ const LeaguesContext = createContext<{
   userInfo: any
   error: any
 } | null>(null)
-
+const supabase = createClient()
 const fetcher = async (userId: string) => {
-  const supabase = createClient()
-
   const [{ data: leaguesData, error: leaguesError }, { data: userData, error: userError }] = await Promise.all([
     supabase
       .from("leagues")
@@ -42,7 +40,8 @@ const fetcher = async (userId: string) => {
           status,
           start_time,
           draft_pick_timer
-        )
+        ),
+        roster_entries(entry_name)
       `)
       .eq("league_members.user_id", userId)
       .order("created_at", { ascending: false }),
@@ -61,7 +60,10 @@ const fetcher = async (userId: string) => {
     ...league,
     draft_status: league.drafts && league.drafts ? league.drafts.status : "not_scheduled",
     start_time: league.drafts && league.drafts ? league.drafts.start_time : null,
+    entryCount: league.roster_entries?.length || 0,
+    
   }))
+ 
 
 
   return {
@@ -79,9 +81,11 @@ export function LeaguesProvider({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useUser()
 
   const { data, error } = useSWR(user && !isLoading ? user.id : null, fetcher, {
+    
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
-    refreshInterval: 5 * 60 * 1000, // Refresh every 5 minutes
+    refreshInterval: 10 * 60 * 1000, // Refresh every 5 minutes
+    keepPreviousData: true,
   })
 
   return (

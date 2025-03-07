@@ -1,17 +1,17 @@
-import React, { type ReactNode } from "react"
-import { AppSidebar } from "@/components/Dashboard/app-sidebar"
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
-import { DynamicBreadcrumb } from "@/components/Dashboard/dynamic-breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import { LeaguesProvider } from "../context/LeaguesContext"
-import { DashboardFooter } from "@/components/DashboardFooter"
-import { UserProvider } from "../context/UserProvider"
+import React, { type ReactNode } from "react";
+import { AppSidebar } from "@/components/Dashboard/app-sidebar";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { DynamicBreadcrumb } from "@/components/Dashboard/dynamic-breadcrumb";
+import { Separator } from "@/components/ui/separator";
+import { LeaguesProvider } from "../context/LeaguesContext";
+import { DashboardFooter } from "@/components/DashboardFooter";
+import { UserProvider } from "../context/UserProvider";
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: ReactNode
-}) {
+export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <UserProvider>
       <LeaguesProvider>
@@ -35,6 +35,5 @@ export default function DashboardLayout({
         </SidebarProvider>
       </LeaguesProvider>
     </UserProvider>
-  )
+  );
 }
-

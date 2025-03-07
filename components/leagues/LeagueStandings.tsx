@@ -92,7 +92,7 @@ export function LeagueStandings() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold">League Standings</h2>
+      <h2 className="text-2xl font-bold">Pool Standings</h2>
       <Tabs defaultValue="members" className="w-full">
         <TabsList>
           <TabsTrigger value="members">League Rankings</TabsTrigger>
