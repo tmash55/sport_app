@@ -83,7 +83,7 @@ export function DraftTimeEmailTemplate({
             </Section>
 
             <Text style={text} className="dark-mode-text">
-              If you're having trouble with the button, you can also copy and paste this link into your browser:
+              If you&spos;re having trouble with the button, you can also copy and paste this link into your browser:
             </Text>
 
             <Text style={linkText} className="dark-mode-text">

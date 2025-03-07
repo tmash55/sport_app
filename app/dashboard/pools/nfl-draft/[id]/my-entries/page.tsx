@@ -60,16 +60,6 @@ export default function MyEntriesPage() {
   const router = useRouter();
   const { user } = useUser();
   const { league, entries, loading, refetchData } = useNflDraft();
-
-  if (loading) {
-    return <EntriesPageSkeleton />;
-  }
-
-  if (!league) {
-    return <div>League not found</div>;
-  }
-
-  const settings = league.settings ? JSON.parse(league.settings) : {};
   const [userEntries, setUserEntries] = useState<Entry[]>([]);
 
   useEffect(() => {
@@ -83,6 +73,19 @@ export default function MyEntriesPage() {
       )
     );
   }, [entries, user, league]);
+
+  if (loading) {
+    return <EntriesPageSkeleton />;
+  }
+
+  if (!league) {
+    return <div>League not found</div>;
+  }
+
+  const settings = league.settings ? JSON.parse(league.settings) : {};
+ 
+
+  
   
   const maxEntries = settings.max_entries_per_user || 1;
   const pickDeadline = settings.lock_entries_at
@@ -207,6 +210,7 @@ export default function MyEntriesPage() {
           ) // ✅ Ensure entry belongs to the logged-in user
           .map((entry) => (
             <EntryCard
+            key={entry.id}
             entry={{
               id: entry.id,
               entry_name: entry.entry_name,

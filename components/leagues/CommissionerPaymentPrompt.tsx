@@ -81,7 +81,7 @@ export function CommissionerPaymentPrompt({ leagueId, leagueName, contestId }: C
               <div>
                 <h3 className="font-medium text-amber-800 dark:text-amber-300">Commissioner Action Required</h3>
                 <p className="text-amber-700 dark:text-amber-400 text-sm mt-1">
-                  Your pool's draft is complete! As the commissioner, you need to activate{" "}
+                  Your pool&spos;s draft is complete! As the commissioner, you need to activate{" "}
                   <span className="font-medium">{leagueName}</span> to unlock features for everyone in your pool.
                 </p>
               </div>

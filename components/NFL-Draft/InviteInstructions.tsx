@@ -62,7 +62,7 @@ export function InviteInstructions({ leagueId, leagueName = "your pool" }: Invit
                 <div>
                   <h3 className="font-medium">Quick & Easy</h3>
                   <p className="text-sm text-muted-foreground">
-                    When friends click your link, they'll create an account (or sign in) and automatically join your
+                    When friends click your link, they&apos;ll create an account (or sign in) and automatically join your
                     pool!
                   </p>
                 </div>
@@ -75,7 +75,7 @@ export function InviteInstructions({ leagueId, leagueName = "your pool" }: Invit
                 <div>
                   <h3 className="font-medium">Track Invites</h3>
                   <p className="text-sm text-muted-foreground">
-                    You'll see members appear in your pool as they join. No manual approval needed!
+                    You&apos;ll see members appear in your pool as they join. No manual approval needed!
                   </p>
                 </div>
               </div>
@@ -96,7 +96,7 @@ export function InviteInstructions({ leagueId, leagueName = "your pool" }: Invit
 
           <Alert className="mt-4 bg-blue-50 dark:bg-blue-950/30 border-blue-100 dark:border-blue-900">
             <AlertDescription className="text-blue-800 dark:text-blue-300">
-              <span className="font-medium">Need more members?</span> Check the Member Management tab to see who's
+              <span className="font-medium">Need more members?</span> Check the Member Management tab to see who&apos;s
               joined so far.
             </AlertDescription>
           </Alert>
@@ -113,7 +113,7 @@ export function InviteInstructions({ leagueId, leagueName = "your pool" }: Invit
                   <div>
                     <h3 className="font-medium">Copy Your Unique Link</h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Click the "Copy Link" button above to copy your pool's invite link to your clipboard.
+                      Click the "Copy Link" button above to copy your pool&apos;s invite link to your clipboard.
                     </p>
                   </div>
                 </li>
@@ -148,7 +148,7 @@ export function InviteInstructions({ leagueId, leagueName = "your pool" }: Invit
                   <div>
                     <h3 className="font-medium">Friends Join Automatically</h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                      When friends click the link, they'll create an account (or sign in) and be added to your pool
+                      When friends click the link, they&apos;ll create an account (or sign in) and be added to your pool
                       instantly.
                     </p>
                   </div>
@@ -205,7 +205,7 @@ export function InviteInstructions({ leagueId, leagueName = "your pool" }: Invit
                   <div>
                     <h3 className="font-medium">Send Reminders</h3>
                     <p className="text-sm text-muted-foreground">
-                      Follow up with anyone who hasn't joined a few days before your deadline.
+                      Follow up with anyone who hasn&apos;t joined a few days before your deadline.
                     </p>
                   </div>
                 </div>

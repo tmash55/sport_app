@@ -9,6 +9,37 @@ import { LeagueMember } from "@/types/database";
 // Initialize Resend with your API key
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+/** ✅ Moved `sendEmailWithDelay` outside of `sendDraftTimeNotification` */
+async function sendEmailWithDelay(member: LeagueMember, delay: number, league: any, formattedDate: string, formattedTime: string, isUpdate: boolean, leagueId: string) {
+  return new Promise((resolve) => setTimeout(resolve, delay)).then(async () => {
+    if (!member.users?.email) return null;
+
+    console.log(`📨 Sending email to: ${member.users.email}`);
+
+    try {
+      const response = await resend.emails.send({
+        from: "Dryft <no-reply@dryftplay.com>",
+        to: [member.users.email],
+        subject: isUpdate ? `Draft Time Updated for ${league.name}` : `Draft Time Set for ${league.name}`,
+        react: DraftTimeEmailTemplate({
+          userName: member.users.display_name || member.team_name || "League Member",
+          leagueName: league.name,
+          draftDate: formattedDate,
+          draftTime: formattedTime,
+          isUpdate,
+          leagueId,
+        }),
+      });
+
+      console.log(`✅ Email successfully sent to ${member.users.email}:`, response);
+      return response;
+    } catch (error) {
+      console.error(`❌ Failed to send email to ${member.users.email}:`, error);
+      return null;
+    }
+  });
+}
+
 export async function sendDraftTimeNotification(leagueId: string, draftTime: Date, isUpdate: boolean) {
   try {
     const supabase = createClient();
@@ -65,40 +96,9 @@ export async function sendDraftTimeNotification(leagueId: string, draftTime: Dat
     const formattedDate = format(draftTime, "EEEE, MMMM d, yyyy");
     const formattedTime = format(draftTime, "h:mm a");
 
-    // Function to send emails with delay to prevent rate limits
-    async function sendEmailWithDelay(member: LeagueMember, delay: number) {
-      return new Promise((resolve) => setTimeout(resolve, delay)).then(async () => {
-        if (!member.users?.email) return null;
-
-        console.log(`📨 Sending email to: ${member.users.email}`);
-
-        try {
-          const response = await resend.emails.send({
-            from: "Dryft <no-reply@dryftplay.com>",
-            to: [member.users.email],
-            subject: isUpdate ? `Draft Time Updated for ${league.name}` : `Draft Time Set for ${league.name}`,
-            react: DraftTimeEmailTemplate({
-              userName: member.users.display_name || member.team_name || "League Member",
-              leagueName: league.name,
-              draftDate: formattedDate,
-              draftTime: formattedTime,
-              isUpdate,
-              leagueId,
-            }),
-          });
-
-          console.log(`✅ Email successfully sent to ${member.users.email}:`, response);
-          return response;
-        } catch (error) {
-          console.error(`❌ Failed to send email to ${member.users.email}:`, error);
-          return null;
-        }
-      });
-    }
-
-    // Send emails with 500ms delay between each
+    // ✅ Pass league & formatted dates to `sendEmailWithDelay`
     const emailPromises = membersWithEmail.map((member, index) =>
-      sendEmailWithDelay(member, index * 600)
+      sendEmailWithDelay(member, index * 600, league, formattedDate, formattedTime, isUpdate, leagueId)
     );
 
     // Wait for all emails to be sent

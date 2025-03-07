@@ -24,7 +24,7 @@ export default function BracketPage() {
                   <Lock className="text-primary w-6 h-6" />
                 </div>
                 <CardTitle className="text-2xl font-bold text-primary">Bracket Coming Soon!</CardTitle>
-                <CardDescription>The official tournament bracket hasn't been announced yet.</CardDescription>
+                <CardDescription>The official tournament bracket hasn&apos;t been announced yet.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="bg-muted p-4 rounded-lg flex items-center space-x-4">
@@ -44,7 +44,7 @@ export default function BracketPage() {
                   </div>
                   <div className="bg-muted p-3 rounded-lg flex items-center space-x-3">
                     <Trophy className="text-muted-foreground h-5 w-5" />
-                    <p className="text-sm">Review your league's scoring settings</p>
+                    <p className="text-sm">Review your league&apos;s scoring settings</p>
                   </div>
                 </div>
               </CardContent>

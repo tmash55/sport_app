@@ -161,7 +161,7 @@ export function MembersSettings({ leagueId, isCommissioner, leagueMembers, onUpd
                       <TableCell colSpan={2} className="text-center py-6 text-muted-foreground">
                         {searchQuery ? (
                           <div className="flex flex-col items-center gap-2">
-                            <p>No members found matching "{searchQuery}"</p>
+                            <p>No members found matching &quot;{searchQuery}&quot;</p>
                             <Button variant="outline" size="sm" onClick={clearSearch}>
                               Clear search
                             </Button>
