@@ -34,7 +34,7 @@ const PrivacyPolicy = () => {
           className="leading-relaxed whitespace-pre-wrap"
           style={{ fontFamily: "sans-serif" }}
         >
-          {`Last Updated: 2025-02-07
+          {`Last Updated: January 26, 2025
 
 Thank you for using Dryft ("we," "us," or "our"). This Privacy Policy outlines how we collect, use, and protect your personal and non-personal information when you use our website located at ${config.domainName} (the "Website").
 

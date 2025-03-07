@@ -35,7 +35,7 @@ const TOS = () => {
           className="leading-relaxed whitespace-pre-wrap"
           style={{ fontFamily: "sans-serif" }}
         >
-          {`Last Updated: September 26, 2023
+          {`Last Updated: January 26, 2025
 
 Welcome to Dryft!
 
