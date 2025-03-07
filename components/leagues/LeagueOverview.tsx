@@ -171,7 +171,6 @@ export function LeagueOverview() {
   ]
 
   const isDraftCompleted = leagueDetails.drafts.status === "completed"
-  console.log(leagueDetails)
 
   return (
     <div className="space-y-6 py-2 sm:py-3 md:py-4">
