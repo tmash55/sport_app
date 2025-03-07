@@ -113,7 +113,7 @@ export function InviteInstructions({ leagueId, leagueName = "your pool" }: Invit
                   <div>
                     <h3 className="font-medium">Copy Your Unique Link</h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Click the "Copy Link" button above to copy your pool&apos;s invite link to your clipboard.
+                      Click the &quot;Copy Link&quot; button above to copy your pool&apos;s invite link to your clipboard.
                     </p>
                   </div>
                 </li>
