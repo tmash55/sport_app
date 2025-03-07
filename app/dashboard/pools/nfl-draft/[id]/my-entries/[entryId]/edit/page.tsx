@@ -97,19 +97,33 @@ export default function EditEntryPage({ params }: EditEntryPageProps) {
         typeof entry.roster === "string"
           ? JSON.parse(entry.roster)
           : entry.roster || {};
-  
-      const formattedRoster = Object.entries(roster).reduce(
-        (acc, [slot, player]) => {
-          const [firstName, lastName] = player.name.split(" ");
-          acc[slot] = {
-            ...player,
-            first_name: firstName || "",
-            last_name: lastName || "",
-          };
-          return acc;
-        },
-        {} as Record<string, Player>
-      );
+          
+          const formattedRoster = Object.entries(roster).reduce(
+            (acc, [slot, player]) => {
+              // Add type assertion to player with more specific properties
+              const playerData = player as {
+                name: string
+                price: number
+                id: string
+                positions: Position[]
+                school: string
+                [key: string]: any
+              }
+    
+              const [firstName, lastName] = playerData.name.split(" ")
+              acc[slot] = {
+                id: playerData.id,
+                first_name: firstName || "",
+                last_name: lastName || "",
+                positions: playerData.positions || [],
+                price: playerData.price || 0,
+                school: playerData.school || "",
+              }
+              return acc
+            },
+            {} as Record<string, Player>,
+          )
+    
   
       setSelectedPlayers(formattedRoster);
   

@@ -12,7 +12,7 @@ export function ReactQueryProvider({ children }: { children: React.ReactNode }) 
         defaultOptions: {
           queries: {
             // You can set default options here
-            staleTime: 60 * 1000, // 1 minute
+            staleTime: 180 * 1000, // 3 minute
           },
         },
       }),
