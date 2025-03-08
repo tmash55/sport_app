@@ -45,7 +45,6 @@ export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftO
   const { leagueData } = useLeague()
   const { toast } = useToast()
   const [isDirty, setIsDirty] = useState(false)
-  console.log(leagueData)
 
   const loadDraftOrder = useCallback(() => {
     if (!leagueData) return
