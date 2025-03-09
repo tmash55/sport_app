@@ -50,50 +50,56 @@ export function PoolDetailsForm({ contestId, contestName }: PoolDetailsFormProps
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
+    e.preventDefault();
+  
+    // Prevent multiple clicks
+    if (isLoading) return;
+  
+    setIsLoading(true);
+  
     try {
       if (!isAuthenticated) {
-        setShowAuthForm(true)
-        return
+        setShowAuthForm(true);
+        return;
       }
-
+  
       const {
         data: { user },
         error: userError,
-      } = await supabase.auth.getUser()
-
+      } = await supabase.auth.getUser();
+  
       if (userError || !user) {
-        throw new Error("User not authenticated")
+        throw new Error("User not authenticated");
       }
-
-      let result
+  
+      let result;
       if (isNFLDraft) {
-        result = await createNFLDraftLeague(leagueName, contestId)
+        result = await createNFLDraftLeague(leagueName, contestId);
       } else {
-        result = await createLeague(leagueName, contestId, Number.parseInt(maxTeams))
+        result = await createLeague(leagueName, contestId, Number.parseInt(maxTeams));
       }
-
+  
       if ("error" in result) {
-        throw new Error(result.error)
+        throw new Error(result.error);
       }
-
+  
+      // Redirect and **only then** reset loading state
       router.push(
         isNFLDraft
           ? `/dashboard/pools/nfl-draft/${result.leagueId}`
-          : `/dashboard/pools/march-madness-draft/${result.leagueId}`,
-      )
+          : `/dashboard/pools/march-madness-draft/${result.leagueId}`
+      );
+  
     } catch (error) {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "An unexpected error occurred",
         variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
+      });
+      setIsLoading(false); // Reset only on error
     }
-  }
+  };
+  
 
   if (showAuthForm) {
     return (
