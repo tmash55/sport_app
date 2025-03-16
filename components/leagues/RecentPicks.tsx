@@ -68,7 +68,7 @@ export function RecentPicks({ draftPicks, leagueMembers, currentPickNumber }: Re
             {/* Column 1: Last Pick and Pick Number */}
             <div className="flex flex-col items-center justify-center">
               <div className="text-sm text-muted-foreground font-medium">
-                {currentPickNumber > draftPicks.length ? "Final Pick" : "Last Pick"}
+                {currentPickNumber > draftPicks.length ? "Last Pick" : "Final Pick"}
               </div>
               <div className="text-lg font-bold">
                 {round}.{pickInRound}

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
@@ -14,7 +14,12 @@ export function JoinLinkGenerator({ leagueId }: JoinLinkGeneratorProps) {
   const [isCopied, setIsCopied] = useState(false)
   const { toast } = useToast()
 
-  const joinLink = `${window.location.origin}/invite/${leagueId}`
+  const [joinLink, setJoinLink] = useState("");
+
+  // Set the join link after component mounts to avoid window not defined error
+  useEffect(() => {
+    setJoinLink(`${window.location.origin}/invite/${leagueId}`);
+  }, [leagueId]);
 
   const copyToClipboard = async () => {
     try {

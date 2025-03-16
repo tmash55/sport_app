@@ -1,54 +1,27 @@
-"use client"
+"use client";
 
-import { Trophy, Users, Clock, ArrowUpRight, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
-import { PiFootballHelmetBold } from "react-icons/pi"
-import { Badge } from "@/components/ui/badge"
-import Link from "next/link"
-import { Skeleton } from "../ui/skeleton"
+import { Trophy, Users, Clock, ArrowUpRight, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { PiFootballHelmetBold } from "react-icons/pi";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 
 interface PoolHeaderProps {
-  name: string
-  sport: string
-  memberCount: number
-  draftStatus: string
-  entryFee?: string
-  entryDeadline?: string
-  onViewDetails?: () => void
-  className?: string
-  maxEntriesPerUser: number
-  rosterFormat: string
-  lockEntriesAt?: Date | null
-  id: string | null
-  isLoading?: boolean // Add isLoading prop
+  name: string;
+  sport: string;
+  memberCount: number;
+  draftStatus: string;
+  entryFee?: string;
+  entryDeadline?: string;
+  onViewDetails?: () => void;
+  className?: string;
+  maxEntriesPerUser: number;
+  rosterFormat: string;
+  lockEntriesAt?: Date | null;
+  id: string | null;
 }
-
-const PoolHeaderSkeleton = () => (
-  <Card className="relative overflow-hidden bg-gradient-to-br from-background to-muted/50 backdrop-blur border shadow-md">
-    <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
-    <div className="p-6 space-y-6">
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-10 w-48 sm:w-64" />
-          <Skeleton className="h-4 w-32" />
-        </div>
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-9 w-28" />
-          <Skeleton className="h-9 w-28" />
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-4">
-        <Skeleton className="h-8 w-20" />
-        <Skeleton className="h-8 w-32" />
-        <Skeleton className="h-8 w-36" />
-        <Skeleton className="h-8 w-32" />
-      </div>
-    </div>
-  </Card>
-)
 
 export function PoolHeader({
   name,
@@ -63,24 +36,22 @@ export function PoolHeader({
   rosterFormat,
   lockEntriesAt,
   id,
-  isLoading = false, // Default to false
 }: PoolHeaderProps) {
   const formatRosterType = (format: string) => {
-    return format === "both" ? "Offense & Defense" : format.charAt(0).toUpperCase() + format.slice(1)
-  }
+    return format === "both"
+      ? "Offense & Defense"
+      : format.charAt(0).toUpperCase() + format.slice(1);
+  };
 
-  const isEntriesOpen = lockEntriesAt ? new Date() < new Date(lockEntriesAt) : true
-
-  // If loading, return the skeleton
-  if (isLoading) {
-    return <PoolHeaderSkeleton />
-  }
+  const isEntriesOpen = lockEntriesAt
+    ? new Date() < new Date(lockEntriesAt)
+    : true;
 
   return (
     <Card
       className={cn(
         "relative overflow-hidden bg-gradient-to-br from-background to-muted/50 backdrop-blur border shadow-md",
-        className,
+        className
       )}
     >
       <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
@@ -135,6 +106,5 @@ export function PoolHeader({
         </div>
       </div>
     </Card>
-  )
+  );
 }
-

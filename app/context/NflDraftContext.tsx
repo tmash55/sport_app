@@ -4,6 +4,7 @@ import type React from "react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { createClient } from "@/libs/supabase/client";
 import { useUser } from "./UserProvider";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export type Position =
   | "EDGE"
@@ -62,24 +63,31 @@ const NflDraftContext = createContext<NflDraftContextType | undefined>(
 export function NflDraftProvider({
   leagueId,
   children,
+  initialLeagueData,
 }: {
   leagueId: string;
   children: React.ReactNode;
+  initialLeagueData: any;
 }) {
   const supabase = createClient();
   const { user, isLoading: userLoading } = useUser();
-  const [league, setLeague] = useState<any | null>(null);
-  const [entries, setEntries] = useState<Entry[]>([]);
+  const [league, setLeague] = useState<any | null>(initialLeagueData || null);
+  const [entries, setEntries] = useState<Entry[]>(initialLeagueData?.roster_entries || []);
   const [players, setPlayers] = useState<Player[]>([]);
-  const [isCommissioner, setIsCommissioner] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [isCommissioner, setIsCommissioner] = useState<boolean | null>(
+    initialLeagueData ? initialLeagueData.commissioner_id === user?.id : null
+  );
+  const [loading, setLoading] = useState(!initialLeagueData);
   const [playersLoading, setPlayersLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
+    if (!initialLeagueData && user) {
       fetchLeagueData();
-      fetchPlayers();
+    } else if (initialLeagueData) {
+      // ✅ Set `isCommissioner` when `initialLeagueData` exists
+      setIsCommissioner(initialLeagueData.commissioner_id === user?.id);
     }
+    fetchPlayers();
   }, [user]);
 
   async function fetchLeagueData() {
@@ -215,7 +223,20 @@ export function NflDraftProvider({
     }
   }
 
-  if (userLoading) return <div>Loading...</div>;
+  if (userLoading) {
+    return (
+      <div className="container max-w-7xl mx-auto px-4 py-6 space-y-6">
+        <Skeleton className="h-[200px] w-full rounded-lg" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Skeleton className="h-[300px] col-span-1 md:col-span-2 rounded-lg" />
+          <div className="space-y-6">
+            <Skeleton className="h-[140px] rounded-lg" />
+            <Skeleton className="h-[140px] rounded-lg" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <NflDraftContext.Provider
