@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import AuthForm from "@/components/Auth/AuthForm"
+import AuthForm from "@/components/Auth/AuthFormPool"
 import { createClient } from "@/libs/supabase/client"
 import { createLeague } from "@/app/actions/createLeague"
 import { Info } from "lucide-react"
@@ -28,9 +28,11 @@ export function PoolDetailsForm({ contestId, contestName }: PoolDetailsFormProps
   const [leagueName, setLeagueName] = useState("")
   const [maxTeams, setMaxTeams] = useState("8")
   const [isLoading, setIsLoading] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false) // Add this new state
   const [showAuthForm, setShowAuthForm] = useState(false)
   const [authType, setAuthType] = useState<"signin" | "signup">("signup")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [formSubmitted, setFormSubmitted] = useState(false) // Track if form was submitted
 
   const router = useRouter()
   const { toast } = useToast()
@@ -38,73 +40,109 @@ export function PoolDetailsForm({ contestId, contestName }: PoolDetailsFormProps
 
   const isNFLDraft = contestId === NFL_DRAFT_CONTEST_ID
 
+  // Check auth status on mount and when showAuthForm changes
   useEffect(() => {
-    checkAuthStatus()
-  }, [])
-
-  const checkAuthStatus = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    setIsAuthenticated(!!user)
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-  
-    // Prevent multiple clicks
-    if (isLoading) return;
-  
-    setIsLoading(true);
-  
-    try {
-      if (!isAuthenticated) {
-        setShowAuthForm(true);
-        return;
-      }
-  
+    const checkAuth = async () => {
       const {
         data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-  
-      if (userError || !user) {
-        throw new Error("User not authenticated");
+      } = await supabase.auth.getUser()
+
+      const authenticated = !!user
+      setIsAuthenticated(authenticated)
+
+      // If user just authenticated and form was previously submitted, create the pool
+      if (authenticated && formSubmitted && !showAuthForm) {
+        createPool()
+      } else if (!authenticated && formSubmitted && !showAuthForm) {
+        // If still not authenticated after auth form is closed, reset states
+        setFormSubmitted(false)
+        setIsProcessing(false)
+        setIsLoading(false)
       }
-  
-      let result;
+    }
+
+    checkAuth()
+  }, [showAuthForm])
+
+  // Separate function to create the pool
+  const createPool = async () => {
+    setIsLoading(true)
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        throw new Error("User not authenticated")
+      }
+
+      let result
       if (isNFLDraft) {
-        result = await createNFLDraftLeague(leagueName, contestId);
+        result = await createNFLDraftLeague(leagueName, contestId)
       } else {
-        result = await createLeague(leagueName, contestId, Number.parseInt(maxTeams));
+        result = await createLeague(leagueName, contestId, Number.parseInt(maxTeams))
       }
-  
+
       if ("error" in result) {
-        throw new Error(result.error);
+        throw new Error(result.error)
       }
-  
-      // Redirect and **only then** reset loading state
+
+
+
+      // Redirect to the new pool
       router.push(
         isNFLDraft
           ? `/dashboard/pools/nfl-draft/${result.leagueId}`
-          : `/dashboard/pools/march-madness-draft/${result.leagueId}`
-      );
-  
+          : `/dashboard/pools/march-madness-draft/${result.leagueId}`,
+      )
     } catch (error) {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "An unexpected error occurred",
         variant: "destructive",
-      });
-      setIsLoading(false); // Reset only on error
+      })
+      setIsLoading(false)
+      setIsProcessing(false)
+      setFormSubmitted(false)
     }
-  };
-  
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // Prevent multiple submissions - check both states
+    if (isLoading || isProcessing) return
+
+    // Set both loading states
+    setIsLoading(true)
+    setIsProcessing(true)
+
+    // Mark form as submitted
+    setFormSubmitted(true)
+
+    // If not authenticated, show auth form
+    if (!isAuthenticated) {
+      setShowAuthForm(true)
+      setIsLoading(false) // Allow UI interaction while auth form is shown
+      return
+    }
+
+    // If already authenticated, create pool directly
+    await createPool()
+  }
+
+  const handleAuthSuccess = () => {
+    setShowAuthForm(false)
+    // Don't need to call createPool here - the useEffect will handle it
+    // But we do need to set isLoading back to true
+    setIsLoading(true)
+  }
 
   if (showAuthForm) {
     return (
       <div className="max-w-md mx-auto">
-        <AuthForm type={authType} onSuccess={() => setShowAuthForm(false)} />
+        <AuthForm type={authType} onSuccess={handleAuthSuccess} />
         <div className="mt-4 text-center">
           {authType === "signup" ? (
             <p>
@@ -187,10 +225,10 @@ export function PoolDetailsForm({ contestId, contestName }: PoolDetailsFormProps
 
             <Button
               type="submit"
-              disabled={isLoading || leagueName.length < 3}
+              disabled={isLoading || isProcessing || leagueName.length < 3}
               className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-6 text-lg font-medium"
             >
-              {isLoading ? "Creating..." : "Create Pool"}
+              {isLoading || isProcessing ? "Creating..." : "Create Pool"}
             </Button>
 
             <p className="text-sm text-muted-foreground text-center">
