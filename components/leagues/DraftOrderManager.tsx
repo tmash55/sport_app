@@ -13,9 +13,10 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2 } from "lucide-react"
+import { Loader2, Shuffle, Save, X, Trash2 } from "lucide-react"
 import { useLeague } from "@/app/context/LeagueContext"
 import { createClient } from "@/libs/supabase/client"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface User {
   id: string
@@ -163,59 +164,92 @@ export function DraftOrderManager({ leagueId, maxTeams, onOrderUpdated }: DraftO
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="default" className="w-full sm:w-auto ">
+        <Button variant="default" className="w-full sm:w-auto">
           Manage Draft Order
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] w-[95vw] max-w-[95vw] sm:w-full">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[500px] w-[95vw] max-w-[95vw] sm:w-full p-0">
+        <DialogHeader className="p-6 pb-2">
           <DialogTitle>Manage Draft Order</DialogTitle>
           <DialogDescription>Set the draft order for league members or randomize it.</DialogDescription>
         </DialogHeader>
-        <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto">
-          {isLoading ? (
-            <div className="flex justify-center">
-              <Loader2 className="h-6 w-6 animate-spin" />
-            </div>
-          ) : (
-            draftOrder.map((member, index) => {
-              const availableMembers = getAvailableMembers(index + 1)
-              return (
-                <div key={index} className="flex items-center space-x-2">
-                  <span className="w-6 text-right">{index + 1}.</span>
-                  <Select value={member?.id || "unassigned"} onValueChange={(value) => assignMember(value, index + 1)}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a member" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="unassigned">Unassigned</SelectItem>
-                      {availableMembers.map((m) => (
-                        <SelectItem key={m.id} value={m.id}>
-                          {m.team_name || m.users[0]?.display_name || "Unknown"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )
-            })
-          )}
-        </div>
-        <DialogFooter className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="w-full sm:w-auto">
-              Close
-            </Button>
-            <Button variant="destructive" onClick={resetDraftOrder} disabled={isLoading} className="w-full sm:w-auto">
-              Reset
-            </Button>
+
+        <ScrollArea className="max-h-[50vh] px-6">
+          <div className="py-4 space-y-3">
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : (
+              draftOrder.map((member, index) => {
+                const availableMembers = getAvailableMembers(index + 1)
+                return (
+                  <div key={index} className="flex items-center space-x-2">
+                    <span className="min-w-[24px] text-right font-medium">{index + 1}.</span>
+                    <Select
+                      value={member?.id || "unassigned"}
+                      onValueChange={(value) => assignMember(value, index + 1)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a member" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                        {availableMembers.map((m) => (
+                          <SelectItem key={m.id} value={m.id}>
+                            {m.team_name || m.users[0]?.display_name || "Unknown"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )
+              })
+            )}
           </div>
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <Button onClick={randomizeDraftOrder} disabled={isLoading} className="w-full sm:w-auto">
-              {isLoading ? "Randomizing..." : "Randomize"}
+        </ScrollArea>
+
+        <DialogFooter className="p-6 pt-2 border-t">
+          <div className="grid grid-cols-2 gap-3 w-full">
+            <Button
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center justify-center"
+              size="sm"
+            >
+              <X className="h-4 w-4 mr-2" />
+              <span>Close</span>
             </Button>
-            <Button onClick={saveDraftOrderToDatabase} disabled={!isDirty || isLoading} className="w-full sm:w-auto">
-              {isLoading ? "Saving..." : "Save"}
+
+            <Button
+              variant="destructive"
+              onClick={resetDraftOrder}
+              disabled={isLoading}
+              className="flex items-center justify-center"
+              size="sm"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              <span>Reset</span>
+            </Button>
+
+            <Button
+              onClick={randomizeDraftOrder}
+              disabled={isLoading}
+              className="flex items-center justify-center col-span-2"
+              size="sm"
+            >
+              <Shuffle className="h-4 w-4 mr-2" />
+              <span>{isLoading ? "Randomizing..." : "Randomize Order"}</span>
+            </Button>
+
+            <Button
+              onClick={saveDraftOrderToDatabase}
+              disabled={!isDirty || isLoading}
+              className="flex items-center justify-center col-span-2"
+              variant="default"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              <span>{isLoading ? "Saving..." : "Save Changes"}</span>
             </Button>
           </div>
         </DialogFooter>

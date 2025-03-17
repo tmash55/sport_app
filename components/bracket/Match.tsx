@@ -1,7 +1,9 @@
+"use client"
+
 import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-import { ChevronRight, ChevronLeft } from "lucide-react"
+import { ChevronRight, Trophy } from "lucide-react"
 import { useTheme } from "next-themes"
 
 interface MatchProps {
@@ -59,14 +61,14 @@ export function Match({
   return (
     <Card
       className={cn(
-        "w-[100px] sm:w-[150px] h-[70px] sm:h-[80px] flex flex-col justify-center transition-all duration-300 overflow-hidden bg-background",
+        "w-[100px] sm:w-[150px] h-[70px] sm:h-[80px] flex flex-col justify-center transition-all duration-300 overflow-hidden",
         isSpecial && "w-[140px] sm:w-[200px] h-[90px] sm:h-[100px] shadow-lg",
         (match.home_team && userTeamIds.includes(match.home_team.id)) ||
           (match.away_team && userTeamIds.includes(match.away_team.id))
           ? theme === "dark"
-            ? "bg-primary/5"
-            : "bg-primary/[0.03]"
-          : "",
+            ? "bg-primary/10 border-primary/30"
+            : "bg-primary/5 border-primary/20"
+          : "bg-card/80 backdrop-blur-sm",
       )}
     >
       <CardContent className={cn("p-0", isSpecial && "p-0")}>
@@ -131,22 +133,36 @@ function TeamInfo({
   return (
     <div
       className={cn(
-        "flex items-center space-x-1 px-2 py-0.5 sm:py-1 relative h-[35px] sm:h-[40px] w-full",
-        position === "top" && "border-b border-border rounded-t-lg",
+        "flex items-center gap-2 px-2 py-0.5 sm:py-1 relative h-[35px] sm:h-[40px] w-full",
+        position === "top" && "border-b border-border/50 rounded-t-lg",
         position === "bottom" && "rounded-b-lg",
         isSpecial && "py-1 sm:py-2 h-[45px] sm:h-[50px]",
-        game_status === "completed" && !isWinner && "opacity-80",
+        game_status === "completed" && !isWinner && "opacity-75",
         isUserTeam && "bg-primary/10 shadow-[0_0_10px_rgba(var(--primary),0.2)] transition-all duration-300",
+        isWinner && "bg-gradient-to-r from-primary/5 to-transparent",
       )}
     >
       {team ? (
         <>
-          <div className="flex items-center gap-0.5 flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {/* Seed Badge */}
             <div
               className={cn(
-                "w-2.5 h-2.5 sm:w-4 sm:h-4 relative flex-shrink-0",
-                isSpecial && "w-3.5 h-3.5 sm:w-5 sm:h-5",
-                isUserTeam && "ring-1 sm:ring-2 ring-primary ring-offset-1 shadow-[0_0_5px_rgba(var(--primary),0.5)]",
+                "flex-shrink-0 w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center",
+                isSpecial && "w-5 h-5 sm:w-6 sm:h-6",
+                isWinner ? "bg-primary/20 text-primary-foreground" : "bg-muted text-muted-foreground",
+                isUserTeam && "ring-1 ring-primary ring-offset-1",
+              )}
+            >
+              <span className="text-[8px] sm:text-[10px] font-semibold">{team.seed}</span>
+            </div>
+
+            {/* Team Logo */}
+            <div
+              className={cn(
+                "w-4 h-4 sm:w-5 sm:h-5 relative flex-shrink-0",
+                isSpecial && "w-5 h-5 sm:w-6 sm:h-6",
+                isUserTeam && "ring-1 ring-primary ring-offset-1 rounded-full",
               )}
             >
               {team.logo_filename ? (
@@ -154,62 +170,51 @@ function TeamInfo({
                   src={`/images/team-logos/${team.logo_filename}`}
                   alt={`${team.name} logo`}
                   fill
-                  style={{ objectFit: "cover" }}
+                  style={{ objectFit: "contain" }}
                   sizes="(max-width: 640px) 50px, (max-width: 768px) 75px, 100px"
-                  className={cn("rounded-full", game_status === "completed" && !isWinner && "grayscale")}
+                  className={cn("rounded-full", game_status === "completed" && !isWinner && "grayscale opacity-75")}
                 />
               ) : (
-                <div
-                  className={cn(
-                    "w-3 h-3 sm:w-4 sm:h-4 bg-gray-200 rounded-full flex items-center justify-center text-[6px] sm:text-[8px] font-medium",
-                    isSpecial && "w-4 h-4 sm:w-5 sm:h-5",
-                    game_status === "completed" && !isWinner && "bg-gray-300",
-                  )}
-                >
-                  {team.seed}
-                </div>
+                <Trophy className="w-full h-full text-amber-500" />
               )}
             </div>
-            <div className="flex flex-col min-w-0">
+
+            {/* Team Name and Owner */}
+            <div className="flex flex-col min-w-0 flex-1">
               <span
                 className={cn(
-                  "text-[7px] sm:text-[10px] leading-tight",
-                  isSpecial && "text-[9px] sm:text-xs",
+                  "text-[8px] sm:text-[11px] leading-tight truncate",
+                  isSpecial && "text-[10px] sm:text-xs",
                   game_status === "completed" && isWinner && "font-bold",
-                  game_status === "completed" && !isWinner && "font-normal",
-                  isUserTeam && "text-primary font-semibold",
+                  isUserTeam && "text-primary",
                 )}
               >
-                {team.seed} {team.name}
+                {team.name}
               </span>
               <span
                 className={cn(
-                  "text-[5px] sm:text-[8px] leading-tight text-muted-foreground truncate",
+                  "text-[6px] sm:text-[8px] leading-tight text-muted-foreground truncate",
                   isUndrafted && "italic",
                 )}
               >
-                {ownerName}
+                {ownerName || "Undrafted"}
               </span>
             </div>
           </div>
+
+          {/* Score */}
           <div className="flex items-center gap-0.5">
-            {game_status === "completed" &&
-              isWinner &&
-              (isRtl ? (
-                <ChevronRight
-                  className={cn("h-2 w-2 sm:h-3 sm:w-3 text-primary", isSpecial && "h-3 w-3 sm:h-4 sm:w-4")}
-                />
-              ) : (
-                <ChevronRight
-                  className={cn("h-2 w-2 sm:h-3 sm:w-3 text-primary", isSpecial && "h-3 w-3 sm:h-4 sm:w-4")}
-                />
-              ))}
+            {game_status === "completed" && isWinner && (
+              <ChevronRight
+                className={cn("h-3 w-3 sm:h-4 sm:w-4 text-primary", isSpecial && "h-4 w-4 sm:h-5 sm:w-5")}
+              />
+            )}
             {score !== null && (
               <span
                 className={cn(
-                  "text-[7px] sm:text-[10px] tabular-nums",
-                  isSpecial && "text-[9px] sm:text-xs",
-                  game_status === "completed" && isWinner && "font-bold",
+                  "text-[10px] sm:text-xs font-medium tabular-nums min-w-[14px] text-right",
+                  isSpecial && "text-xs sm:text-sm",
+                  game_status === "completed" && isWinner && "font-bold text-primary",
                 )}
               >
                 {score}
@@ -218,14 +223,14 @@ function TeamInfo({
           </div>
         </>
       ) : (
-        <div className={cn("flex items-center justify-center space-x-1 h-full w-full text-gray-400")}>
+        <div className="flex items-center justify-center space-x-2 h-full w-full text-muted-foreground">
           <div
             className={cn(
-              "w-3 h-3 sm:w-4 sm:h-4 bg-gray-200 rounded-full flex items-center justify-center text-[6px] sm:text-[8px] font-medium",
-              isSpecial && "w-4 h-4 sm:w-5 sm:h-5",
+              "w-4 h-4 sm:w-5 sm:h-5 bg-muted/50 rounded-full flex items-center justify-center",
+              isSpecial && "w-5 h-5 sm:w-6 sm:h-6",
             )}
           >
-            ?
+            <span className="text-[8px] sm:text-[10px] font-medium">?</span>
           </div>
           <span className={cn("text-[8px] sm:text-xs truncate", isSpecial && "text-[10px] sm:text-sm")}>TBD</span>
         </div>

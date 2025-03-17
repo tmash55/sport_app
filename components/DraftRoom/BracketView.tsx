@@ -59,10 +59,10 @@ export function BracketView({
           <div className="space-y-6 sm:space-y-8 lg:space-y-16 pb-8">
             {/* Top Regions */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
-              <div>
+            <div>
                 <DraftRegion
-                  name="East"
-                  matchups={bracketData["East"]}
+                  name="South"
+                  matchups={bracketData["South"]}
                   direction="ltr"
                   currentUser={currentUser}
                   leagueMembers={leagueMembers}
@@ -70,13 +70,14 @@ export function BracketView({
               </div>
               <div>
                 <DraftRegion
-                  name="South"
-                  matchups={bracketData["South"]}
+                  name="East"
+                  matchups={bracketData["East"]}
                   direction="rtl"
                   currentUser={currentUser}
                   leagueMembers={leagueMembers}
                 />
               </div>
+              
             </div>
 
 

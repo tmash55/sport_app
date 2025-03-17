@@ -1,4 +1,9 @@
+"use client"
+
 import { cn } from "@/lib/utils"
+import { useState } from "react"
+import { ChevronDown, ChevronUp } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface RoundInfo {
   name: string
@@ -20,35 +25,46 @@ const rounds: RoundInfo[] = [
   { name: "1st Round", dates: "March 20-21" },
 ]
 
-export function BracketHeader() {
+interface BracketHeaderProps {
+  className?: string
+}
+
+export function BracketHeader({ className }: BracketHeaderProps) {
+  const [showRounds, setShowRounds] = useState(false)
+
   return (
-    <div className="w-full">
-      <div className="px-2 py-4 md:px-4 md:py-6">
-        <h1 className="text-xl font-bold text-[#11274F] dark:text-foreground md:text-2xl lg:text-3xl">
-          Men&apos;s NCAA Tournament Bracket 2024-25
-        </h1>
-        <div className="mt-4 md:mt-6">
-          <div className="grid grid-cols-3 gap-1 sm:grid-cols-6 md:grid-cols-11 rounded-md border bg-background">
-            {rounds.map((round, index) => (
-              <div
-                key={`${round.name}-${index}`}
-                className={cn(
-                  "flex flex-col items-center justify-center p-1 text-center",
-                  index === 5 && "border-x border-border/50 bg-primary/5",
-                  index >= 6 && "hidden md:flex", // Hide on mobile, show on md and up
-                )}
-              >
-                <span className="text-xs font-semibold text-[#11274F] dark:text-foreground sm:text-sm">
-                  {round.name}
-                </span>
-                <span className="mt-0.5 text-[10px] text-muted-foreground sm:text-xs">{round.dates}</span>
-                {round.location && (
-                  <span className="mt-0.5 text-[10px] text-muted-foreground sm:text-xs">{round.location}</span>
-                )}
-              </div>
-            ))}
-          </div>
+    <div className={cn("w-full", className)}>
+      <div className="px-1 py-2 flex flex-col">
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-bold text-[#11274F] dark:text-foreground">
+            Men&apos;s NCAA Tournament Bracket 2024-25
+          </h1>
+          <Button variant="ghost" size="sm" onClick={() => setShowRounds(!showRounds)} className="h-8 w-8 p-0">
+            {showRounds ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            <span className="sr-only">{showRounds ? "Hide rounds" : "Show rounds"}</span>
+          </Button>
         </div>
+
+        {showRounds && (
+          <div className="mt-2">
+            <div className="grid grid-cols-3 gap-1 sm:grid-cols-6 md:grid-cols-11 rounded-md border bg-background/50">
+              {rounds.map((round, index) => (
+                <div
+                  key={`${round.name}-${index}`}
+                  className={cn(
+                    "flex flex-col items-center justify-center p-1 text-center",
+                    index === 5 && "border-x border-border/50 bg-primary/5",
+                    index >= 6 && "hidden md:flex", // Hide on mobile, show on md and up
+                  )}
+                >
+                  <span className="text-xs font-semibold text-[#11274F] dark:text-foreground">{round.name}</span>
+                  <span className="mt-0.5 text-[10px] text-muted-foreground">{round.dates}</span>
+                  {round.location && <span className="mt-0.5 text-[10px] text-muted-foreground">{round.location}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

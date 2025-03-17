@@ -28,37 +28,42 @@ const DEFAULT_ROUND_SCORES = [1, 2, 4, 8, 16, 32]
 const DEFAULT_UPSET_MULTIPLIER = 1
 
 export function ScoringSettings({ leagueId, isCommissioner, leagueSettings, onUpdate }: ScoringSettingsProps) {
-  const [roundScores, setRoundScores] = useState<number[]>([])
+  // Change the roundScores state to store strings instead of numbers
+  const [roundScores, setRoundScores] = useState<string[]>([])
   const [upsetMultiplier, setUpsetMultiplier] = useState<number>(1)
+  const [upsetMultiplierInput, setUpsetMultiplierInput] = useState<string>("1")
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
 
+  // Update the useEffect to convert numbers to strings
   useEffect(() => {
     if (leagueSettings) {
       setRoundScores([
-        leagueSettings.round_1_score,
-        leagueSettings.round_2_score,
-        leagueSettings.round_3_score,
-        leagueSettings.round_4_score,
-        leagueSettings.round_5_score,
-        leagueSettings.round_6_score,
+        leagueSettings.round_1_score.toString(),
+        leagueSettings.round_2_score.toString(),
+        leagueSettings.round_3_score.toString(),
+        leagueSettings.round_4_score.toString(),
+        leagueSettings.round_5_score.toString(),
+        leagueSettings.round_6_score.toString(),
       ])
       setUpsetMultiplier(leagueSettings.upset_multiplier)
+      setUpsetMultiplierInput(leagueSettings.upset_multiplier.toString())
     }
   }, [leagueSettings])
 
+  // Update the handleSave function to parse the string values to numbers
   const handleSave = useCallback(async () => {
     if (!isCommissioner) return
 
     setIsLoading(true)
     try {
       const updatedSettings: Partial<LeagueSettings> = {
-        round_1_score: roundScores[0],
-        round_2_score: roundScores[1],
-        round_3_score: roundScores[2],
-        round_4_score: roundScores[3],
-        round_5_score: roundScores[4],
-        round_6_score: roundScores[5],
+        round_1_score: Number.parseInt(roundScores[0], 10) || 0,
+        round_2_score: Number.parseInt(roundScores[1], 10) || 0,
+        round_3_score: Number.parseInt(roundScores[2], 10) || 0,
+        round_4_score: Number.parseInt(roundScores[3], 10) || 0,
+        round_5_score: Number.parseInt(roundScores[4], 10) || 0,
+        round_6_score: Number.parseInt(roundScores[5], 10) || 0,
         upset_multiplier: upsetMultiplier,
       }
 
@@ -80,14 +85,31 @@ export function ScoringSettings({ leagueId, isCommissioner, leagueSettings, onUp
     }
   }, [isCommissioner, roundScores, upsetMultiplier, onUpdate, toast])
 
+  // Update the handleResetToDefault function
   const handleResetToDefault = useCallback(() => {
-    setRoundScores(DEFAULT_ROUND_SCORES)
+    setRoundScores(DEFAULT_ROUND_SCORES.map((score) => score.toString()))
     setUpsetMultiplier(DEFAULT_UPSET_MULTIPLIER)
+    setUpsetMultiplierInput(DEFAULT_UPSET_MULTIPLIER.toString())
     toast({
       title: "Default Values Set",
       description: "Scoring settings have been reset to default values. Don't forget to save your changes.",
     })
   }, [toast])
+
+  // Update the handleRoundScoreChange function
+  const handleRoundScoreChange = (index: number, value: string) => {
+    const newScores = [...roundScores]
+    newScores[index] = value
+    setRoundScores(newScores)
+  }
+
+  const handleUpsetMultiplierChange = (value: string) => {
+    setUpsetMultiplierInput(value)
+
+    // Convert to number for the actual state
+    const numValue = value === "" ? 0 : Number.parseFloat(value)
+    setUpsetMultiplier(numValue)
+  }
 
   if (!leagueSettings) {
     return <p className="text-center">No league settings available.</p>
@@ -124,16 +146,14 @@ export function ScoringSettings({ leagueId, isCommissioner, leagueSettings, onUp
                   <label htmlFor={`round${index + 1}Score`} className="text-sm font-medium">
                     Round {index + 1}
                   </label>
+                  {/* Update the input type in the render section */}
                   <Input
                     id={`round${index + 1}Score`}
-                    type="number"
-                    min={1}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={score}
-                    onChange={(e) => {
-                      const newScores = [...roundScores]
-                      newScores[index] = Number(e.target.value) || 0
-                      setRoundScores(newScores)
-                    }}
+                    onChange={(e) => handleRoundScoreChange(index, e.target.value)}
                     disabled={!isCommissioner || isLoading}
                   />
                 </div>
@@ -158,22 +178,18 @@ export function ScoringSettings({ leagueId, isCommissioner, leagueSettings, onUp
                 </label>
                 <Input
                   id="upsetMultiplier"
-                  type="number"
-                  min={0}
-                  step={0.1}
-                  value={upsetMultiplier}
-                  onChange={(e) => {
-                    const newValue = Number(e.target.value) || 1
-                    setUpsetMultiplier(newValue)
-                  }}
+                  type="text"
+                  value={upsetMultiplierInput}
+                  onChange={(e) => handleUpsetMultiplierChange(e.target.value)}
                   disabled={!isCommissioner || isLoading}
                   className="max-w-[200px]"
+                  placeholder="0.0"
                 />
               </div>
               <p className="text-sm text-muted-foreground">
                 Example: If a 12th seed beats a 5th seed (7 seed difference) and the upset multiplier is 1, the team
                 earns 7 extra points on top of the round score. With a multiplier of 1.5, they would get 10.5 extra
-                points (7 * 1.5).
+                points (7 * 1.5). Set to 0 to disable upset bonuses.
               </p>
             </div>
           </CardContent>

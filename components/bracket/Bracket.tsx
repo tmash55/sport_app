@@ -122,20 +122,21 @@ export function Bracket() {
             <div className="space-y-6 sm:space-y-8 lg:space-y-16">
               {/* Top Regions: East and South */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 mb-6 sm:mb-8 lg:mb-16">
-                <Region
-                  name="East"
-                  matchups={bracketData["East"]}
+              <Region
+                  name="South"
+                  matchups={bracketData["South"]}
                   direction="ltr"
                   userTeamIds={userTeamIds}
                   getTeamOwner={getTeamOwner}
                 />
                 <Region
-                  name="South"
-                  matchups={bracketData["South"]}
+                  name="East"
+                  matchups={bracketData["East"]}
                   direction="rtl"
                   userTeamIds={userTeamIds}
                   getTeamOwner={getTeamOwner}
                 />
+                
               </div>
 
               {/* Middle: Final Four and Championship */}

@@ -43,8 +43,10 @@ const OFFENSIVE_POSITIONS: Position[] = [
   "OT",
   "C",
   "OL",
-];
-const DEFENSIVE_POSITIONS: Position[] = ["EDGE", "DT", "LB", "CB", "S"];
+] as Position[];
+const DEFENSIVE_POSITIONS: Position[] = ["EDGE", "DT", "LB", "CB", "S"] as Position[];
+
+const FLEX_POSITION = "WR/RB/TE" as Position
 
 export function PlayerTable({
   selectedPosition,
@@ -64,31 +66,21 @@ export function PlayerTable({
           (Array.isArray(selectedPosition)
             ? selectedPosition.some((pos) => player.positions.includes(pos))
             : player.positions.includes(selectedPosition) ||
-              (selectedPosition === "OL" &&
-                ["OG", "OT", "C"].some((pos) =>
-                  player.positions.includes(pos)
-                )) ||
-              (selectedPosition === "WR/RB/TE" &&
-                ["WR", "RB", "TE"].some((pos) =>
-                  player.positions.includes(pos)
-                )));
+              (selectedPosition === ("OL" as Position) &&
+                (["OG", "OT", "C"] as Position[]).some((pos) => player.positions.includes(pos))) ||
+              (selectedPosition === FLEX_POSITION &&
+                (["WR", "RB", "TE"] as Position[]).some((pos) => player.positions.includes(pos))))
         const matchesSearch =
-          `${player.first_name} ${player.last_name}`
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          player.school.toLowerCase().includes(searchQuery.toLowerCase());
+          `${player.first_name} ${player.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          player.school.toLowerCase().includes(searchQuery.toLowerCase())
         const matchesFormat =
           leagueFormat === "both" ||
-          (leagueFormat === "offense" &&
-            player.positions.some((pos) =>
-              OFFENSIVE_POSITIONS.includes(pos)
-            )) ||
-          (leagueFormat === "defense" &&
-            player.positions.some((pos) => DEFENSIVE_POSITIONS.includes(pos)));
-        return matchesPosition && matchesSearch && matchesFormat;
+          (leagueFormat === "offense" && player.positions.some((pos) => OFFENSIVE_POSITIONS.includes(pos))) ||
+          (leagueFormat === "defense" && player.positions.some((pos) => DEFENSIVE_POSITIONS.includes(pos)))
+        return matchesPosition && matchesSearch && matchesFormat
       })
-      .sort((a, b) => b.price - a.price);
-  }, [availablePlayers, selectedPosition, searchQuery, leagueFormat]);
+      .sort((a, b) => b.price - a.price)
+  }, [availablePlayers, selectedPosition, searchQuery, leagueFormat])
 
   const canSelectPlayer = (player: Player) => remainingBudget >= player.price;
 

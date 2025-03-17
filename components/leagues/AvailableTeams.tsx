@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react"
 import Image from "next/image"
-import { Search, Filter, LayoutGrid, Table2 } from "lucide-react"
+import { Search, Filter, LayoutGrid, Table2, Trophy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -143,8 +143,8 @@ export function AvailableTeams({
               <Card key={team.id} className="p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    {team.global_teams.logo_filename && (
-                      <div className="relative w-12 h-12 flex items-center justify-center overflow-hidden bg-white rounded-full">
+                  <div className="relative w-12 h-12 flex items-center justify-center overflow-hidden bg-white rounded-full">
+                  {team.global_teams.logo_filename ? (
                         <Image
                           src={getLogoUrl(team.global_teams.logo_filename) || "/placeholder.svg"}
                           alt={`${team.name} logo`}
@@ -152,8 +152,10 @@ export function AvailableTeams({
                           height={48}
                           className="object-contain"
                         />
-                      </div>
-                    )}
+                      ) : (
+                        <Trophy className="h-8 w-8 text-amber-500" />
+                      )}
+                    </div>
                     <div className="flex flex-col">
                       <span className="font-medium text-base">{team.name}</span>
                       <span className="text-sm text-muted-foreground">Seed #{team.global_teams.seed}</span>
@@ -265,8 +267,8 @@ export function AvailableTeams({
                     </TableCell>
                     <TableCell className="py-2">
                       <div className="flex items-center gap-3">
-                        {team.global_teams.logo_filename && (
-                          <div className="relative w-10 h-10 flex items-center justify-center overflow-hidden bg-white rounded-full">
+                      <div className="relative w-10 h-10 flex items-center justify-center overflow-hidden bg-white rounded-full">
+                          {team.global_teams.logo_filename ? (
                             <Image
                               src={getLogoUrl(team.global_teams.logo_filename) || "/placeholder.svg"}
                               alt={`${team.name} logo`}
@@ -274,8 +276,10 @@ export function AvailableTeams({
                               height={40}
                               className="object-contain"
                             />
-                          </div>
-                        )}
+                          ) : (
+                            <Trophy className="h-6 w-6 text-amber-500" />
+                          )}
+                        </div>
                         <div className="flex flex-col">
                           <span className="font-medium">{team.name}</span>
                           <span className="text-sm text-muted-foreground">Seed #{team.global_teams.seed}</span>

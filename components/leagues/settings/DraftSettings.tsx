@@ -30,8 +30,6 @@ const timerOptions = [
   { label: "2 hours", value: "7200" },
   { label: "4 hours", value: "14400" },
   { label: "8 hours", value: "28800" },
-  { label: "12 hours", value: "43200" },
-  { label: "24 hours", value: "86400" },
 ]
 
 export function DraftSettings({ leagueId, isCommissioner, draft, onUpdate }: DraftSettingsProps) {
