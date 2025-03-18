@@ -12,7 +12,6 @@ import { useLeague } from "@/app/context/LeagueContext"
 import { Clock } from "lucide-react"
 import { sendDraftTimeNotification } from "@/app/actions/sendDraftTimeNotifications"
 
-
 export function DraftTimeModal() {
   const { leagueData, updateLeagueData } = useLeague()
   const [isOpen, setIsOpen] = useState(false)
@@ -38,11 +37,20 @@ export function DraftTimeModal() {
 
     const [timeString, period] = time.split(" ")
     const [hours, minutes] = timeString.split(":").map(Number)
+
+    // Create a date object with the selected date and time
     const draftDateTime = new Date(date)
-    draftDateTime.setHours(
-      period === "PM" && hours !== 12 ? hours + 12 : hours === 12 && period === "AM" ? 0 : hours,
-      minutes,
-    )
+
+    // Convert hours to 24-hour format if needed
+    const hours24 = period === "PM" && hours !== 12 ? hours + 12 : hours === 12 && period === "AM" ? 0 : hours
+
+    // Set the hours and minutes
+    draftDateTime.setHours(hours24, minutes, 0, 0)
+
+    console.log(`🕒 Selected Date: ${date.toDateString()}`)
+    console.log(`🕒 Selected Time: ${time} (${hours24}:${minutes})`)
+    console.log(`🕒 Draft DateTime (Local): ${draftDateTime.toString()}`)
+    console.log(`🕒 Draft DateTime (ISO): ${draftDateTime.toISOString()}`)
 
     setIsSending(true)
 
@@ -50,7 +58,9 @@ export function DraftTimeModal() {
       // Update the draft time in the database
       const { error } = await supabase
         .from("leagues")
-        .update({ draft_start_time: draftDateTime.toISOString() })
+        .update({
+          draft_start_time: draftDateTime.toISOString(),
+        })
         .eq("id", leagueData?.id)
 
       if (error) {
@@ -60,13 +70,21 @@ export function DraftTimeModal() {
       // Determine if this is an update or a new setting
       const isUpdate = !!leagueData?.draft_start_time
 
-      // Send email notifications
-      const emailResult = await sendDraftTimeNotification(leagueData?.id as string, draftDateTime, isUpdate)
+      // Send email notifications with the original local hours and minutes
+      const emailResult = await sendDraftTimeNotification(
+        leagueData?.id as string,
+        draftDateTime,
+        isUpdate,
+        hours24, // Pass the local hours in 24-hour format
+        minutes, // Pass the local minutes
+      )
 
       if (!emailResult.success) {
         // Still close the modal and update the data, but show a warning about emails
         setIsOpen(false)
-        updateLeagueData({ draft_start_time: draftDateTime.toISOString() })
+        updateLeagueData({
+          draft_start_time: draftDateTime.toISOString(),
+        })
 
         toast({
           title: "Draft time updated",
@@ -78,7 +96,9 @@ export function DraftTimeModal() {
 
       // Everything succeeded
       setIsOpen(false)
-      updateLeagueData({ draft_start_time: draftDateTime.toISOString() })
+      updateLeagueData({
+        draft_start_time: draftDateTime.toISOString(),
+      })
 
       toast({
         title: "Success",

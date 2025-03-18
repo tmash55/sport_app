@@ -68,7 +68,7 @@ export function DraftTimeEmailTemplate({
                 <strong>Date:</strong> {draftDate}
               </Text>
               <Text style={draftInfoText} className="dark-mode-secondary-text">
-                <strong>Time:</strong> {draftTime}
+                <strong>Time:</strong> {draftTime} (Your local time)
               </Text>
             </Section>
 
